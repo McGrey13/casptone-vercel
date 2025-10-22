@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
-import HeroSection from "./home/HeroSection";
-import CategoryGrid from "./home/CategoryGrid";
+import HeroSection from "./Home/HeroSection";
+import CategoryGrid from "./Home/CategoryGrid";
 import FeaturedProducts from "./product/FeaturedProducts";
 import { useCart } from "./Cart/CartContext";
 import { useFavorites } from "./favorites/FavoritesContext";
