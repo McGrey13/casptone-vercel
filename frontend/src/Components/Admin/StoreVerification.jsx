@@ -603,7 +603,6 @@ const StoreVerification = () => {
                 <div className="text-sm text-yellow-600 font-medium">Pending Review</div>
               </div>
               <div className="p-3 bg-yellow-200 rounded-full">
-                <Clock className="h-6 w-6 text-yellow-700" />
               </div>
             </div>
           </CardContent>

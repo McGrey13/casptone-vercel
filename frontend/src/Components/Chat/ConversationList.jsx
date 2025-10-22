@@ -4,6 +4,7 @@ import { MessageCircle, Clock, User } from 'lucide-react';
 const ConversationList = ({ onSelectConversation, currentConversationId }) => {
   const [conversations, setConversations] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     fetchConversations();
@@ -14,22 +15,31 @@ const ConversationList = ({ onSelectConversation, currentConversationId }) => {
 
   const fetchConversations = async () => {
     try {
+      setError(null);
       const token = sessionStorage.getItem('auth_token');
-      const response = await fetch('http://localhost:8080/api/chat/seller/conversations', {
+      console.log('Fetching conversations with token:', token ? 'present' : 'missing');
+      
+      const response = await fetch('/api/chat/seller/conversations', {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Accept': 'application/json',
         }
       });
 
+      console.log('Conversations API response status:', response.status);
+
       if (response.ok) {
         const data = await response.json();
+        console.log('Conversations data:', data);
         setConversations(data);
       } else {
-        console.error('Failed to fetch conversations');
+        const errorData = await response.json().catch(() => ({}));
+        console.error('Failed to fetch conversations:', response.status, errorData);
+        setError(`Failed to load conversations: ${response.status} ${errorData.error || 'Unknown error'}`);
       }
     } catch (error) {
       console.error('Error fetching conversations:', error);
+      setError(`Network error: ${error.message}`);
     } finally {
       setLoading(false);
     }
@@ -69,7 +79,19 @@ const ConversationList = ({ onSelectConversation, currentConversationId }) => {
       </div>
       
       <div className="flex-1 overflow-y-auto">
-        {conversations.length === 0 ? (
+        {error ? (
+          <div className="p-4 text-center text-red-500">
+            <MessageCircle className="h-12 w-12 mx-auto mb-2 text-red-300" />
+            <p className="text-sm font-medium">Error loading conversations</p>
+            <p className="text-xs mt-1">{error}</p>
+            <button 
+              onClick={fetchConversations}
+              className="mt-2 px-3 py-1 bg-red-100 text-red-700 rounded text-xs hover:bg-red-200 transition-colors"
+            >
+              Retry
+            </button>
+          </div>
+        ) : conversations.length === 0 ? (
           <div className="p-4 text-center text-gray-500">
             <MessageCircle className="h-12 w-12 mx-auto mb-2 text-gray-300" />
             <p className="text-sm">No messages yet</p>

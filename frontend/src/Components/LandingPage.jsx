@@ -26,7 +26,7 @@ const LandingPage = () => (
       {/* Navigation */}
       <nav className="flex items-center gap-8 mt-4 md:mt-0 font-medium">
         <Link
-          to="/artisans"
+          to="/artisan"
           className="text-[#3b2a1f] hover:text-[#a4785a] visited:text-[#3b2a1f] focus:text-[#3b2a1f] active:text-[#3b2a1f] transition-colors"
         >
           Artisans

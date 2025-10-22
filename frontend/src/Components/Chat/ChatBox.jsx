@@ -34,7 +34,7 @@ export default function ChatBox({ conversationId, user, customer }) {
 
     const fetchMessages = async () => {
       try {
-        const response = await axios.get(`http://localhost:8080/api/chat/${conversationId}/messages`, {
+        const response = await axios.get(`/api/chat/${conversationId}/messages`, {
           headers: {
             'Authorization': `Bearer ${sessionStorage.getItem('auth_token')}`
           }
@@ -45,7 +45,7 @@ export default function ChatBox({ conversationId, user, customer }) {
         // Mark messages as read if user is a seller
         if (user.role === 'seller') {
           try {
-            await axios.post(`http://localhost:8080/api/chat/${conversationId}/mark-read`, {}, {
+            await axios.post(`/api/chat/${conversationId}/mark-read`, {}, {
               headers: {
                 'Authorization': `Bearer ${sessionStorage.getItem('auth_token')}`
               }
@@ -89,7 +89,7 @@ export default function ChatBox({ conversationId, user, customer }) {
         fileFormData.append("file", file);
         
         const uploadResponse = await axios.post(
-          `http://localhost:8080/api/upload`,
+          `/api/upload`,
           fileFormData,
           {
             headers: {
@@ -112,7 +112,7 @@ export default function ChatBox({ conversationId, user, customer }) {
 
     try {
       const response = await axios.post(
-        `http://localhost:8080/api/chat/${conversationId}/send`,
+        `/api/chat/${conversationId}/send`,
         formData,
         {
           headers: {
@@ -181,14 +181,14 @@ export default function ChatBox({ conversationId, user, customer }) {
                   <div key={i} className="mt-2">
                     {a.file_type === "image" ? (
                       <img 
-                        src={`http://localhost:8080/storage/${a.file_url}`} 
+                        src={`/storage/${a.file_url}`} 
                         alt="attachment" 
                         className="max-w-full rounded-lg shadow"
                         loading="lazy"
                       />
                     ) : (
                       <a 
-                        href={`http://localhost:8080/storage/${a.file_url}`}
+                        href={`/storage/${a.file_url}`}
                         target="_blank" 
                         rel="noopener noreferrer"
                         className={`flex items-center gap-2 ${

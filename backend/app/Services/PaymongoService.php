@@ -30,7 +30,7 @@ class PayMongoService
                     'attributes' => [
                         'amount' => $data['amount_cents'],
                         'currency' => $data['currency'] ?? 'PHP',
-                        'payment_method_allowed' => $data['payment_methods'] ?? ['gcash', 'paymaya', 'card'],
+                        'payment_method_allowed' => $data['payment_methods'] ?? ['gcash', 'grab_pay', 'card'],
                         'description' => $data['description'] ?? 'Payment for Order',
                         'metadata' => $data['metadata'] ?? []
                     ]

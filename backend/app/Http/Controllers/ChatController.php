@@ -153,11 +153,23 @@ class ChatController extends Controller
     public function getSellerConversations(Request $request)
     {
         try {
-            $seller = auth()->user()->seller;
+            $user = auth()->user();
+            
+            if (!$user) {
+                return response()->json(['error' => 'Unauthenticated'], 401);
+            }
+
+            // Get seller record for the user
+            $seller = \App\Models\Seller::where('user_id', $user->userID)->first();
             
             if (!$seller) {
                 return response()->json(['error' => 'User is not a seller'], 403);
             }
+
+            \Log::info('Fetching conversations for seller', [
+                'seller_id' => $seller->sellerID,
+                'user_id' => $user->userID
+            ]);
 
             $conversations = Conversation::where('recever_id', $seller->user_id)
                 ->with(['sender', 'messages' => function($query) {
@@ -165,6 +177,8 @@ class ChatController extends Controller
                 }])
                 ->orderBy('updated_at', 'desc')
                 ->get();
+
+            \Log::info('Found conversations', ['count' => $conversations->count()]);
 
             return response()->json($conversations);
 

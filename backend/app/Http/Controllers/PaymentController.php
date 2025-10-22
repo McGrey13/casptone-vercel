@@ -53,12 +53,15 @@ class PaymentController extends Controller
             ], 400);
         }
 
+        // Map payment method to PayMongo source type
+        $sourceType = $method === 'paymaya' ? 'grab_pay' : $method;
+
         $sourceData = [
             "data" => [
                 "attributes" => [
                     "amount" => $amount,
                     "currency" => "PHP",
-                    "type" => $method, // gcash or paymaya
+                    "type" => $sourceType, // gcash or grab_pay (for paymaya)
                     "redirect" => [
                         "success" => url('/api/payment/success'),
                         "failed"  => url('/api/payment/failed')
@@ -294,6 +297,10 @@ class PaymentController extends Controller
                                     'paymentStatus' => 'paid'
                                 ]);
 
+                                // Map PayMongo source type back to our internal payment method
+                                $paymongoType = $response->data->attributes->type;
+                                $paymentMethod = $paymongoType === 'grab_pay' ? 'paymaya' : $paymongoType;
+
                                 // Update or create payment record
                                 $payment = Payment::updateOrCreate(
                                     ['orderID' => $orderID],
@@ -301,7 +308,7 @@ class PaymentController extends Controller
                                         'userID' => $order->customer_id,
                                         'amount' => $response->data->attributes->amount / 100, // Convert from centavos
                                         'currency' => 'PHP',
-                                        'paymentMethod' => $response->data->attributes->type,
+                                        'paymentMethod' => $paymentMethod,
                                         'paymentStatus' => 'paid',
                                         'payment_type' => 'online',
                                         'paymongo_source_id' => $sourceId,

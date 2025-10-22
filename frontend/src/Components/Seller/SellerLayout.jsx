@@ -97,6 +97,23 @@ const SellerLayout = () => {
   const toggleProfileDropdown = () => {
     setIsProfileDropdownOpen(!isProfileDropdownOpen);
   };
+
+  // Close profile dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (isProfileDropdownOpen && !event.target.closest('.profile-dropdown')) {
+        setIsProfileDropdownOpen(false);
+      }
+    };
+
+    if (isProfileDropdownOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isProfileDropdownOpen]);
   
   const handleLogout = async () => {
     try {
@@ -296,10 +313,56 @@ const SellerLayout = () => {
             </div>
           </button>
 
-          {/* Profile Button - Always Visible */}
+          {/* Profile Button - Desktop Dropdown */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button
+                className="p-1.5 sm:p-2 rounded-lg hover:bg-[#a4785a]/10 transition-all duration-200"
+                title="Profile"
+              >
+                <div className="p-1.5 sm:p-2 bg-gradient-to-r from-[#a4785a] to-[#7b5a3b] rounded-full">
+                  <User className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-white" />
+                </div>
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent className="w-56 bg-white border-2 border-[#e5ded7] rounded-xl shadow-xl">
+              <DropdownMenuLabel className="p-3 bg-gradient-to-r from-[#faf9f8] to-white border-b border-[#e5ded7]">
+                <div className="flex items-center">
+                  <div className="p-1.5 bg-gradient-to-r from-[#a4785a] to-[#7b5a3b] rounded-lg mr-3">
+                    <UserCircle className="h-4 w-4 text-white" />
+                  </div>
+                  <span className="text-[#5c3d28] font-medium text-sm">Hi, {userName}</span>
+                </div>
+              </DropdownMenuLabel>
+              <DropdownMenuItem
+                onClick={() => handleTabChange("profile")}
+                className="flex items-center px-3 py-2 text-sm text-[#5c3d28] hover:bg-gradient-to-r hover:from-[#a4785a]/10 hover:to-[#7b5a3b]/10 transition-all duration-200 cursor-pointer"
+              >
+                <UserCircle className="h-4 w-4 mr-2 text-[#a4785a]" />
+                Profile
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => handleTabChange("settings")}
+                className="flex items-center px-3 py-2 text-sm text-[#5c3d28] hover:bg-gradient-to-r hover:from-[#a4785a]/10 hover:to-[#7b5a3b]/10 transition-all duration-200 cursor-pointer"
+              >
+                <Settings className="h-4 w-4 mr-2 text-[#a4785a]" />
+                Settings
+              </DropdownMenuItem>
+              <DropdownMenuSeparator className="border-[#e5ded7]" />
+              <DropdownMenuItem
+                onClick={handleLogout}
+                className="flex items-center px-3 py-2 text-sm text-red-600 hover:bg-gradient-to-r hover:from-red-50 hover:to-red-100 hover:text-red-700 transition-all duration-200 cursor-pointer"
+              >
+                <LogOut className="h-4 w-4 mr-2" />
+                Logout
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          {/* Profile Button - Mobile (for backward compatibility) */}
           <button
             onClick={toggleProfileDropdown}
-            className="p-1.5 sm:p-2 rounded-lg hover:bg-[#a4785a]/10 transition-all duration-200"
+            className="lg:hidden p-1.5 sm:p-2 rounded-lg hover:bg-[#a4785a]/10 transition-all duration-200"
             title="Profile"
           >
             <div className="p-1.5 sm:p-2 bg-gradient-to-r from-[#a4785a] to-[#7b5a3b] rounded-full">
