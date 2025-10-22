@@ -1,0 +1,313 @@
+import React, { useState, useEffect } from "react";
+import { Card, CardContent } from "../ui/card";
+import { Input } from "../ui/input";
+import { Label } from "../ui/label";
+import { Button } from "../ui/button";
+import { Textarea } from "../ui/textarea";
+import { MapPin } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
+import api from "../../api";
+
+const OwnerInfo = ({ onNext, onBack, ownerData, setOwnerData }) => {
+  const [errors, setErrors] = useState({});
+  const [loadingLocation, setLoadingLocation] = useState(false);
+  const [selectedRegion, setSelectedRegion] = useState("");
+
+  const regions = [
+    { code: "REGION_III", name: "Central Luzon" },
+    { code: "CALABARZON", name: "CALABARZON" },
+    { code: "NCR", name: "Metro Manila" },
+    // Add more regions as needed
+  ];
+
+  const citiesByRegion = {
+    REGION_III: ["Angeles City", "Mabalacat", "San Fernando"],
+    CALABARZON: ["Calamba", "Lipa City", "Batangas City"],
+    NCR: ["Manila", "Quezon City", "Makati"],
+    // Add more cities as needed
+  };
+
+  // Fetch user data on component mount
+  useEffect(() => {
+    const fetchUserData = async () => {
+      try {
+        const response = await api.get('/profile');
+        setOwnerData({
+          ...ownerData,
+          fullName: response.data.name,
+          email: response.data.email,
+          phone: response.data.phone || "",
+        });
+      } catch (error) {
+        console.error("Failed to fetch user data:", error);
+      }
+    };
+
+    // Fetch Philippine regions
+    const fetchRegions = async () => {
+      try {
+        const response = await fetch('https://psgc.gitlab.io/api/regions');
+        const data = await response.json();
+        setRegions(data);
+      } catch (error) {
+        console.error("Failed to fetch regions:", error);
+      }
+    };
+
+    fetchUserData();
+    fetchRegions();
+  }, []);
+
+  // Fetch cities when region is selected
+  useEffect(() => {
+    const fetchCities = async () => {
+      if (!selectedRegion) return;
+      try {
+        const response = await fetch(`https://psgc.gitlab.io/api/regions/${selectedRegion}/cities`);
+        const data = await response.json();
+        setCities(data);
+      } catch (error) {
+        console.error("Failed to fetch cities:", error);
+      }
+    };
+
+    if (selectedRegion) {
+      fetchCities();
+    }
+  }, [selectedRegion]);
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setOwnerData({ ...ownerData, [name]: value });
+
+    if (errors[name]) {
+      setErrors({ ...errors, [name]: "" });
+    }
+  };
+
+  const handleSelectChange = (value, name) => {
+    setOwnerData({ ...ownerData, [name]: value });
+
+    if (errors[name]) {
+      setErrors({ ...errors, [name]: "" });
+    }
+  };
+
+  const fetchLocation = async () => {
+    setLoadingLocation(true);
+    try {
+      if (!navigator.geolocation) {
+        throw new Error("Geolocation is not supported by your browser");
+      }
+
+      const position = await new Promise((resolve, reject) => {
+        navigator.geolocation.getCurrentPosition(resolve, reject);
+      });
+
+      const { latitude, longitude } = position.coords;
+
+      // Reverse geocoding using Nominatim
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`
+      );
+      const data = await response.json();
+
+      // Extract location details from response
+      const address = {
+        city: data.address.city || data.address.town || data.address.municipality,
+        region: data.address.state || data.address.region,
+        country: "Philippines" // Lock to Philippines
+      };
+
+      setOwnerData(prev => ({
+        ...prev,
+        address: `${address.city}, ${address.region}, ${address.country}`
+      }));
+
+    } catch (error) {
+      console.error("Error fetching location:", error);
+      setErrors(prev => ({
+        ...prev,
+        location: "Failed to fetch location. Please enter manually."
+      }));
+    } finally {
+      setLoadingLocation(false);
+    }
+  };
+
+  const validateForm = () => {
+    const newErrors = {};
+
+    if (!ownerData.fullName?.trim()) newErrors.fullName = "Full name is required";
+    if (!ownerData.email?.trim()) {
+      newErrors.email = "Email is required";
+    } else if (!/^\S+@\S+\.\S+$/.test(ownerData.email)) {
+      newErrors.email = "Please enter a valid email address";
+    }
+
+    if (!ownerData.phone?.trim()) {
+      newErrors.phone = "Phone number is required";
+    } else if (!/^[0-9\-+\s()]+$/.test(ownerData.phone)) {
+      newErrors.phone = "Please enter a valid phone number";
+    }
+
+    if (!ownerData.address?.trim()) {
+      newErrors.address = "Address is required";
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleNext = () => {
+    if (validateForm()) {
+      onNext();
+    }
+  };
+
+  return (
+    <Card className="w-full bg-white">
+      <CardContent className="pt-6">
+        <div className="space-y-6">
+          <h2 className="text-2xl font-bold text-center">Owner Information</h2>
+          <p className="text-center text-gray-500">
+            Please verify your contact information
+          </p>
+
+          <div className="space-y-4">
+            {/* Full Name */}
+            <div className="space-y-2">
+              <Label htmlFor="fullName">Full Name</Label>
+              <Input
+                id="fullName"
+                name="fullName"
+                value={ownerData.fullName || ""}
+                onChange={handleChange}
+                disabled // Make it uneditable
+              />
+              {errors.fullName && (
+                <p className="text-sm text-red-500">{errors.fullName}</p>
+              )}
+            </div>
+
+            {/* Email */}
+            <div className="space-y-2">
+              <Label htmlFor="email">Email</Label>
+              <Input
+                id="email"
+                name="email"
+                type="email"
+                value={ownerData.email || ""}
+                onChange={handleChange}
+                disabled // Make it uneditable
+              />
+              {errors.email && (
+                <p className="text-sm text-red-500">{errors.email}</p>
+              )}
+            </div>
+
+            {/* Phone */}
+            <div className="space-y-2">
+              <Label htmlFor="phone">Phone Number</Label>
+              <Input
+                id="phone"
+                name="phone"
+                value={ownerData.phone || ""}
+                onChange={handleChange}
+                placeholder="Enter your phone number"
+              />
+              {errors.phone && (
+                <p className="text-sm text-red-500">{errors.phone}</p>
+              )}
+            </div>
+
+            {/* Address with Location Fetch */}
+            <div className="space-y-2">
+              <Label htmlFor="address">Address</Label>
+              <div className="flex gap-2">
+                <Textarea
+                  id="address"
+                  name="address"
+                  value={ownerData.address || ""}
+                  onChange={handleChange}
+                  placeholder="Enter your address"
+                  className="flex-1"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={fetchLocation}
+                  disabled={loadingLocation}
+                  className="w-auto whitespace-nowrap"
+                >
+                  <MapPin className="w-4 h-4 mr-2" />
+                  {loadingLocation ? "Fetching..." : "Get Location"}
+                </Button>
+              </div>
+              {errors.location && (
+                <p className="text-sm text-red-500">{errors.location}</p>
+              )}
+              {errors.address && (
+                <p className="text-sm text-red-500">{errors.address}</p>
+              )}
+            </div>
+
+            {/* Region Selection */}
+            <div className="space-y-2">
+              <Label htmlFor="region">Region</Label>
+              <Select
+                value={selectedRegion}
+                onValueChange={(value) => {
+                  setSelectedRegion(value);
+                  handleSelectChange(value, "region");
+                }}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select your region" />
+                </SelectTrigger>
+                <SelectContent>
+                  {regions.map((region) => (
+                    <SelectItem key={region.code} value={region.code}>
+                      {region.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* City Selection */}
+            <div className="space-y-2">
+              <Label htmlFor="city">City/Municipality</Label>
+              <Select
+                value={ownerData.city || ""}
+                onValueChange={(value) => handleSelectChange(value, "city")}
+                disabled={!selectedRegion}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select your city" />
+                </SelectTrigger>
+                <SelectContent>
+                  {cities.map((city) => (
+                    <SelectItem key={city.code} value={city.name}>
+                      {city.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          {/* Navigation Buttons */}
+          <div className="flex justify-between pt-4">
+            <Button onClick={onBack} variant="outline">
+              Back
+            </Button>
+            <Button onClick={handleNext}>Next Step</Button>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+};
+
+export default OwnerInfo;

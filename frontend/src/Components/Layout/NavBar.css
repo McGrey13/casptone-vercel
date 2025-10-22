@@ -1,0 +1,264 @@
+.navbar {
+  background-color: #8b5e3c;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 40px;
+  position: fixed;
+  width: 100%;
+  top: 0;
+  z-index: 1000;
+  height: 65px;
+}
+
+body {
+  margin: 0;
+  padding-top: 65px; /* prevents content from being hidden under navbar */
+}
+
+.navbar-section {
+  display: flex;
+  align-items: center;
+}
+
+/* Left */
+.navbar-section.left {
+  flex: 1;
+  justify-content: flex-start;
+  margin-left: 210px;
+}
+
+.navbar-brand {
+  color: white !important;
+  text-decoration: none;
+  transition: all 0.3s ease;
+}
+
+.navbar-brand:hover {
+  transform: scale(1.05);
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+/* Center (desktop only) */
+.navbar-section.center {
+  flex: 2;
+  justify-content: center;
+  gap: 1.5rem;
+}
+
+/* Navigation Links */
+.nav-link {
+  color: white;
+  text-decoration: none;
+  font-weight: 500;
+  position: relative;
+  padding: 0.5rem 0;
+  transition: all 0.3s ease;
+}
+
+.nav-link::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 0;
+  height: 2px;
+  background-color: #f0e6d2;
+  transition: width 0.3s ease;
+}
+
+.nav-link:hover {
+  color: #f0e6d2;
+  transform: translateY(-2px);
+}
+
+.nav-link:hover::after {
+  width: 100%;
+}
+
+.navbar-section.center a {
+  color: white;
+  text-decoration: none;
+  font-weight: 500;
+  position: relative;
+  padding: 0.5rem 0;
+  transition: all 0.3s ease;
+}
+
+.navbar-section.center a::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 0;
+  height: 2px;
+  background-color: #f0e6d2;
+  transition: width 0.3s ease;
+}
+
+.navbar-section.center a:hover {
+  color: #f0e6d2;
+  transform: translateY(-2px);
+}
+
+.navbar-section.center a:hover::after {
+  width: 100%;
+}
+
+/* Right */
+.navbar-section.right {
+  flex: 1;
+  justify-content: flex-end;
+  position: relative;
+  margin-right: 250px;
+}
+
+/* Icon Links */
+.icon-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.5rem;
+  border-radius: 50%;
+  transition: all 0.3s ease;
+  cursor: pointer;
+  height: 35px;
+  width: 35px;
+}
+
+.icon-link:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+  transform: scale(1.1);
+}
+
+.icon-link:active {
+  transform: scale(0.95);
+}
+
+.favorites-link:hover,
+.cart-link:hover,
+.user-icon:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+  transform: scale(1.1);
+}
+
+/* Profile dropdown */
+.user-account {
+  position: relative;
+}
+
+.profile-modal {
+  position: absolute;
+  right: 0;
+  top: 35px;
+  background-color: white;
+  color: black;
+  width: 180px;
+  border-radius: 8px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+  overflow: hidden;
+  z-index: 20;
+}
+
+.dropdown-link {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 8px 14px;
+  color: #333;
+  background: white;
+  border: none;
+  text-decoration: none;
+}
+
+.dropdown-link:hover {
+  background: #f3f3f3;
+}
+
+.logout-btn {
+  color: #c53030;
+}
+
+/* Cart count */
+.cart-link {
+  position: relative;
+}
+
+.cart-count {
+  background-color: #ff4d4d;
+  color: white;
+  font-size: 11px;
+  border-radius: 50%;
+  padding: 2px 6px;
+  position: absolute;
+  top: -6px;
+  right: -10px;
+}
+
+/* Toggle Button */
+.navbar-toggle {
+  display: none;
+  background: none;
+  border: none;
+  color: white;
+  cursor: pointer;
+}
+
+/* ✅ Mobile Menu Below Navbar */
+.mobile-menu {
+  display: none;
+  flex-direction: column;
+  background-color: #8b5e3c;
+  padding: 12px 20px;
+  position: fixed;
+  top: 65px; /* directly below navbar */
+  left: 0;
+  width: 100%;
+  z-index: 999;
+}
+
+.mobile-menu a {
+  color: white;
+  text-decoration: none;
+  padding: 10px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+  font-weight: 500;
+}
+
+.mobile-menu a:last-child {
+  border-bottom: none;
+}
+
+.mobile-menu a:hover {
+  color: #f0e6d2;
+}
+
+/* ✅ Responsive Behavior */
+@media (max-width: 768px) {
+  .navbar-section.center {
+    display: none;
+  }
+
+  .navbar-toggle {
+    display: block;
+  }
+
+  .mobile-menu {
+    display: flex;
+  }
+
+  .navbar-section.left {
+    flex: 1;
+    justify-content: flex-start;
+    margin-left: -10px;
+  }
+
+  .navbar-section.right {
+    margin-left: 40px;
+    flex: 1;
+    justify-content: flex-end;
+    position: relative;
+    margin-right: 0;
+  }
+}

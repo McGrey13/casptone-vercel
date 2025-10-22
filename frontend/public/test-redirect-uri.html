@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Redirect URI</title>
+</head>
+<body>
+    <h1>Test Redirect URI</h1>
+    <p>This will test what redirect URI is being used for social media connection.</p>
+    
+    <button onclick="testRedirect()">Test Social Media Redirect</button>
+    
+    <div id="result"></div>
+
+    <script>
+        async function testRedirect() {
+            try {
+                const response = await fetch('http://localhost:8000/api/social/facebook/redirect', {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': 'Bearer ' + localStorage.getItem('token'),
+                        'Content-Type': 'application/json',
+                    }
+                });
+                
+                const data = await response.json();
+                const url = new URL(data.url);
+                const redirectUri = url.searchParams.get('redirect_uri');
+                
+                document.getElementById('result').innerHTML = 
+                    '<h3>Generated URL:</h3>' +
+                    '<p><strong>Redirect URI:</strong> ' + redirectUri + '</p>' +
+                    '<p><strong>Expected:</strong> http://localhost:8000/api/social/facebook/callback</p>' +
+                    '<p><strong>Match:</strong> ' + (redirectUri === 'http://localhost:8000/api/social/facebook/callback' ? '✅ YES' : '❌ NO') + '</p>' +
+                    '<p><strong>Full URL:</strong> <a href="' + data.url + '" target="_blank">' + data.url + '</a></p>';
+            } catch (error) {
+                document.getElementById('result').innerHTML = '<p style="color: red;">Error: ' + error.message + '</p>';
+            }
+        }
+    </script>
+</body>
+</html>
+

@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Marketing Tools Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ccc; border-radius: 5px; }
+        .success { background-color: #d4edda; border-color: #c3e6cb; }
+        .error { background-color: #f8d7da; border-color: #f5c6cb; }
+        .info { background-color: #d1ecf1; border-color: #bee5eb; }
+        button { padding: 10px 15px; margin: 5px; cursor: pointer; }
+        input { padding: 8px; margin: 5px; width: 200px; }
+    </style>
+</head>
+<body>
+    <h1>Marketing Tools Authentication Test</h1>
+    <div id="results"></div>
+    
+    <div class="test-section info">
+        <h3>Login Test</h3>
+        <input type="email" id="email" placeholder="Email" value="seller@example.com">
+        <input type="password" id="password" placeholder="Password" value="password">
+        <button onclick="testLogin()">Test Login</button>
+        <div id="loginResult"></div>
+    </div>
+    
+    <div class="test-section">
+        <h3>Marketing Tools API Tests</h3>
+        <button onclick="testSellerProducts()">Test Seller Products</button>
+        <button onclick="testDiscountCodes()">Test Discount Codes</button>
+        <button onclick="testCreateDiscount()">Test Create Discount</button>
+        <div id="apiResult"></div>
+    </div>
+    
+    <script>
+        const API_BASE = 'http://localhost:8000/api';
+        
+        function addResult(message, type = 'info') {
+            const results = document.getElementById('results');
+            const div = document.createElement('div');
+            div.className = `test-section ${type}`;
+            div.innerHTML = `<p>${new Date().toLocaleTimeString()}: ${message}</p>`;
+            results.appendChild(div);
+        }
+        
+        async function testLogin() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const resultDiv = document.getElementById('loginResult');
+            
+            try {
+                resultDiv.innerHTML = 'Logging in...';
+                
+                const response = await fetch(`${API_BASE}/auth/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                    },
+                    credentials: 'include',
+                    body: JSON.stringify({ email, password })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    resultDiv.innerHTML = `<div class="success">✅ Login successful: ${data.message || 'Logged in'}</div>`;
+                    addResult('Login successful', 'success');
+                } else {
+                    resultDiv.innerHTML = `<div class="error">❌ Login failed: ${data.message || 'Unknown error'}</div>`;
+                    addResult(`Login failed: ${data.message}`, 'error');
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error">❌ Login error: ${error.message}</div>`;
+                addResult(`Login error: ${error.message}`, 'error');
+            }
+        }
+        
+        async function testSellerProducts() {
+            const resultDiv = document.getElementById('apiResult');
+            
+            try {
+                const response = await fetch(`${API_BASE}/seller/products`, {
+                    method: 'GET',
+                    credentials: 'include',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                    }
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    resultDiv.innerHTML += `<div class="success">✅ Seller Products: ${Array.isArray(data) ? data.length : 'Received'} products</div>`;
+                    addResult('Seller products access successful', 'success');
+                } else {
+                    resultDiv.innerHTML += `<div class="error">❌ Seller Products failed: ${data.message || 'Unauthorized'}</div>`;
+                    addResult(`Seller products failed: ${data.message}`, 'error');
+                }
+            } catch (error) {
+                resultDiv.innerHTML += `<div class="error">❌ Seller Products error: ${error.message}</div>`;
+                addResult(`Seller products error: ${error.message}`, 'error');
+            }
+        }
+        
+        async function testDiscountCodes() {
+            const resultDiv = document.getElementById('apiResult');
+            
+            try {
+                const response = await fetch(`${API_BASE}/discount-codes`, {
+                    method: 'GET',
+                    credentials: 'include',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                    }
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    resultDiv.innerHTML += `<div class="success">✅ Discount Codes: ${Array.isArray(data) ? data.length : 'Received'} codes</div>`;
+                    addResult('Discount codes access successful', 'success');
+                } else {
+                    resultDiv.innerHTML += `<div class="error">❌ Discount Codes failed: ${data.message || 'Unauthorized'}</div>`;
+                    addResult(`Discount codes failed: ${data.message}`, 'error');
+                }
+            } catch (error) {
+                resultDiv.innerHTML += `<div class="error">❌ Discount Codes error: ${error.message}</div>`;
+                addResult(`Discount codes error: ${error.message}`, 'error');
+            }
+        }
+        
+        async function testCreateDiscount() {
+            const resultDiv = document.getElementById('apiResult');
+            
+            try {
+                // Get CSRF token
+                const csrfResponse = await fetch(`${API_BASE}/sanctum/csrf-cookie`, {
+                    method: 'GET',
+                    credentials: 'include'
+                });
+                const csrfData = await csrfResponse.json();
+                
+                const response = await fetch(`${API_BASE}/discount-codes`, {
+                    method: 'POST',
+                    credentials: 'include',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': csrfData.csrf_token
+                    },
+                    body: JSON.stringify({
+                        code: 'TEST123',
+                        type: 'percentage',
+                        value: 10,
+                        usage_limit: 5,
+                        expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    resultDiv.innerHTML += `<div class="success">✅ Create Discount: Success</div>`;
+                    addResult('Create discount successful', 'success');
+                } else {
+                    resultDiv.innerHTML += `<div class="error">❌ Create Discount failed: ${data.message || 'Error'}</div>`;
+                    addResult(`Create discount failed: ${data.message}`, 'error');
+                }
+            } catch (error) {
+                resultDiv.innerHTML += `<div class="error">❌ Create Discount error: ${error.message}</div>`;
+                addResult(`Create discount error: ${error.message}`, 'error');
+            }
+        }
+    </script>
+</body>
+</html>

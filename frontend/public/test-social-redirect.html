@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Social Media Facebook Redirect</title>
+</head>
+<body>
+    <h1>Test Social Media Facebook Redirect</h1>
+    <p>This will test the social media Facebook redirect to see what URL is generated.</p>
+    
+    <button onclick="testSocialRedirect()">Test Social Media Redirect</button>
+    
+    <div id="result"></div>
+
+    <script>
+        async function testSocialRedirect() {
+            try {
+                const response = await fetch('http://localhost:8000/api/social/facebook/redirect', {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': 'Bearer ' + localStorage.getItem('token'),
+                        'Content-Type': 'application/json',
+                    }
+                });
+                
+                const data = await response.json();
+                document.getElementById('result').innerHTML = 
+                    '<h3>Generated URL:</h3>' +
+                    '<p><strong>Redirect URI:</strong> ' + extractRedirectUri(data.url) + '</p>' +
+                    '<p><strong>Full URL:</strong> <a href="' + data.url + '" target="_blank">' + data.url + '</a></p>';
+            } catch (error) {
+                document.getElementById('result').innerHTML = '<p style="color: red;">Error: ' + error.message + '</p>';
+            }
+        }
+        
+        function extractRedirectUri(url) {
+            const urlObj = new URL(url);
+            return urlObj.searchParams.get('redirect_uri');
+        }
+    </script>
+</body>
+</html>
+

@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Commission Dashboard Test</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .button {
+            background: #a4785a;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px 5px;
+        }
+        .button:hover {
+            background: #8a6a5a;
+        }
+        .success {
+            color: #059669;
+            background: #d1fae5;
+            padding: 10px;
+            border-radius: 6px;
+            margin: 10px 0;
+        }
+        .error {
+            color: #dc2626;
+            background: #fee2e2;
+            padding: 10px;
+            border-radius: 6px;
+            margin: 10px 0;
+        }
+        .code {
+            background: #f3f4f6;
+            padding: 10px;
+            border-radius: 6px;
+            font-family: monospace;
+            font-size: 14px;
+            margin: 10px 0;
+        }
+        .status {
+            padding: 10px;
+            border-radius: 6px;
+            margin: 10px 0;
+        }
+        .status.success {
+            background: #d1fae5;
+            color: #059669;
+        }
+        .status.error {
+            background: #fee2e2;
+            color: #dc2626;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎯 Commission Dashboard Test</h1>
+        <p>This page helps you test the commission dashboard authentication and API connection.</p>
+
+        <h2>🔑 Authentication Setup</h2>
+        <button class="button" onclick="setupAuth()">Setup Test Authentication</button>
+        <button class="button" onclick="clearAuth()">Clear Authentication</button>
+        <button class="button" onclick="checkAuth()">Check Authentication Status</button>
+
+        <div id="authStatus"></div>
+
+        <h2>🌐 API Testing</h2>
+        <button class="button" onclick="testAPI()">Test Commission API</button>
+        <button class="button" onclick="testItemAPI()">Test Item Commission API</button>
+        <button class="button" onclick="testCategoryAPI()">Test Category Commission API</button>
+
+        <div id="apiStatus"></div>
+
+        <h2>📊 Commission Data Preview</h2>
+        <div id="commissionData"></div>
+
+        <h2>🚀 Next Steps</h2>
+        <p>Once authentication is working:</p>
+        <ol>
+            <li>Navigate to: <code>http://localhost:5173/admin/commission-dashboard</code></li>
+            <li>The dashboard should load with commission data</li>
+            <li>If not, refresh the page after setting up authentication</li>
+        </ol>
+
+        <h2>🛠️ Manual Setup (Browser Console)</h2>
+        <p>If buttons don't work, open browser console (F12) and run:</p>
+        <div class="code">
+            // Setup authentication<br>
+            localStorage.setItem('token', '33|53e0FXEFKvOeEC3hL8GHnNXrc37q4UvXa7NUS0TV0422e1ec');<br><br>
+            
+            // Test API<br>
+            fetch('http://localhost:8000/api/admin/reports/system-commission?from_date=2025-09-01&to_date=2025-10-06', {<br>
+            &nbsp;&nbsp;headers: { 'Authorization': 'Bearer ' + localStorage.getItem('token') }<br>
+            }).then(r => r.json()).then(console.log);
+        </div>
+    </div>
+
+    <script>
+        const testToken = '33|53e0FXEFKvOeEC3hL8GHnNXrc37q4UvXa7NUS0TV0422e1ec';
+        const baseURL = 'http://localhost:8000';
+
+        function setupAuth() {
+            localStorage.setItem('token', testToken);
+            showStatus('authStatus', 'success', '✅ Authentication token set successfully!');
+            checkAuth();
+        }
+
+        function clearAuth() {
+            localStorage.removeItem('token');
+            showStatus('authStatus', 'error', '🗑️ Authentication token cleared');
+            checkAuth();
+        }
+
+        function checkAuth() {
+            const token = localStorage.getItem('token');
+            if (token) {
+                showStatus('authStatus', 'success', `✅ Token found: ${token.substring(0, 20)}...`);
+            } else {
+                showStatus('authStatus', 'error', '❌ No authentication token found');
+            }
+        }
+
+        async function testAPI() {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                showStatus('apiStatus', 'error', '❌ No authentication token. Setup authentication first.');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${baseURL}/api/admin/reports/system-commission?from_date=2025-09-01&to_date=2025-10-06`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    }
+                });
+
+                if (response.status === 200) {
+                    const data = await response.json();
+                    showStatus('apiStatus', 'success', '✅ System Commission API working!');
+                    displayCommissionData(data);
+                } else {
+                    showStatus('apiStatus', 'error', `❌ API failed with status: ${response.status}`);
+                }
+            } catch (error) {
+                showStatus('apiStatus', 'error', `❌ API error: ${error.message}`);
+            }
+        }
+
+        async function testItemAPI() {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                showStatus('apiStatus', 'error', '❌ No authentication token. Setup authentication first.');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${baseURL}/api/admin/reports/item-commission?from_date=2025-09-01&to_date=2025-10-06`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    }
+                });
+
+                if (response.status === 200) {
+                    showStatus('apiStatus', 'success', '✅ Item Commission API working!');
+                } else {
+                    showStatus('apiStatus', 'error', `❌ Item API failed with status: ${response.status}`);
+                }
+            } catch (error) {
+                showStatus('apiStatus', 'error', `❌ Item API error: ${error.message}`);
+            }
+        }
+
+        async function testCategoryAPI() {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                showStatus('apiStatus', 'error', '❌ No authentication token. Setup authentication first.');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${baseURL}/api/admin/reports/category-commission?from_date=2025-09-01&to_date=2025-10-06`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    }
+                });
+
+                if (response.status === 200) {
+                    showStatus('apiStatus', 'success', '✅ Category Commission API working!');
+                } else {
+                    showStatus('apiStatus', 'error', `❌ Category API failed with status: ${response.status}`);
+                }
+            } catch (error) {
+                showStatus('apiStatus', 'error', `❌ Category API error: ${error.message}`);
+            }
+        }
+
+        function displayCommissionData(data) {
+            const summary = data.data.summary;
+            const html = `
+                <div class="success">
+                    <h3>📊 Commission Summary</h3>
+                    <p><strong>Total Revenue:</strong> ₱${summary.total_gross_revenue?.toLocaleString() || 0}</p>
+                    <p><strong>Platform Commission:</strong> ₱${summary.total_admin_fees?.toLocaleString() || 0}</p>
+                    <p><strong>Seller Payments:</strong> ₱${summary.total_seller_payments?.toLocaleString() || 0}</p>
+                    <p><strong>Transactions:</strong> ${summary.transaction_count || 0}</p>
+                    <p><strong>Commission Rate:</strong> ${summary.commission_rate || '2%'}</p>
+                </div>
+            `;
+            document.getElementById('commissionData').innerHTML = html;
+        }
+
+        function showStatus(elementId, type, message) {
+            const element = document.getElementById(elementId);
+            element.innerHTML = `<div class="status ${type}">${message}</div>`;
+        }
+
+        // Check authentication status on page load
+        window.onload = function() {
+            checkAuth();
+        };
+    </script>
+</body>
+</html>

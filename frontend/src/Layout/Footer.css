@@ -1,0 +1,97 @@
+
+body {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh; /* Ensure it's at least the height of the viewport */
+  margin: 0; /* Remove default body margin */
+}
+
+.main-container {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
+
+/* Apply to the footer */
+.footer {
+  background-color: #a4785a;
+  color: white;
+  padding: 2.5rem 1.5rem;
+  /* Remove bottom, left, width, and position */
+  z-index: 100;
+  margin-top: auto; /* Push the footer to the bottom */
+}
+
+.footer-container {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 2.5rem;
+  margin: 0 auto;
+  padding: 0 1.5rem;
+}
+
+@media (min-width: 768px) {
+  .footer-container {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+.footer-section h3 {
+  font-size: 1.2rem;
+  margin-bottom: 1rem;
+  border-bottom: 2px solid white;
+  padding-bottom: 0.5rem;
+}
+
+.footer-section ul {
+  list-style: none;
+  padding: 0;
+}
+
+.footer-section li {
+  margin-bottom: 0.5rem;
+}
+
+.footer-section a {
+  color: white;
+  text-decoration: none;
+  transition: color 0.3s ease-in-out;
+}
+
+.footer-section a:hover {
+  color: #f0e6d2;
+}
+
+.footer-social-icons {
+  display: flex;
+  gap: 1rem;
+  font-size: 1.5rem;
+  margin-top: 1rem;
+}
+
+.footer-social-icons a {
+  color: white;
+  transition: color 0.3s ease-in-out;
+}
+
+.footer-social-icons a:hover {
+  color: #f0e6d2;
+}
+
+.footer-bottom {
+  text-align: center;
+  margin-top: 2rem;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.2);
+  font-size: 0.9rem;
+}
+
+.footer-section input[type="email"] {
+  width: calc(100% - 2.5rem);
+}
+
+.footer-section button {
+  padding: 0.5rem 1rem;
+  cursor: pointer;
+}

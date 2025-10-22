@@ -1,0 +1,179 @@
+/* Centering and new color scheme */
+.register-bg {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem 1rem;
+  background-color: #ffffff;
+}
+
+/* Card styling */
+.register-card {
+  width: 100%;
+  max-width: 28rem;
+  background: #ffffff;
+  border-radius: 1rem;
+  border: none;
+  box-shadow: 0 10px 24px 0 rgba(85, 72, 29, 0.15);
+  padding: 2rem;
+}
+
+.register-card-large {
+  max-width: 36rem;
+  padding: 3rem 2.5rem;
+}
+
+/* Header section */
+.register-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  padding-bottom: 1.5rem;
+}
+
+.register-avatar {
+  height: 4rem;
+  width: 4rem;
+  border-radius: 9999px;
+  background-color: #a4785a;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 12px 0 rgba(99, 102, 241, 0.18) inset;
+}
+
+.register-title {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: #75533d;
+  margin-top: 1rem;
+  text-align: center;
+}
+
+.register-subtitle {
+  color: #a4785a;
+  text-align: center;
+}
+
+/* Tabs */
+.register-tabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  background: #a4785a;
+  border-radius: 0.5rem;
+  overflow: hidden;
+  margin-bottom: 1.5rem;
+}
+
+.register-tab {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0;
+  font-weight: 500;
+  font-size: 0.95rem;
+  color: #ffffff;
+  background: none;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.register-tab.active {
+  background: #fff;
+  color: #a4785a;
+  box-shadow: 0 2px 8px 0 rgba(99, 102, 241, 0.10);
+}
+
+/* Form labels and inputs */
+.register-form label {
+  color: #a4785a;
+  font-weight: 500;
+  font-size: 1rem;
+}
+
+.register-form .input-wrapper {
+  position: relative;
+}
+
+.register-form input[type="email"],
+.register-form input[type="password"],
+.register-form input[type="text"],
+.register-form input[type="number"],
+.register-form input[type="date"] {
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid #a4785a;
+  border-radius: 0.375rem;
+  font-size: 0.95rem;
+  margin-top: 0.25rem;
+  margin-bottom: 0.5rem;
+  transition: border 0.2s, box-shadow 0.2s;
+}
+
+.register-form input:focus {
+  border-color: #a4785a;
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(124, 58, 237, 0.2);
+}
+
+/* Submit button */
+.register-form .submit-btn {
+  width: 100%;
+  background: #a4785a;
+  color: #fff;
+  font-weight: 500;
+  padding: 0.75rem 0;
+  border: none;
+  border-radius: 0.375rem;
+  font-size: 1rem;
+  margin-top: 0.5rem;
+  margin-bottom: 0.5rem;
+  box-shadow: 0 2px 8px 0 rgba(95, 72, 42, 0.61);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  transition: background 0.2s, box-shadow 0.2s;
+}
+
+.register-form .submit-btn:hover {
+  background: #a4785a;
+  box-shadow: 0 4px 16px 0 rgba(99, 102, 241, 0.25);
+}
+
+/* Footer */
+.register-footer {
+  text-align: center;
+  color: #a4785a;
+  font-size: 0.95rem;
+}
+
+.register-footer a {
+  color: #a4785a;
+  font-weight: 500;
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.register-footer a:hover {
+  color: #a4785a;
+  text-decoration: underline;
+}
+
+/* Row layout */
+.register-row {
+  display: flex;
+  gap: 2rem;
+  margin-bottom: 1rem;
+}
+
+.register-col {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}

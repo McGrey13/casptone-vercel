@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Share - CraftConnect</title>
+    
+    <!-- Open Graph Meta Tags -->
+    <meta property="og:title" content="Maria's Handmade Crafts by Maria Santos - CraftConnect">
+    <meta property="og:description" content="🌟 Discover amazing handcrafted products by Maria Santos. Each piece is carefully made with love and attention to detail. Support local artisans and find unique treasures! ✨">
+    <meta property="og:image" content="https://api.dicebear.com/7.x/avataaars/svg?seed=artisan">
+    <meta property="og:url" content="http://localhost:3000/artisans/1">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="CraftConnect">
+    
+    <!-- Twitter Card Meta Tags -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Maria's Handmade Crafts by Maria Santos - CraftConnect">
+    <meta name="twitter:description" content="🌟 Discover amazing handcrafted products by Maria Santos. Each piece is carefully made with love and attention to detail. Support local artisans and find unique treasures! ✨">
+    <meta name="twitter:image" content="https://api.dicebear.com/7.x/avataaars/svg?seed=artisan">
+    
+    <!-- Standard Meta Tags -->
+    <meta name="description" content="🌟 Discover amazing handcrafted products by Maria Santos. Each piece is carefully made with love and attention to detail. Support local artisans and find unique treasures! ✨">
+    
+    <!-- Pinterest Rich Pin Meta Tags -->
+    <meta name="pinterest-rich-pin" content="true">
+    <meta name="pinterest-title" content="Maria's Handmade Crafts by Maria Santos - CraftConnect">
+    <meta name="pinterest-description" content="🌟 Discover amazing handcrafted products by Maria Santos. Each piece is carefully made with love and attention to detail. Support local artisans and find unique treasures! ✨">
+    <meta name="pinterest-image" content="https://api.dicebear.com/7.x/avataaars/svg?seed=artisan">
+    
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        .header {
+            text-align: center;
+            padding: 40px 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 10px;
+            margin-bottom: 30px;
+        }
+        .test-section {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        .share-button {
+            display: inline-block;
+            padding: 10px 20px;
+            background: #4267B2;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            margin: 5px;
+        }
+        .share-button:hover {
+            background: #365899;
+        }
+        .facebook { background: #4267B2; }
+        .twitter { background: #1DA1F2; }
+        .instagram { background: linear-gradient(45deg, #f09433 0%,#e6683c 25%,#dc2743 50%,#cc2366 75%,#bc1888 100%); }
+        .pinterest { background: #BD081C; }
+    </style>
+    
+    <script>
+        function shareToInstagram() {
+            const instagramText = `🌟 Check out this amazing artisan store "Maria's Handmade Crafts" by Maria Santos! 
+
+Discover unique handcrafted products and support local artisans. ✨
+
+Store: Maria's Handmade Crafts
+Artisan: Maria Santos
+Rating: 4.8 ⭐
+Followers: 1.2K
+
+http://localhost:3000/artisans/1
+
+#Handmade #Artisan #CraftConnect #LocalBusiness #SupportLocal`;
+            
+            navigator.clipboard.writeText(instagramText).then(() => {
+                alert('Content copied to clipboard! You can now paste it in your Instagram story or post. Don\'t forget to add the image!');
+            }).catch(() => {
+                prompt('Copy this text for Instagram:', instagramText);
+            });
+        }
+
+        function shareToPinterest() {
+            const pinDescription = `🌟 Maria's Handmade Crafts by Maria Santos
+
+Discover amazing handcrafted products by Maria Santos! Each piece is carefully made with love and attention to detail. Support local artisans and find unique treasures! ✨
+
+Store: Maria's Handmade Crafts
+Artisan: Maria Santos
+Rating: 4.8 ⭐
+Followers: 1.2K
+
+#Handmade #Artisan #CraftConnect #LocalBusiness #SupportLocal #Handcrafted`;
+            
+            const pinImage = "https://api.dicebear.com/7.x/avataaars/svg?seed=artisan";
+            const pinUrl = window.location.href;
+            
+            const pinterestUrl = `https://pinterest.com/pin/create/button/?url=${encodeURIComponent(pinUrl)}&media=${encodeURIComponent(pinImage)}&description=${encodeURIComponent(pinDescription)}`;
+            
+            window.open(pinterestUrl, '_blank', 'width=600,height=400');
+        }
+    </script>
+</head>
+<body>
+    <div class="header">
+        <h1>🧪 Social Share Test Page</h1>
+        <p>This page tests how your artisan store will appear when shared on social media</p>
+    </div>
+    
+    <div class="test-section">
+        <h2>📱 Preview of What Will Be Shared</h2>
+        <p>When someone shares your artisan store link, social media platforms will show:</p>
+        
+        <div style="border: 1px solid #ddd; border-radius: 8px; padding: 20px; margin: 20px 0; background: white;">
+            <div style="display: flex; align-items: center; margin-bottom: 15px;">
+                <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=artisan" alt="Store logo" style="width: 60px; height: 60px; border-radius: 50%; margin-right: 15px;">
+                <div>
+                    <h3 style="margin: 0; color: #333;">Maria's Handmade Crafts by Maria Santos</h3>
+                    <p style="margin: 5px 0; color: #666; font-size: 14px;">✨ by Maria Santos</p>
+                </div>
+            </div>
+            <p style="color: #555; margin: 0;">🌟 Discover amazing handcrafted products by Maria Santos. Each piece is carefully made with love and attention to detail. Support local artisans and find unique treasures! ✨</p>
+        </div>
+    </div>
+    
+    <div class="test-section">
+        <h2>🔗 Test Social Sharing</h2>
+        <p>Click these buttons to test how the preview appears on different platforms:</p>
+        
+        <a href="https://www.facebook.com/sharer/sharer.php?u=http://localhost:3000/artisans/1&quote=🌟 Check out this amazing artisan store Maria's Handmade Crafts by Maria Santos! Discover unique handcrafted products and support local artisans. ✨" 
+           target="_blank" class="share-button facebook">📘 Share on Facebook</a>
+        
+        <a href="https://twitter.com/intent/tweet?url=http://localhost:3000/artisans/1&text=🌟 Check out Maria's Handmade Crafts by Maria Santos! Discover unique handcrafted products and support local artisans. ✨ #Handmade #Artisan #CraftConnect" 
+           target="_blank" class="share-button twitter">🐦 Share on Twitter</a>
+        
+        <button onclick="shareToInstagram()" class="share-button instagram">📷 Share on Instagram</button>
+        
+        <button onclick="shareToPinterest()" class="share-button pinterest">📌 Share on Pinterest</button>
+    </div>
+    
+    <div class="test-section">
+        <h2>🔍 How to Test</h2>
+        <ol>
+            <li><strong>Facebook Debugger:</strong> Visit <a href="https://developers.facebook.com/tools/debug/" target="_blank">Facebook Sharing Debugger</a> and enter your URL</li>
+            <li><strong>Twitter Card Validator:</strong> Visit <a href="https://cards-dev.twitter.com/validator" target="_blank">Twitter Card Validator</a> and enter your URL</li>
+            <li><strong>LinkedIn Post Inspector:</strong> Visit <a href="https://www.linkedin.com/post-inspector/" target="_blank">LinkedIn Post Inspector</a> and enter your URL</li>
+            <li><strong>Direct Sharing:</strong> Use the share buttons above to see how it appears in real posts</li>
+        </ol>
+    </div>
+    
+    <div class="test-section">
+        <h2>⚙️ Technical Details</h2>
+        <p>This page includes the following Open Graph meta tags:</p>
+        <ul>
+            <li><code>og:title</code> - The title shown in the preview</li>
+            <li><code>og:description</code> - The description text</li>
+            <li><code>og:image</code> - The preview image</li>
+            <li><code>og:url</code> - The canonical URL</li>
+            <li><code>og:type</code> - The type of content (website)</li>
+            <li><code>og:site_name</code> - Your site name (CraftConnect)</li>
+            <li><code>twitter:card</code> - Twitter card type (summary_large_image)</li>
+        </ul>
+    </div>
+</body>
+</html>

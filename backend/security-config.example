@@ -1,0 +1,37 @@
+# Security Configuration Example
+# Copy these settings to your .env file
+
+# Token Expiration (in minutes)
+SANCTUM_TOKEN_EXPIRATION=60
+SANCTUM_REFRESH_EXPIRATION=1440
+
+# HTTPS Configuration
+FORCE_HTTPS=false
+HSTS_ENABLED=false
+HSTS_MAX_AGE=31536000
+HSTS_INCLUDE_SUBDOMAINS=true
+HSTS_PRELOAD=false
+
+# Content Security Policy
+CSP_ENABLED=false
+CSP_REPORT_ONLY=false
+CSP_REPORT_URI=
+
+# Frame Options
+X_FRAME_OPTIONS=DENY
+
+# Referrer Policy
+REFERRER_POLICY=strict-origin-when-cross-origin
+
+# Session Security
+SESSION_SECURE_COOKIE=false
+SESSION_HTTP_ONLY=true
+SESSION_ENCRYPT=false
+SESSION_SAME_SITE=lax
+
+# CORS Configuration
+CORS_ALLOWED_ORIGINS=http://localhost:5173,http://localhost:3000,http://127.0.0.1:5173,http://127.0.0.1:3000
+SANCTUM_STATEFUL_DOMAINS=localhost,127.0.0.1
+
+# Frontend URL for CSP
+FRONTEND_URL=http://localhost:5173

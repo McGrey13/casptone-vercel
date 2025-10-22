@@ -1,0 +1,564 @@
+import React, { useState, useRef, useEffect } from 'react';
+import { X, Plus, Upload, Video, Image as ImageIcon } from 'lucide-react';
+
+export const AddProductModal = ({ isOpen, onClose, onSave }) => {
+  const [title, setTitle] = useState('');
+  const [description, setDescription] = useState('');
+  const [price, setPrice] = useState('');
+  const [stock, setStock] = useState('');
+  const [mainCategory, setMainCategory] = useState('');
+  const [subCategory, setSubCategory] = useState('');
+  const [categories, setCategories] = useState([]);
+  const [mainImage, setMainImage] = useState(null);
+  const [additionalImages, setAdditionalImages] = useState(Array(5).fill(null));
+  const [video, setVideo] = useState(null);
+  const [tags, setTags] = useState([]);
+  const [tagInput, setTagInput] = useState('');
+  const [weight, setWeight] = useState('');
+  const [dimensions, setDimensions] = useState({ length: '', width: '', height: '' });
+  const [shippingClass, setShippingClass] = useState('standard');
+  const [status, setStatus] = useState('draft');
+  const [visibility, setVisibility] = useState('public');
+
+  const fileInputRef = useRef(null);
+  const videoInputRef = useRef(null);
+  const additionalImageRefs = useRef(Array(5).fill().map(() => React.createRef()));
+
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const response = await fetch('http://localhost:8000/api/categories');
+        if (response.ok) {
+          const data = await response.json();
+          setCategories(data);
+        }
+      } catch (error) {
+        console.error('Error fetching categories:', error);
+      }
+    };
+    fetchCategories();
+  }, []);
+
+  const handleMainImageChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      if (!file.type.startsWith('image/')) {
+        alert('Please upload a valid image file.');
+        return;
+      }
+      if (file.size > 10 * 1024 * 1024) {
+        alert('Image size must be less than 10MB.');
+        return;
+      }
+      setMainImage(URL.createObjectURL(file));
+    }
+  };
+
+  const handleAdditionalImageChange = (index, e) => {
+    const file = e.target.files[0];
+    if (file) {
+      if (!file.type.startsWith('image/')) {
+        alert('Please upload a valid image file.');
+        return;
+      }
+      if (file.size > 10 * 1024 * 1024) {
+        alert('Image size must be less than 10MB.');
+        return;
+      }
+      const newImages = [...additionalImages];
+      newImages[index] = URL.createObjectURL(file);
+      setAdditionalImages(newImages);
+    }
+  };
+
+  const handleVideoChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      if (file.type !== 'video/mp4') {
+        alert('Only MP4 videos are accepted.');
+        return;
+      }
+      if (file.size > 50 * 1024 * 1024) {
+        alert('Video size must be less than 50MB.');
+        return;
+      }
+      setVideo(URL.createObjectURL(file));
+    }
+  };
+
+  const handleAddTag = (e) => {
+    if (e.key === 'Enter' && tagInput.trim()) {
+      e.preventDefault();
+      if (!tags.includes(tagInput.trim())) {
+        setTags([...tags, tagInput.trim()]);
+      }
+      setTagInput('');
+    }
+  };
+
+  const removeTag = (tagToRemove) => {
+    setTags(tags.filter(tag => tag !== tagToRemove));
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (!mainCategory) {
+      alert('Please select a main category');
+      return;
+    }
+    
+    onSave({
+      title,
+      description,
+      price: parseFloat(price),
+      stock: parseInt(stock, 10),
+      category_id: mainCategory,
+      subcategory_id: subCategory || null,
+      images: [mainImage, ...additionalImages].filter(Boolean),
+      video
+    });
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-2xl shadow-xl w-full max-w-6xl max-h-[90vh] overflow-y-auto">
+        <div className="p-6">
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-2xl font-bold text-gray-800">Add New Product</h2>
+            <button 
+              onClick={onClose}
+              className="text-gray-400 hover:text-gray-600"
+              aria-label="Close modal"
+            >
+              <X size={24} />
+            </button>
+          </div>
+          
+          <form onSubmit={handleSubmit}>
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+              {/* Left Column - Product Details */}
+              <div className="lg:col-span-2 space-y-6">
+                {/* Product Information */}
+                <div className="bg-white rounded-xl shadow-sm p-6">
+                  <h3 className="text-xl font-semibold text-gray-800 mb-6">Product Information</h3>
+                  
+                  {/* Product Title */}
+                  <div className="mb-6">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Product Title <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      placeholder="Enter product name"
+                      value={title}
+                      onChange={(e) => setTitle(e.target.value)}
+                      maxLength={100}
+                      required
+                    />
+                    <p className="text-xs text-gray-500 mt-1">
+                      {title.length}/100 characters
+                    </p>
+                  </div>
+
+                  {/* Product Description */}
+                  <div className="mb-6">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Description <span className="text-red-500">*</span>
+                    </label>
+                    <textarea
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      rows="4"
+                      placeholder="Describe your product in detail..."
+                      value={description}
+                      onChange={(e) => setDescription(e.target.value)}
+                      maxLength={2000}
+                      required
+                    ></textarea>
+                    <p className="text-xs text-gray-500 mt-1">
+                      {description.length}/2000 characters
+                    </p>
+                  </div>
+
+                  {/* Price and Stock */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Price ($) <span className="text-red-500">*</span>
+                      </label>
+                      <div className="relative">
+                        <span className="absolute left-3 top-3 text-gray-400">$</span>
+                        <input
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          className="w-full pl-8 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          placeholder="0.00"
+                          value={price}
+                          onChange={(e) => setPrice(e.target.value)}
+                          required
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Stock Quantity <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="number"
+                        min="0"
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        placeholder="Available units"
+                        value={stock}
+                        onChange={(e) => setStock(e.target.value)}
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  {/* Product Images */}
+                  <div className="bg-white rounded-xl shadow-sm p-6">
+                    <h3 className="text-xl font-semibold text-gray-800 mb-6">Product Images</h3>
+                    
+                    {/* Main Image */}
+                    <div className="mb-6">
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Main Product Image <span className="text-red-500">*</span>
+                      </label>
+                      <div 
+                        className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center cursor-pointer hover:border-blue-400 transition-colors relative"
+                        onClick={() => fileInputRef.current?.click()}
+                      >
+                        {mainImage ? (
+                          <img 
+                            src={mainImage} 
+                            alt="Main product display" 
+                            className="mx-auto mb-4 rounded-lg max-h-48 object-cover"
+                          />
+                        ) : (
+                          <>
+                            <ImageIcon className="mx-auto mb-4 text-gray-400" size={40} />
+                            <p className="text-gray-600">Click to upload or drag and drop</p>
+                            <p className="text-sm text-gray-500">PNG, JPG, GIF up to 10MB</p>
+                          </>
+                        )}
+                        <input
+                          type="file"
+                          ref={fileInputRef}
+                          className="hidden"
+                          accept="image/*"
+                          onChange={handleMainImageChange}
+                        />
+                      </div>
+                    </div>
+
+                    {/* Additional Images */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-4">
+                        Additional Images (up to 5)
+                      </label>
+                      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+                        {additionalImages.map((img, index) => (
+                          <div
+                            key={index}
+                            className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center cursor-pointer hover:border-blue-400 transition-colors relative h-32 flex items-center justify-center"
+                            onClick={() => additionalImageRefs.current[index]?.current?.click()}
+                          >
+                            {img ? (
+                              <>
+                                <img 
+                                  src={img} 
+                                  alt={`Additional view ${index + 1}`}
+                                  className="w-full h-full object-cover rounded-lg"
+                                />
+                                <button
+                                  type="button"
+                                  className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    const newImages = [...additionalImages];
+                                    newImages[index] = null;
+                                    setAdditionalImages(newImages);
+                                  }}
+                                >
+                                  ×
+                                </button>
+                              </>
+                            ) : (
+                              <div className="text-gray-400">
+                                <Plus size={24} className="mx-auto mb-1" />
+                                <span className="text-xs">Add Image</span>
+                              </div>
+                            )}
+                            <input
+                              type="file"
+                              ref={additionalImageRefs.current[index]}
+                              className="hidden"
+                              accept="image/*"
+                              onChange={(e) => handleAdditionalImageChange(index, e)}
+                            />
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Product Video */}
+                  <div className="bg-white rounded-xl shadow-sm p-6">
+                    <h3 className="text-xl font-semibold text-gray-800 mb-6">Product Video (Optional)</h3>
+                    <div 
+                      className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center cursor-pointer hover:border-blue-400 transition-colors"
+                      onClick={() => videoInputRef.current?.click()}
+                    >
+                      {video ? (
+                        <div className="relative">
+                          <video
+                            src={video}
+                            controls
+                            className="w-full rounded-lg"
+                          />
+                          <button
+                            type="button"
+                            className="absolute top-2 right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setVideo(null);
+                            }}
+                          >
+                            ×
+                          </button>
+                        </div>
+                      ) : (
+                        <>
+                          <Video className="mx-auto mb-3 text-gray-400" size={40} />
+                          <p className="text-gray-600 mb-1">Click to upload or drag and drop your product video</p>
+                          <p className="text-sm text-gray-500">MP4 format, max 50MB</p>
+                        </>
+                      )}
+                      <input
+                        type="file"
+                        ref={videoInputRef}
+                        className="hidden"
+                        accept="video/mp4"
+                        onChange={handleVideoChange}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Categories */}
+                <div className="bg-white rounded-xl shadow-sm p-6">
+                  <h3 className="text-xl font-semibold text-gray-800 mb-6">Categories</h3>
+                  
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Main Category <span className="text-red-500">*</span>
+                      </label>
+                      <select
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        value={mainCategory}
+                        onChange={(e) => {
+                          setMainCategory(e.target.value);
+                          setSubCategory('');
+                        }}
+                        required
+                      >
+                        <option value="">Select a category</option>
+                        {categories
+                          .filter(cat => cat.type === 'main')
+                          .map(category => (
+                            <option key={category.id} value={category.id}>
+                              {category.name}
+                            </option>
+                          ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Subcategory (Optional)
+                      </label>
+                      <select
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        value={subCategory}
+                        onChange={(e) => setSubCategory(e.target.value)}
+                        disabled={!mainCategory}
+                      >
+                        <option value="">Select a subcategory</option>
+                        {categories
+                          .filter(cat => cat.parent_id === parseInt(mainCategory))
+                          .map(category => (
+                            <option key={category.id} value={category.id}>
+                              {category.name}
+                            </option>
+                          ))}
+                      </select>
+                    </div>
+
+                  </div>
+
+                  {/* Tags */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Product Tags
+                    </label>
+                    <div className="flex flex-wrap gap-2 mb-2">
+                      {tags.map((tag, index) => (
+                        <span key={index} className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm flex items-center">
+                          {tag}
+                          <button
+                            type="button"
+                            className="ml-2 text-blue-600 hover:text-blue-800 focus:outline-none"
+                            onClick={() => removeTag(tag)}
+                            aria-label={`Remove tag ${tag}`}
+                          >
+                            ×
+                          </button>
+                        </span>
+                      ))}
+                    </div>
+                    <input
+                      type="text"
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      placeholder="Add tags (press Enter to add)"
+                      value={tagInput}
+                      onChange={(e) => setTagInput(e.target.value)}
+                      onKeyPress={handleAddTag}
+                    />
+                    <p className="text-xs text-gray-400 mt-1">Press Enter to add tags</p>
+                  </div>
+                </div>
+
+                {/* Shipping */}
+                <div className="bg-white rounded-xl shadow-sm p-6">
+                  <h3 className="text-xl font-semibold text-gray-800 mb-6">Shipping Details</h3>
+                  
+                  {/* Weight */}
+                  <div className="mb-4">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Weight (kg)
+                    </label>
+                    <input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      placeholder="0.00"
+                      value={weight}
+                      onChange={(e) => setWeight(e.target.value)}
+                    />
+                  </div>
+
+                  {/* Dimensions */}
+                  <div className="mb-4">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Dimensions (cm)
+                    </label>
+                    <div className="grid grid-cols-3 gap-3">
+                      <input
+                        type="number"
+                        min="0"
+                        className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        placeholder="Length"
+                        value={dimensions.length}
+                        onChange={(e) => setDimensions({...dimensions, length: e.target.value})}
+                      />
+                      <input
+                        type="number"
+                        min="0"
+                        className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        placeholder="Width"
+                        value={dimensions.width}
+                        onChange={(e) => setDimensions({...dimensions, width: e.target.value})}
+                      />
+                      <input
+                        type="number"
+                        min="0"
+                        className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        placeholder="Height"
+                        value={dimensions.height}
+                        onChange={(e) => setDimensions({...dimensions, height: e.target.value})}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Shipping Class */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Shipping Class
+                    </label>
+                    <select
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      value={shippingClass}
+                      onChange={(e) => setShippingClass(e.target.value)}
+                    >
+                      <option value="standard">Standard Shipping</option>
+                      <option value="express">Express Shipping</option>
+                      <option value="free">Free Shipping</option>
+                      <option value="heavy">Heavy/Bulky Item</option>
+                    </select>
+                  </div>
+                </div>
+
+                {/* Publish */}
+                <div className="bg-white rounded-xl shadow-sm p-6">
+                  <h3 className="text-xl font-semibold text-gray-800 mb-6">Publish</h3>
+                  
+                  <div className="space-y-4">
+                    {/* Status */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Status
+                      </label>
+                      <select
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        value={status}
+                        onChange={(e) => setStatus(e.target.value)}
+                      >
+                        <option value="draft">Draft</option>
+                        <option value="published">Published</option>
+                        <option value="archived">Archived</option>
+                      </select>
+                    </div>
+
+                    {/* Visibility */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Visibility
+                      </label>
+                      <select
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        value={visibility}
+                        onChange={(e) => setVisibility(e.target.value)}
+                      >
+                        <option value="public">Public</option>
+                        <option value="private">Private</option>
+                        <option value="hidden">Hidden</option>
+                      </select>
+                    </div>
+
+                    {/* Submit Button */}
+                    <div className="pt-4 border-t border-gray-200">
+                      <button
+                        type="submit"
+                        className="w-full bg-gradient-to-r from-blue-600 to-blue-700 text-white py-3 px-6 rounded-lg font-semibold hover:from-blue-700 hover:to-blue-800 transition-all transform hover:scale-105 shadow-lg flex items-center justify-center"
+                      >
+                        <Plus className="mr-2 h-5 w-5" />
+                        Add Product
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </form>
+        </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default AddProductModal;

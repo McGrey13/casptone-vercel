@@ -1,0 +1,187 @@
+@import "tailwindcss";
+
+:root {
+  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+
+  color-scheme:  dark;
+  color: rgba(255, 255, 255, 0.87);
+  background-color: #242424;
+
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+a {
+  font-weight: 500;
+  color: #646cff;
+  text-decoration: inherit;
+}
+a:hover {
+  color: #535bf2;
+}
+
+html, body, #root {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+}
+body {
+  min-width: 320px;
+  display: flex;
+  flex-direction: column;
+}
+
+
+  
+h1 {
+  font-size: 3.2em;
+  line-height: 1.1;
+}
+
+button {
+  border-radius: 8px;
+  border: 1px solid transparent;
+  padding: 0.6em 1.2em;
+  font-size: 1em;
+  font-weight: 500;
+  font-family: inherit;
+  background-color: #1a1a1a;
+  cursor: pointer;
+  transition: border-color 0.25s;
+}
+button:hover {
+  border-color: #646cff;
+}
+button:focus,
+button:focus-visible {
+  outline: 4px auto -webkit-focus-ring-color;
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    color: #213547;
+    background-color: #ffffff;
+  }
+  a:hover {
+    color: #747bff;
+  }
+  button {
+    background-color: #f9f9f9;
+  }
+}
+
+/* In Footer.css */
+.footer {
+  /* ... other footer styles ... */
+  margin-top: auto; /* Pushes the footer to the bottom */
+}
+
+/* Admin Layout Fixes */
+.admin-layout {
+  height: 100vh;
+  overflow: hidden;
+}
+
+.admin-sidebar {
+  flex-shrink: 0;
+  width: 16rem; /* 256px */
+}
+
+.admin-main {
+  flex: 1;
+  min-width: 0; /* Prevents flex item from overflowing */
+  overflow: hidden;
+}
+
+.admin-content {
+  height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+/* Responsive fixes */
+@media (max-width: 1024px) {
+  .admin-sidebar {
+    width: 14rem; /* 224px */
+  }
+}
+
+@media (max-width: 768px) {
+  .admin-sidebar {
+    width: 12rem; /* 192px */
+  }
+}
+
+/* Ensure content doesn't overflow */
+.grid-responsive {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+}
+
+@media (min-width: 1280px) {
+  .grid-responsive {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+@media (min-width: 1024px) and (max-width: 1279px) {
+  .grid-responsive {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* Table fixes */
+.table-container {
+  overflow-x: auto;
+  width: 100%;
+}
+
+.table-container table {
+  min-width: 100%;
+  table-layout: auto;
+}
+
+/* Ensure table actions are always visible */
+.table-actions {
+  white-space: nowrap;
+  min-width: 120px;
+}
+
+/* Fix for dropdown positioning */
+.dropdown-content {
+  z-index: 1000;
+}
+
+/* Ensure main content has proper width */
+.main-content {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+/* Navbar fixes */
+.navbar-right {
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+/* Ensure dropdowns are visible */
+[data-radix-popper-content-wrapper] {
+  z-index: 1000 !important;
+}
+
+/* Fix for table overflow */
+.overflow-x-auto {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Ensure all content is visible */
+.w-full {
+  width: 100% !important;
+}
