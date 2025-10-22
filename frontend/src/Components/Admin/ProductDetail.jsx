@@ -6,7 +6,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Badge } from "../ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
-import { useCart } from "../cart/CartContext";
+import { useCart } from "../Cart/CartContext";
 import { useUser } from "../Context/UserContext";
 import api from "../../api";
  
