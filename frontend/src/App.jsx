@@ -6,7 +6,7 @@ import './utils/consoleHelper';
 
 // Landing Page
 import LandingPage from './Components/LandingPage';
-import StoreView from './Components/StoreView';
+import StoreView from './Components/storeview';
 
 
 // Layouts
@@ -28,7 +28,7 @@ import ArtisanDetail from './Components/Artisans/ArtisanDetail';
 import Register from './Components/Auth/Register';
 import Login from './Components/Auth/Login';
 import OtpVerification from './Components/Auth/otpVerification';
-import ProductsPage from './Components/Product/ProductsPage';
+import ProductsPage from './Components/product/ProductsPage';
 import ProductDetails from './Components/product/ProductDetails';
 import { Favorites } from './Components/pages/Favorites';
 import Orders from './Components/Orders/Orders';
