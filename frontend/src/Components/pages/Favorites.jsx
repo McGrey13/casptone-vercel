@@ -4,7 +4,7 @@ import { Button } from "../ui/button";
 import { ShoppingCart, Heart, Loader2 } from "lucide-react";
 import { useFavorites } from "../favorites/FavoritesContext";
 import { useNavigate } from "react-router-dom";
-import { useCart } from "../cart/CartContext";
+import { useCart } from "../Cart/CartContext";
 
 export function Favorites() {
   const { favorites, removeFavorite } = useFavorites();
