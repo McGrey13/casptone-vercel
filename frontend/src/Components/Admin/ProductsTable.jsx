@@ -1,14 +1,18 @@
 import React, { useState, useEffect } from "react";
 import {
-  Edit,
   Eye,
   MoreHorizontal,
   Filter,
-  Check,
-  X,
 } from "lucide-react";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "../ui/select";
 import {
   Table,
   TableBody,
@@ -22,12 +26,10 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "../ui/dropdown-menu";
 import { Badge } from "../ui/badge";
 import ProductDetail from "./ProductDetail";
-import ProductEdit from "./ProductEdit";
 import api from "../../api";
 import "./AdminTableDesign.css";
 import { Search, Package, TrendingUp, Users } from "lucide-react";
@@ -35,15 +37,16 @@ import { Search, Package, TrendingUp, Users } from "lucide-react";
 function ProductsTable() {
   const [searchQuery, setSearchQuery] = useState("");
   const [products, setProducts] = useState([]);
+  const [filteredProducts, setFilteredProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [categoryFilter, setCategoryFilter] = useState("all");
+  const [quantityFilter, setQuantityFilter] = useState("all");
   // Token handled by httpOnly cookies
   
-  // State for view and edit dialogs
+  // State for view dialog
   const [selectedProductId, setSelectedProductId] = useState(null);
-  const [selectedProduct, setSelectedProduct] = useState(null);
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
-  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
 
   // ✅ Fetch products for admin
   const fetchProducts = async () => {
@@ -52,6 +55,7 @@ function ProductsTable() {
       const response = await api.get("/admin/products");
       // console.log("Products data:", response.data);
       setProducts(response.data);
+      setFilteredProducts(response.data);
     } catch (err) {
       console.error("Error fetching products:", err);
       setError(err.message);
@@ -64,22 +68,61 @@ function ProductsTable() {
     fetchProducts();
   }, []);
 
-  const handleSearch = (e) => {
-    const query = e.target.value.toLowerCase();
-    setSearchQuery(query);
+  // Filter products when search query, category filter, or quantity filter changes
+  useEffect(() => {
+    filterProducts();
+  }, [searchQuery, categoryFilter, quantityFilter, products]);
 
-    if (query.trim() === "") {
-      fetchProducts();
-    } else {
-      setProducts((prev) =>
-        prev.filter(
-          (product) =>
-            product.productName?.toLowerCase().includes(query) ||
-            product.category?.toLowerCase().includes(query) ||
-            product.id?.toString().includes(query)
-        )
+  // Filter products based on search, category, and quantity
+  const filterProducts = () => {
+    let filtered = products;
+
+    // Filter by search query
+    if (searchQuery.trim() !== "") {
+      filtered = filtered.filter(
+        (product) =>
+          product.productName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          product.category?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          product.id?.toString().includes(searchQuery)
       );
     }
+
+    // Filter by category
+    if (categoryFilter !== "all") {
+      filtered = filtered.filter((product) => product.category === categoryFilter);
+    }
+
+    // Filter by quantity
+    if (quantityFilter !== "all") {
+      switch (quantityFilter) {
+        case "low":
+          filtered = filtered.filter((product) => product.productQuantity <= 10);
+          break;
+        case "medium":
+          filtered = filtered.filter((product) => product.productQuantity > 10 && product.productQuantity <= 50);
+          break;
+        case "high":
+          filtered = filtered.filter((product) => product.productQuantity > 50);
+          break;
+        case "out_of_stock":
+          filtered = filtered.filter((product) => product.productQuantity === 0);
+          break;
+      }
+    }
+
+    setFilteredProducts(filtered);
+  };
+
+  const handleSearch = (e) => {
+    setSearchQuery(e.target.value);
+  };
+
+  const handleCategoryFilter = (value) => {
+    setCategoryFilter(value);
+  };
+
+  const handleQuantityFilter = (value) => {
+    setQuantityFilter(value);
   };
 
   const handleViewProduct = (productId) => {
@@ -87,43 +130,10 @@ function ProductsTable() {
     setIsViewDialogOpen(true);
   };
 
-  const handleEditProduct = (product) => {
-    setSelectedProduct(product);
-    setIsEditDialogOpen(true);
-  };
-
-  const handleSaveProduct = (updatedProduct) => {
-    setProducts(prev => 
-      prev.map(product => 
-        product.id === updatedProduct.id ? updatedProduct : product
-      )
-    );
-  };
-
-  const handleApprove = async (id) => {
-    try {
-      await api.post(`/products/${id}/approve`);
-      setProducts((prev) =>
-        prev.map((p) =>
-          p.id === id ? { ...p, approval_status: "approved" } : p
-        )
-      );
-    } catch (err) {
-      console.error("Error approving product:", err);
-    }
-  };
-
-  const handleReject = async (id) => {
-    try {
-      await api.post(`/products/${id}/reject`);
-      setProducts((prev) =>
-        prev.map((p) =>
-          p.id === id ? { ...p, approval_status: "rejected" } : p
-        )
-      );
-    } catch (err) {
-      console.error("Error rejecting product:", err);
-    }
+  // Get unique categories for filter
+  const getUniqueCategories = () => {
+    const categories = products.map(product => product.category).filter(Boolean);
+    return [...new Set(categories)];
   };
 
   const getStatusBadge = (status) => {
@@ -192,15 +202,15 @@ function ProductsTable() {
           <div className="admin-table-stat">
             <Package className="admin-table-stat-icon" />
             <div>
-              <div className="admin-table-stat-value">{products.length}</div>
-              <div className="admin-table-stat-label">Total Products</div>
+              <div className="admin-table-stat-value">{filteredProducts.length}</div>
+              <div className="admin-table-stat-label">Filtered Products</div>
             </div>
           </div>
           <div className="admin-table-stat">
             <TrendingUp className="admin-table-stat-icon" />
             <div>
               <div className="admin-table-stat-value">
-                {products.filter(p => p.approval_status === 'approved').length}
+                {filteredProducts.filter(p => p.approval_status === 'approved').length}
               </div>
               <div className="admin-table-stat-label">Approved</div>
             </div>
@@ -209,7 +219,7 @@ function ProductsTable() {
             <Users className="admin-table-stat-icon" />
             <div>
               <div className="admin-table-stat-value">
-                {products.filter(p => p.approval_status === 'pending').length}
+                {filteredProducts.filter(p => p.approval_status === 'pending').length}
               </div>
               <div className="admin-table-stat-label">Pending</div>
             </div>
@@ -221,19 +231,40 @@ function ProductsTable() {
           <div className="admin-table-search">
             <Search className="admin-table-search-icon" />
             <Input
-              placeholder="Search products by name, category, or seller..."
+              placeholder="Search products by name, category, or ID..."
               value={searchQuery}
               onChange={handleSearch}
             />
           </div>
           <div className="admin-table-filters">
-            <button className="admin-table-filter-btn">
-              <Filter className="h-4 w-4 mr-2" />
-              Filter
-            </button>
-            <Button className="admin-table-filter-btn">
-              Add New Product
-            </Button>
+            <div className="flex gap-2">
+              <Select value={categoryFilter} onValueChange={handleCategoryFilter}>
+                <SelectTrigger className="w-40 bg-white">
+                  <SelectValue placeholder="Category" />
+                </SelectTrigger>
+                <SelectContent className="bg-white">
+                  <SelectItem value="all">All Categories</SelectItem>
+                  {getUniqueCategories().map((category) => (
+                    <SelectItem key={category} value={category}>
+                      {category}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              
+              <Select value={quantityFilter} onValueChange={handleQuantityFilter}>
+                <SelectTrigger className="w-40 bg-white">
+                  <SelectValue placeholder="Quantity" />
+                </SelectTrigger>
+                <SelectContent className="bg-white">
+                  <SelectItem value="all">All Quantities</SelectItem>
+                  <SelectItem value="out_of_stock">Out of Stock (0)</SelectItem>
+                  <SelectItem value="low">Low (1-10)</SelectItem>
+                  <SelectItem value="medium">Medium (11-50)</SelectItem>
+                  <SelectItem value="high">High (50+)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
         </div>
       </div>
@@ -253,7 +284,7 @@ function ProductsTable() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {products.map((product) => (
+            {filteredProducts.map((product) => (
               <TableRow key={product.id}>
                 <TableCell>
                   {product.productImage ? (
@@ -292,26 +323,6 @@ function ProductsTable() {
                           <Eye className="h-4 w-4 mr-2" /> View
                         </button>
                       </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => handleEditProduct(product)}>
-                        <button className="admin-table-action-btn edit">
-                          <Edit className="h-4 w-4 mr-2" /> Edit
-                        </button>
-                      </DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem
-                        onClick={() => handleApprove(product.id)}
-                      >
-                        <button className="admin-table-action-btn view">
-                          <Check className="h-4 w-4 mr-2" /> Approve
-                        </button>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        onClick={() => handleReject(product.id)}
-                      >
-                        <button className="admin-table-action-btn deactivate">
-                          <X className="h-4 w-4 mr-2" /> Reject
-                        </button>
-                      </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </TableCell>
@@ -323,7 +334,7 @@ function ProductsTable() {
 
       <div className="flex items-center justify-between">
         <div className="text-sm text-gray-500">
-          Showing {products.length} of {products.length} products
+          Showing {filteredProducts.length} of {products.length} products
         </div>
         <div className="flex items-center space-x-2">
           <Button variant="outline" size="sm" disabled>
@@ -343,18 +354,6 @@ function ProductsTable() {
           setIsViewDialogOpen(false);
           setSelectedProductId(null);
         }}
-        onEdit={handleEditProduct}
-      />
-
-      {/* Product Edit Dialog */}
-      <ProductEdit
-        product={selectedProduct}
-        isOpen={isEditDialogOpen}
-        onClose={() => {
-          setIsEditDialogOpen(false);
-          setSelectedProduct(null);
-        }}
-        onSave={handleSaveProduct}
       />
     </div>
   );

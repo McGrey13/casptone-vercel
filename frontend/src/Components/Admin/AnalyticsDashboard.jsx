@@ -47,6 +47,8 @@ import { Button } from "../ui/button";
 import { Badge } from "../ui/badge";
 import { Progress } from "../ui/progress";
 import "./AdminTableDesign.css";
+import api from '../../api';
+import { useUser } from '../Context/UserContext';
 
 // Chart components (you can replace with your preferred chart library)
 import {
@@ -68,6 +70,7 @@ import {
 } from "recharts";
 
 const AnalyticsDashboard = () => {
+  const { user, loading: userLoading } = useUser();
   const [analyticsData, setAnalyticsData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
@@ -117,24 +120,21 @@ const AnalyticsDashboard = () => {
   const fetchAnalyticsData = async () => {
     setLoading(true);
     try {
-      const url = `http://localhost:8080/api/analytics/test-controller?period=${selectedPeriod}&start_date=${dateRange.start_date}&end_date=${dateRange.end_date}`;
-      
-      const response = await fetch(url, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-        },
-      });
-      
-      if (response.ok) {
-        const data = await response.json();
-        setAnalyticsData(data);
-      } else {
-        console.error('Failed to fetch analytics data:', response.status, response.statusText);
-        const errorText = await response.text();
-        console.error('Error response:', errorText);
+      // Check if user is authenticated
+      if (!user) {
+        console.error('User not authenticated');
+        setLoading(false);
+        return;
       }
+
+      const params = {
+        period: selectedPeriod,
+        start_date: dateRange.start_date,
+        end_date: dateRange.end_date
+      };
+      
+      const response = await api.get('/analytics/test-controller', { params });
+      setAnalyticsData(response.data);
     } catch (error) {
       console.error('Error fetching analytics data:', error);
     } finally {
@@ -176,34 +176,26 @@ const AnalyticsDashboard = () => {
   const fetchMicroAnalyticsData = async () => {
     setMicroAnalyticsLoading(true);
     try {
-      const mostSellingUrl = `http://localhost:8080/api/analytics/revenue/most-selling-products?period=${selectedPeriod}&start_date=${dateRange.start_date}&end_date=${dateRange.end_date}`;
-      const highestSalesUrl = `http://localhost:8080/api/analytics/revenue/highest-sales-sellers?period=${selectedPeriod}&start_date=${dateRange.start_date}&end_date=${dateRange.end_date}`;
+      // Check if user is authenticated
+      if (!user) {
+        console.error('User not authenticated');
+        setMicroAnalyticsLoading(false);
+        return;
+      }
+
+      const params = {
+        period: selectedPeriod,
+        start_date: dateRange.start_date,
+        end_date: dateRange.end_date
+      };
       
       const [mostSellingResponse, highestSalesResponse] = await Promise.all([
-        fetch(mostSellingUrl),
-        fetch(highestSalesUrl)
+        api.get('/analytics/revenue/most-selling-products', { params }),
+        api.get('/analytics/revenue/highest-sales-sellers', { params })
       ]);
       
-      if (mostSellingResponse.ok && highestSalesResponse.ok) {
-        const mostSellingData = await mostSellingResponse.json();
-        const highestSalesData = await highestSalesResponse.json();
-        
-        setMostSellingProducts(mostSellingData);
-        setHighestSalesSellers(highestSalesData);
-      } else {
-        console.error('Failed to fetch micro analytics data:', {
-          mostSellingStatus: mostSellingResponse.status,
-          highestSalesStatus: highestSalesResponse.status
-        });
-        if (!mostSellingResponse.ok) {
-          const errorText = await mostSellingResponse.text();
-          console.error('Most selling products error:', errorText);
-        }
-        if (!highestSalesResponse.ok) {
-          const errorText = await highestSalesResponse.text();
-          console.error('Highest sales sellers error:', errorText);
-        }
-      }
+      setMostSellingProducts(mostSellingResponse.data);
+      setHighestSalesSellers(highestSalesResponse.data);
     } catch (error) {
       console.error('Error fetching micro analytics data:', error);
     } finally {
@@ -211,9 +203,17 @@ const AnalyticsDashboard = () => {
     }
   };
 
+  // Fetch data when user is authenticated
+  useEffect(() => {
+    if (user && !userLoading) {
+      fetchAnalyticsData();
+      fetchMicroAnalyticsData();
+    }
+  }, [user, userLoading]);
+
   // Auto-fetch data when period or date range changes
   useEffect(() => {
-    if (selectedPeriod && dateRange.start_date && dateRange.end_date) {
+    if (user && !userLoading && selectedPeriod && dateRange.start_date && dateRange.end_date) {
       fetchAnalyticsData();
       fetchMicroAnalyticsData();
     }
@@ -223,45 +223,62 @@ const AnalyticsDashboard = () => {
   const generateAnalyticsData = async () => {
     setGenerating(true);
     try {
+      // Check if user is authenticated
+      if (!user) {
+        console.error('User not authenticated');
+        setGenerating(false);
+        return;
+      }
+
       console.log('Generating analytics data...');
       
-      const response = await fetch('http://localhost:8080/api/analytics/generate-public', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-        },
-        body: JSON.stringify({
-          date: new Date().toISOString().split('T')[0],
-          period_type: selectedPeriod
-        }),
+      const response = await api.post('/analytics/generate-public', {
+        date: new Date().toISOString().split('T')[0],
+        period_type: selectedPeriod
       });
       
       console.log('Generate response status:', response.status);
+      console.log('Generate response:', response.data);
       
-      if (response.ok) {
-        const result = await response.json();
-        console.log('Generate response:', result);
-        
-        // Show success message
-        if (result.data_created) {
-          alert(`Data generated successfully!\nOrders: ${result.data_created.orders}\nProducts: ${result.data_created.products}\nReviews: ${result.data_created.reviews}`);
-        }
-        
-        await fetchAnalyticsData(); // Refresh data after generation
-        await fetchMicroAnalyticsData(); // Refresh micro analytics data
-        console.log('Analytics data refreshed');
-      } else {
-        console.error('Generate failed with status:', response.status);
-        const errorText = await response.text();
-        console.error('Error response:', errorText);
+      // Show success message
+      if (response.data.data_created) {
+        alert(`Data generated successfully!\nOrders: ${response.data.data_created.orders}\nProducts: ${response.data.data_created.products}\nReviews: ${response.data.data_created.reviews}`);
       }
+      
+      await fetchAnalyticsData(); // Refresh data after generation
+      await fetchMicroAnalyticsData(); // Refresh micro analytics data
+      console.log('Analytics data refreshed');
     } catch (error) {
       console.error('Error generating analytics data:', error);
     } finally {
       setGenerating(false);
     }
   };
+
+  // Show loading while checking authentication
+  if (userLoading) {
+    return (
+      <div className="admin-table-container">
+        <div className="admin-table-loading">
+          <div className="admin-table-loading-spinner"></div>
+          <span>Checking authentication...</span>
+        </div>
+      </div>
+    );
+  }
+
+  // Show authentication error if user is not authenticated
+  if (!user) {
+    return (
+      <div className="admin-table-container">
+        <div className="admin-table-empty">
+          <div className="admin-table-empty-icon">🔒</div>
+          <h3 className="admin-table-empty-title">Authentication Required</h3>
+          <p className="admin-table-empty-description">Please log in to access the analytics dashboard.</p>
+        </div>
+      </div>
+    );
+  }
 
   if (loading) {
     return (
@@ -414,25 +431,7 @@ const AnalyticsDashboard = () => {
                 {generating ? 'Generating...' : 'Generate Data'}
               </Button>
               <Button 
-                onClick={() => {
-                  // Trigger micro analytics data generation
-                  fetch(`http://localhost:8080/api/analytics/generate-public`, {
-                    method: 'POST',
-                    headers: { 
-                      'Content-Type': 'application/json',
-                      'Accept': 'application/json',
-                    },
-                    body: JSON.stringify({
-                      date: new Date().toISOString().split('T')[0],
-                      period_type: selectedPeriod
-                    }),
-                  }).then(() => {
-                    setTimeout(() => {
-                      fetchAnalyticsData();
-                      fetchMicroAnalyticsData();
-                    }, 1000);
-                  });
-                }} 
+                onClick={generateAnalyticsData}
                 className="admin-table-filter-btn"
                 disabled={generating}
               >

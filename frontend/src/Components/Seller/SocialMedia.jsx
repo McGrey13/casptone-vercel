@@ -357,7 +357,6 @@ import SuccessNotificationModal from "../ui/SuccessNotificationModal";
                 <div className="space-y-3 sm:space-y-4 bg-white p-3 sm:p-4 max-w-[405px] mx-auto sm:max-w-none px-3 sm:px-4 rounded-lg">
                 <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-0">
                   <h1 className="text-xl sm:text-2xl font-bold tracking-tight">Social Media</h1>
-                  <Button className="w-full sm:w-auto text-xs sm:text-sm">Schedule Post</Button>
                 </div>
 
                 {/* Connection Status Banner */}
@@ -444,10 +443,9 @@ import SuccessNotificationModal from "../ui/SuccessNotificationModal";
                 </div>
 
                 <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                  <TabsList className="grid w-full grid-cols-3">
+                  <TabsList className="grid w-full grid-cols-2">
                     <TabsTrigger value="accounts">Connected Accounts</TabsTrigger>
                     <TabsTrigger value="posts">Create Posts</TabsTrigger>
-                    <TabsTrigger value="scheduled">Scheduled Content</TabsTrigger>
                   </TabsList>
 
                   {/* Connected Accounts */}
@@ -615,51 +613,6 @@ import SuccessNotificationModal from "../ui/SuccessNotificationModal";
                         </CardContent>
                       </Card>
 
-                      {/* Twitter */}
-                      <Card className="rounded-lg sm:rounded-xl overflow-hidden">
-                        <CardHeader className="pb-2">
-                          <CardTitle className="flex items-center text-sm sm:text-base">
-                            <Twitter className="h-4 w-4 sm:h-5 sm:w-5 mr-2 text-blue-400" />
-                            Twitter
-                          </CardTitle>
-                          <CardDescription>Connect your Twitter account</CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                          <div className="flex items-center justify-between">
-                            <div className="text-sm">
-                              <span className="font-medium">Status:</span>{" "}
-                              <span className="text-gray-500 font-medium">
-                                Not Connected
-                              </span>
-                            </div>
-                            <Button size="sm">Connect</Button>
-                          </div>
-                        </CardContent>
-                      </Card>
-
-                      {/* YouTube */}
-                      <Card className="rounded-lg sm:rounded-xl overflow-hidden">
-                        <CardHeader className="pb-2">
-                          <CardTitle className="flex items-center text-sm sm:text-base">
-                            <Youtube className="h-4 w-4 sm:h-5 sm:w-5 mr-2 text-red-600" />
-                            YouTube
-                          </CardTitle>
-                          <CardDescription>
-                            Connect your YouTube channel
-                          </CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                          <div className="flex items-center justify-between">
-                            <div className="text-sm">
-                              <span className="font-medium">Status:</span>{" "}
-                              <span className="text-gray-500 font-medium">
-                                Not Connected
-                              </span>
-                            </div>
-                            <Button size="sm">Connect</Button>
-                          </div>
-                        </CardContent>
-                      </Card>
                     </div>
                   </TabsContent>
 
@@ -756,15 +709,6 @@ import SuccessNotificationModal from "../ui/SuccessNotificationModal";
                               <Facebook className="h-4 w-4 mr-2 text-blue-600" />
                               Facebook
                             </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="flex items-center opacity-50"
-                              disabled
-                            >
-                              <Twitter className="h-4 w-4 mr-2 text-blue-400" />
-                              Twitter
-                            </Button>
                           </div>
                           {postToInstagram && (
                             <p className="text-sm text-amber-600">
@@ -773,22 +717,6 @@ import SuccessNotificationModal from "../ui/SuccessNotificationModal";
                           )}
                         </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          <div className="space-y-2">
-                            <Label htmlFor="post-date">Schedule Date</Label>
-                            <div className="flex items-center">
-                              <Calendar className="h-4 w-4 mr-2 text-gray-500" />
-                              <Input id="post-date" type="date" />
-                            </div>
-                          </div>
-                          <div className="space-y-2">
-                            <Label htmlFor="post-time">Schedule Time</Label>
-                            <div className="flex items-center">
-                              <Clock className="h-4 w-4 mr-2 text-gray-500" />
-                              <Input id="post-time" type="time" />
-                            </div>
-                          </div>
-                        </div>
                       </CardContent>
                       <CardFooter className="flex justify-end">
                         <div className="space-y-3">
@@ -803,104 +731,11 @@ import SuccessNotificationModal from "../ui/SuccessNotificationModal";
                              `📱 Post to ${postToInstagram ? 'Instagram' : 'Facebook'}`}
                           </Button>
                           
-                          {/* Secondary Action - Copy to Clipboard */}
-                          <Button 
-                            variant="outline" 
-                            onClick={() => {
-                              const postContent = `${message}${link ? '\n\n' + link : ''}`;
-                              navigator.clipboard.writeText(postContent).then(() => {
-                                setSuccess('Post content copied to clipboard! You can now paste it manually on Facebook/Instagram.');
-                                setError(""); // Clear any previous errors
-                              }).catch(() => {
-                                setError('Failed to copy to clipboard. Please copy the content manually.');
-                              });
-                            }}
-                            disabled={!message.trim()}
-                            className="w-full"
-                          >
-                            📋 Copy to Clipboard (Backup)
-                          </Button>
-                          
-                          <p className="text-xs text-gray-500 text-center">
-                            Post directly to your connected social media accounts or copy content for manual posting.
-                          </p>
-                          
-                          {/* Alternative Posting Method */}
-                          <Button 
-                            variant="outline" 
-                            size="sm"
-                            onClick={async () => {
-                              try {
-                                setPosting(true);
-                                setError("");
-                                setSuccess("");
-                                
-                                // Try alternative posting method
-                                const response = await api.post('/social/facebook/simple-post', {
-                                  message: message.trim(),
-                                  link: link.trim() || null,
-                                  hasImage: !!selectedImage,
-                                  postToInstagram: postToInstagram
-                                });
-                                
-                                if (response.data.success) {
-                                  setSuccessMessage('Posted successfully using alternative method!');
-                                  setShowSuccessModal(true);
-                                  setMessage("");
-                                  setLink("");
-                                  setSelectedImage(null);
-                                  setImagePreview(null);
-                                } else {
-                                  setError(`Failed to post: ${response.data.message}`);
-                                }
-                              } catch (err) {
-                                setError(`Alternative posting failed: ${err.response?.data?.message || err.message}`);
-                              } finally {
-                                setPosting(false);
-                              }
-                            }}
-                            disabled={posting || !message.trim()}
-                            className="w-full text-xs"
-                          >
-                            🔄 Try Alternative Posting
-                          </Button>
-
-                          {/* Debug Button - Remove in production */}
-                          <Button 
-                            variant="outline" 
-                            size="sm"
-                            onClick={() => {
-                              console.log('=== DEBUG INFO ===');
-                              console.log('fbStatus:', fbStatus);
-                              console.log('pages:', pages);
-                              console.log('message:', message);
-                              console.log('link:', link);
-                              console.log('selectedImage:', selectedImage);
-                              console.log('postToInstagram:', postToInstagram);
-                              console.log('==================');
-                            }}
-                            className="w-full text-xs"
-                          >
-                            🔍 Debug Info (Check Console)
-                          </Button>
                         </div>
                       </CardFooter>
                     </Card>
                   </TabsContent>
 
-                  {/* Scheduled Content */}
-                  <TabsContent value="scheduled" className="space-y-4 pt-4">
-                    <div className="bg-gray-50 p-4 rounded-lg">
-                      <div className="text-center py-8">
-                        <p className="text-gray-500">
-                          You don't have any scheduled posts yet.
-                        </p>
-                        <Button className="mt-4" variant="outline">
-                          Create Your First Post
-                        </Button>
-                      </div>
-                    </div>
-                  </TabsContent>
                 </Tabs>
 
                 {/* Important Reminder */}

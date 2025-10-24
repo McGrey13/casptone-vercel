@@ -88,21 +88,23 @@ const OrdersTab = () => {
 
   const updateOrderStatus = async (newStatus) => {
     try {
+      console.log('Full order object:', orderToUpdate);
       console.log(`Updating order ${orderToUpdate.id} to ${newStatus}`);
       
-      // Extract order ID from the order.id (format: ORD-123)
-      const orderIdMatch = orderToUpdate.id.match(/\d+/);
-      const orderId = orderIdMatch ? orderIdMatch[0] : orderToUpdate.orderID;
+      // The backend updateStatus method expects the database ID, not the order_number
+      // We need to use orderToUpdate.orderID (which is the database ID)
+      let orderId = orderToUpdate.orderID;
       
       if (!orderId) {
-        console.error('Could not extract order ID from:', orderToUpdate.id);
+        console.error('Could not find order ID from:', orderToUpdate);
         alert('Error: Could not find order ID');
         return;
       }
       
-      console.log('Extracted order ID:', orderId);
+      console.log('Using database order ID:', orderId);
+      console.log('API endpoint:', `/orders/${orderId}/status`);
       
-      // Call API to update order status
+      // Use the correct API endpoint: PUT /orders/{orderId}/status
       const response = await api.put(`/orders/${orderId}/status`, {
         status: newStatus
       });
@@ -119,7 +121,8 @@ const OrdersTab = () => {
       }
     } catch (error) {
       console.error("Error updating order status:", error);
-      alert(error.response?.data?.message || "Error updating order status. Please try again.");
+      console.error("Error response:", error.response?.data);
+      alert(error.response?.data?.message || error.response?.data?.error || "Error updating order status. Please try again.");
     }
   };
 
@@ -195,13 +198,13 @@ const OrdersTab = () => {
         </div>
       </div>
 
-      <Card className="border-[#e5ded7] shadow">
-        <CardHeader className="pb-2 border-b border-[#e5ded7] bg-[#faf9f8] px-2">
-          <CardTitle className="text-[#5c3d28] text-sm">Recent Orders</CardTitle>
-          <CardDescription className="text-[#7b5a3b] text-[10px]">Manage your customer orders and track their status</CardDescription>
-        </CardHeader>
-        <CardContent className="pt-2 px-2">
-          <div className="overflow-x-auto -mx-2">
+        <Card className="border-[#e5ded7] shadow overflow-visible">
+          <CardHeader className="pb-2 border-b border-[#e5ded7] bg-[#faf9f8] px-2">
+            <CardTitle className="text-[#5c3d28] text-sm">Recent Orders</CardTitle>
+            <CardDescription className="text-[#7b5a3b] text-[10px]">Manage your customer orders and track their status</CardDescription>
+          </CardHeader>
+          <CardContent className="pt-2 px-2 overflow-visible">
+            <div className="overflow-x-auto -mx-2 overflow-y-visible">
             <Table>
             <TableHeader>
               <TableRow>
@@ -235,7 +238,30 @@ const OrdersTab = () => {
                       </Badge>
                     </TableCell>
                     <TableCell className="px-2 py-2 relative">
-                      <div className="flex items-center justify-end">
+                      {/* Desktop: Show all actions directly */}
+                      <div className="hidden sm:flex items-center gap-2">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleViewOrder(order)}
+                          className="h-6 px-2 text-[10px] hover:bg-[#f8f1ec] text-[#5c3d28]"
+                        >
+                          View
+                        </Button>
+                        {(order.status?.toLowerCase() === "pending" || order.status?.toLowerCase() === "processing") && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleStatusChange(order)}
+                            className="h-6 px-2 text-[10px] hover:bg-[#f8f1ec] text-[#5c3d28]"
+                          >
+                            Pack
+                          </Button>
+                        )}
+                      </div>
+                      
+                      {/* Mobile: Show dropdown */}
+                      <div className="sm:hidden flex items-center justify-end">
                         <Button
                           variant="ghost"
                           size="sm"
@@ -244,37 +270,36 @@ const OrdersTab = () => {
                         >
                           <MoreHorizontal className="h-4 w-4 text-[#7b5a3b]" />
                         </Button>
-                        {openActionMenu === order.id && (
-                          <>
-                            <div 
-                              className="fixed inset-0 z-30"
-                              onClick={() => setOpenActionMenu(null)}
-                            />
-                            <div className="absolute right-0 sm:right-auto sm:left-0 top-full sm:top-1/2 mt-1 sm:mt-0 sm:-translate-y-1/2 sm:translate-x-2 bg-white border border-[#e5ded7] rounded-lg shadow-lg z-40 min-w-[120px] sm:min-w-fit py-1 sm:flex sm:items-center sm:gap-1">
+                      </div>
+                      
+                      {/* Dropdown positioned relative to TableCell */}
+                      {openActionMenu === order.id && (
+                        <>
+                          <div className="fixed inset-0 z-[9998]" onClick={() => setOpenActionMenu(null)} />
+                          <div className="absolute right-0 top-full mt-1 bg-white border border-[#e5ded7] rounded-lg shadow-lg z-[9999] min-w-[120px] py-1">
+                            <button
+                              onClick={() => {
+                                handleViewOrder(order);
+                                setOpenActionMenu(null);
+                              }}
+                              className="w-full text-left px-3 py-1.5 text-[10px] hover:bg-[#f8f1ec] text-[#5c3d28] transition-colors"
+                            >
+                              View Details
+                            </button>
+                            {(order.status?.toLowerCase() === "pending" || order.status?.toLowerCase() === "processing") && (
                               <button
                                 onClick={() => {
-                                  handleViewOrder(order);
+                                  handleStatusChange(order);
                                   setOpenActionMenu(null);
                                 }}
-                                className="w-full sm:w-auto text-left px-3 py-1.5 text-[10px] hover:bg-[#f8f1ec] text-[#5c3d28] transition-colors whitespace-nowrap"
+                                className="w-full text-left px-3 py-1.5 text-[10px] hover:bg-[#f8f1ec] text-[#5c3d28] transition-colors"
                               >
-                                View Details
+                                Pack Order
                               </button>
-                              {(order.status?.toLowerCase() === "pending" || order.status?.toLowerCase() === "processing") && (
-                                <button
-                                  onClick={() => {
-                                    handleStatusChange(order);
-                                    setOpenActionMenu(null);
-                                  }}
-                                  className="w-full text-left px-3 py-1.5 text-[10px] hover:bg-[#f8f1ec] text-[#5c3d28] transition-colors"
-                                >
-                                  Pack Order
-                                </button>
-                              )}
-                            </div>
-                          </>
-                        )}
-                      </div>
+                            )}
+                          </div>
+                        </>
+                      )}
                     </TableCell>
                   </TableRow>
                 ))
@@ -1368,14 +1393,14 @@ const InventoryTab = () => {
         </div>
       </div>
       
-      <Card className="border-[#e5ded7] shadow-xl">
+      <Card className="border-[#e5ded7] shadow-xl overflow-visible">
         <CardHeader className="pb-3 sm:pb-4 border-b border-[#e5ded7] bg-gradient-to-r from-[#faf9f8] to-white px-3 sm:px-6">
           <CardTitle className="text-[#5c3d28] text-lg sm:text-xl">Product Inventory</CardTitle>
           <CardDescription className="text-[#7b5a3b] text-xs sm:text-sm">Manage your product inventory and stock levels</CardDescription>
         </CardHeader>
-        <CardContent className="pt-4 sm:pt-6 px-0 sm:px-6">
+        <CardContent className="pt-4 sm:pt-6 px-0 sm:px-6 overflow-visible">
           {/* Mobile: Scrollable wrapper */}
-          <div className="overflow-x-auto -mx-3 sm:mx-0">
+          <div className="overflow-x-auto -mx-3 sm:mx-0 overflow-y-visible">
           <Table>
             <TableHeader>
               <TableRow>
@@ -1418,8 +1443,11 @@ const InventoryTab = () => {
                           alt={product.productName} 
                           className="h-8 w-8 sm:h-10 sm:w-10 object-cover rounded"
                           onError={(e) => {
+                            console.warn('Image failed to load:', product.productImage);
                             e.target.style.display = 'none';
-                            e.target.nextSibling.style.display = 'flex';
+                            if (e.target.nextSibling) {
+                              e.target.nextSibling.style.display = 'flex';
+                            }
                           }}
                         />
                       ) : null}
@@ -1429,7 +1457,12 @@ const InventoryTab = () => {
                         <ImageIcon className="h-4 w-4 sm:h-5 sm:w-5 text-gray-400" />
                       </div>
                     </TableCell>
-                    <TableCell className="text-xs sm:text-sm font-medium truncate max-w-[120px] sm:max-w-none">{product.productName}</TableCell>
+                    <TableCell className="text-xs sm:text-sm font-medium truncate max-w-[120px] sm:max-w-none">
+                      <div>
+                        <div className="font-medium">{product.productName}</div>
+                        <div className="text-[10px] text-gray-500 mt-0.5">SKU: {product.sku || 'N/A'}</div>
+                      </div>
+                    </TableCell>
                     <TableCell className="text-xs sm:text-sm hidden lg:table-cell">{product.category}</TableCell>
                     <TableCell className="text-xs sm:text-sm font-semibold whitespace-nowrap">₱{product.productPrice}</TableCell>
                     <TableCell className="text-xs sm:text-sm whitespace-nowrap">{product.productQuantity}</TableCell>
@@ -1439,7 +1472,54 @@ const InventoryTab = () => {
                       </Badge>
                     </TableCell>
                     <TableCell className="px-2 py-2 relative">
-                      <div className="flex items-center justify-end">
+                      {/* Desktop: Show all actions directly */}
+                      <div className="hidden sm:flex items-center gap-1">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleViewProduct(product)}
+                          className="h-6 px-1 text-[8px] hover:bg-[#f8f1ec] text-[#5c3d28]"
+                        >
+                          View
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleShareProduct(product)}
+                          className="h-6 px-1 text-[8px] hover:bg-[#f8f1ec] text-[#5c3d28]"
+                        >
+                          Share
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleQuantityClick(product)}
+                          className="h-6 px-1 text-[8px] hover:bg-[#f8f1ec] text-[#5c3d28]"
+                        >
+                          Stock
+                        </Button>
+                        {(!product.hasOrders || product.hasOrders === 0) && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleTogglePublishStatus(product)}
+                            className="h-6 px-1 text-[8px] hover:bg-[#f8f1ec] text-[#5c3d28]"
+                          >
+                            {product.publish_status === 'published' ? 'Draft' : 'Publish'}
+                          </Button>
+                        )}
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleEditClick(product)}
+                          className="h-6 px-1 text-[8px] hover:bg-[#f8f1ec] text-[#5c3d28]"
+                        >
+                          Edit
+                        </Button>
+                      </div>
+                      
+                      {/* Mobile: Show dropdown */}
+                      <div className="sm:hidden flex items-center justify-end">
                         <Button
                           variant="ghost"
                           size="sm"
@@ -1448,64 +1528,63 @@ const InventoryTab = () => {
                         >
                           <MoreHorizontal className="h-4 w-4 text-[#7b5a3b]" />
                         </Button>
-                        {openActionMenu === product.id && (
-                          <>
-                            <div 
-                              className="fixed inset-0 z-30"
-                              onClick={() => setOpenActionMenu(null)}
-                            />
-                            <div className="absolute right-0 top-full mt-1 bg-white border border-[#e5ded7] rounded shadow-lg z-40 min-w-[120px] py-1">
-                              <button
-                                onClick={() => {
-                                  handleViewProduct(product);
-                                  setOpenActionMenu(null);
-                                }}
-                                className="w-full text-left px-3 py-1.5 text-[10px] hover:bg-[#f8f1ec] text-[#5c3d28] transition-colors"
-                              >
-                                View Details
-                              </button>
-                              <button
-                                onClick={() => {
-                                  handleShareProduct(product);
-                                  setOpenActionMenu(null);
-                                }}
-                                className="w-full text-left px-3 py-1.5 text-[10px] hover:bg-[#f8f1ec] text-[#5c3d28] transition-colors"
-                              >
-                                Share Product
-                              </button>
-                              <button
-                                onClick={() => {
-                                  handleQuantityClick(product);
-                                  setOpenActionMenu(null);
-                                }}
-                                className="w-full text-left px-3 py-1.5 text-[10px] hover:bg-[#f8f1ec] text-[#5c3d28] transition-colors"
-                              >
-                                Update Stock
-                              </button>
-                              {(!product.hasOrders || product.hasOrders === 0) && (
-                                <button
-                                  onClick={() => {
-                                    handleTogglePublishStatus(product);
-                                    setOpenActionMenu(null);
-                                  }}
-                                  className="w-full text-left px-3 py-1.5 text-[10px] hover:bg-[#f8f1ec] text-[#5c3d28] transition-colors"
-                                >
-                                  {product.publish_status === 'published' ? 'Save as Draft' : 'Publish Product'}
-                                </button>
-                              )}
-                              <button
-                                onClick={() => {
-                                  handleEditClick(product);
-                                  setOpenActionMenu(null);
-                                }}
-                                className="w-full text-left px-3 py-1.5 text-[10px] hover:bg-[#f8f1ec] text-[#5c3d28] transition-colors"
-                              >
-                                Edit Product
-                              </button>
-                            </div>
-                          </>
-                        )}
                       </div>
+                      
+                      {/* Dropdown positioned relative to TableCell */}
+                      {openActionMenu === product.id && (
+                        <>
+                          <div className="fixed inset-0 z-[9998]" onClick={() => setOpenActionMenu(null)} />
+                          <div className="absolute right-0 top-full mt-1 bg-white border border-[#e5ded7] rounded-lg shadow-lg z-[9999] min-w-[120px] py-1">
+                            <button
+                              onClick={() => {
+                                handleViewProduct(product);
+                                setOpenActionMenu(null);
+                              }}
+                              className="w-full text-left px-3 py-1.5 text-[10px] hover:bg-[#f8f1ec] text-[#5c3d28] transition-colors"
+                            >
+                              View Details
+                            </button>
+                            <button
+                              onClick={() => {
+                                handleShareProduct(product);
+                                setOpenActionMenu(null);
+                              }}
+                              className="w-full text-left px-3 py-1.5 text-[10px] hover:bg-[#f8f1ec] text-[#5c3d28] transition-colors"
+                            >
+                              Share Product
+                            </button>
+                            <button
+                              onClick={() => {
+                                handleQuantityClick(product);
+                                setOpenActionMenu(null);
+                              }}
+                              className="w-full text-left px-3 py-1.5 text-[10px] hover:bg-[#f8f1ec] text-[#5c3d28] transition-colors"
+                            >
+                              Update Stock
+                            </button>
+                            {(!product.hasOrders || product.hasOrders === 0) && (
+                              <button
+                                onClick={() => {
+                                  handleTogglePublishStatus(product);
+                                  setOpenActionMenu(null);
+                                }}
+                                className="w-full text-left px-3 py-1.5 text-[10px] hover:bg-[#f8f1ec] text-[#5c3d28] transition-colors"
+                              >
+                                {product.publish_status === 'published' ? 'Save as Draft' : 'Publish Product'}
+                              </button>
+                            )}
+                            <button
+                              onClick={() => {
+                                handleEditClick(product);
+                                setOpenActionMenu(null);
+                              }}
+                              className="w-full text-left px-3 py-1.5 text-[10px] hover:bg-[#f8f1ec] text-[#5c3d28] transition-colors"
+                            >
+                              Edit Product
+                            </button>
+                          </div>
+                        </>
+                      )}
                     </TableCell>
                   </TableRow>
                 ))
@@ -1545,6 +1624,10 @@ const InventoryTab = () => {
                       <div className="space-y-1">
                         <p className="text-xs sm:text-sm text-gray-500 font-medium">Product Name</p>
                         <p className="text-base sm:text-lg font-semibold text-[#5c3d28]">{currentProduct.productName}</p>
+                      </div>
+                      <div className="space-y-1">
+                        <p className="text-xs sm:text-sm text-gray-500 font-medium">SKU</p>
+                        <p className="text-sm sm:text-base font-semibold text-[#5c3d28]">{currentProduct.sku || 'N/A'}</p>
                       </div>
                       <div className="space-y-1">
                         <p className="text-xs sm:text-sm text-gray-500 font-medium">Category</p>
@@ -1595,9 +1678,11 @@ const InventoryTab = () => {
                           alt={currentProduct.productName}
                           className="max-w-full h-48 sm:h-64 object-cover rounded-lg border border-[#e5ded7]"
                           onError={(e) => {
-                            console.warn('Image failed to load, showing placeholder');
+                            console.warn('Image failed to load:', currentProduct.productImage);
                             e.target.style.display = 'none';
-                            e.target.nextSibling.style.display = 'flex';
+                            if (e.target.nextSibling) {
+                              e.target.nextSibling.style.display = 'flex';
+                            }
                           }}
                         />
                         <div 

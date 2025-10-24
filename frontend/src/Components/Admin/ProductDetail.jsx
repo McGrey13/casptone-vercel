@@ -1,22 +1,16 @@
 import React, { useState, useEffect } from "react";
-import { X, Edit, Package, DollarSign, ShoppingCart, User, Calendar } from "lucide-react";
+import { X, Package, DollarSign, User } from "lucide-react";
 import { Button } from "../ui/button";
-import { Input } from "../ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "../ui/dialog";
 import { Badge } from "../ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
-import { useCart } from "../Cart/CartContext";
-import { useUser } from "../Context/UserContext";
 import api from "../../api";
  
 const ProductDetail = ({ productId, isOpen, onClose }) => {
   const [product, setProduct] = useState(null);
-  const [quantity, setQuantity] = useState(1);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const { addToCart } = useCart();
-  const { user, isAuthenticated, loading: authLoading } = useUser();
 
   useEffect(() => {
     if (isOpen && productId) {
@@ -87,73 +81,6 @@ const ProductDetail = ({ productId, isOpen, onClose }) => {
     }
   };
 
-  const handleAddToCart = async () => {
-    if (!product || !product.product_id) {
-      alert('Product information is incomplete');
-      return;
-    }
-
-    if (loading) return; // Prevent multiple clicks
-
-    // Check if authentication is still loading
-    if (authLoading) {
-      alert('Please wait while we verify your authentication...');
-      return;
-    }
-
-    // Check if user is authenticated
-    if (!isAuthenticated) {
-      alert('Please log in to add items to your cart.');
-      return;
-    }
-
-    // Debug authentication status
-    console.log('🔍 Authentication Debug:', {
-      isAuthenticated,
-      authLoading,
-      user: user ? { id: user.userID, email: user.userEmail, role: user.role } : null,
-      hasToken: !!sessionStorage.getItem('auth_token'),
-      refreshToken: !!sessionStorage.getItem('refresh_token')
-    });
-
-    try {
-      setLoading(true);
-      console.log('Attempting to add to cart:', {
-        productId: product.product_id,
-        productName: product.productName,
-        quantity: quantity
-      });
-      
-      const result = await addToCart(product, quantity);
-      
-      if (result && result.success) {
-        console.log('Add to cart successful:', result);
-        alert(`${product.productName} (${quantity}) added to cart`);
-      } else {
-        const errorMsg = result?.error || 'Failed to add item to cart';
-        console.error('Add to cart failed:', errorMsg);
-        alert(errorMsg);
-      }
-    } catch (error) {
-      console.error('Error in handleAddToCart:', error);
-      let errorMessage = 'An error occurred while adding to cart';
-      
-      if (error.response) {
-        // The request was made and the server responded with a status code
-        errorMessage = error.response.data?.message || error.response.statusText || errorMessage;
-      } else if (error.request) {
-        // The request was made but no response was received
-        errorMessage = 'No response from server. Please check your connection.';
-      } else {
-        // Something happened in setting up the request
-        errorMessage = error.message || errorMessage;
-      }
-      
-      alert(errorMessage);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   if (loading) {
     return (
@@ -193,50 +120,15 @@ const ProductDetail = ({ productId, isOpen, onClose }) => {
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
-        <DialogHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <DialogTitle className="text-2xl font-bold">Product Details</DialogTitle>
-              <DialogDescription>View detailed information about this product</DialogDescription>
+      <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto bg-gradient-to-br from-[#f9f4ef] via-[#eadfd2] to-[#d3bfa8] border-[#d5bfae]/30">
+        <DialogHeader className="bg-gradient-to-r from-[#a4785a]/10 to-[#7b5a3b]/10 rounded-xl p-6 border border-[#d5bfae]/30 -m-6 mb-6">
+          <div className="flex items-center gap-4">
+            <div className="h-12 w-12 bg-gradient-to-br from-[#a4785a] to-[#7b5a3b] rounded-xl flex items-center justify-center">
+              <Package className="h-6 w-6 text-white" />
             </div>
-            <div className="flex gap-2">
-              <div className="flex flex-col space-y-4">
-                <div className="flex items-center space-x-2">
-                  <Button 
-                    variant="outline" 
-                    size="icon" 
-                    onClick={() => setQuantity(prev => Math.max(1, prev - 1))}
-                  >
-                    -
-                  </Button>
-                  <Input 
-                    type="number" 
-                    min="1" 
-                    value={quantity} 
-                    onChange={(e) => setQuantity(Number(e.target.value))} 
-                    className="w-16 text-center"
-                  />
-                  <Button 
-                    variant="outline" 
-                    size="icon"
-                    onClick={() => setQuantity(prev => prev + 1)}
-                  >
-                    +
-                  </Button>
-                </div>
-                <Button 
-                  className="w-full" 
-                  onClick={handleAddToCart}
-                  disabled={loading || authLoading || !isAuthenticated}
-                >
-                  <ShoppingCart className="h-4 w-4 mr-2" />
-                  {authLoading ? 'Verifying...' : !isAuthenticated ? 'Please Login' : 'Add to Cart'}
-                </Button>
-              </div>
-              <Button variant="outline" size="sm" onClick={onClose}>
-                <X className="h-4 w-4" />
-              </Button>
+            <div>
+              <DialogTitle className="text-3xl font-bold text-[#5c3d28]">Product Details</DialogTitle>
+              <DialogDescription className="text-[#7b5a3b] text-lg">Complete information about this product</DialogDescription>
             </div>
           </div>
         </DialogHeader>
@@ -244,16 +136,18 @@ const ProductDetail = ({ productId, isOpen, onClose }) => {
         {product && (
           <div className="space-y-6">
             {/* Product Header */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Package className="h-5 w-5" />
+            <Card className="bg-white/80 backdrop-blur-sm border-[#d5bfae]/30 shadow-lg">
+              <CardHeader className="bg-gradient-to-r from-[#a4785a]/10 to-[#7b5a3b]/10 rounded-t-lg">
+                <CardTitle className="flex items-center gap-3 text-[#5c3d28] text-xl">
+                  <div className="h-8 w-8 bg-gradient-to-br from-[#a4785a] to-[#7b5a3b] rounded-lg flex items-center justify-center">
+                    <Package className="h-4 w-4 text-white" />
+                  </div>
                   Product Information
                 </CardTitle>
               </CardHeader>
-              <CardContent>
-                <div className="flex items-start gap-6">
-                  <div className="w-32 h-32 bg-gray-100 rounded-lg overflow-hidden">
+              <CardContent className="p-6">
+                <div className="flex items-start gap-8">
+                  <div className="w-40 h-40 bg-gradient-to-br from-[#a4785a]/20 to-[#7b5a3b]/20 rounded-xl overflow-hidden shadow-lg border border-[#d5bfae]/30">
                     {product.productImage ? (
                       <img
                         src={product.image_url || product.productImage}
@@ -265,15 +159,17 @@ const ProductDetail = ({ productId, isOpen, onClose }) => {
                         }}
                       />
                     ) : (
-                      <div className="w-full h-full flex items-center justify-center text-gray-400">
-                        <Package className="h-8 w-8" />
+                      <div className="w-full h-full flex items-center justify-center text-[#a4785a]">
+                        <Package className="h-12 w-12" />
                       </div>
                     )}
                   </div>
-                  <div className="flex-1">
-                    <h2 className="text-2xl font-bold">{product.productName}</h2>
-                    <p className="text-gray-600">Product ID: {product.product_id || product.id}</p>
-                    <div className="mt-2 flex gap-2">
+                  <div className="flex-1 space-y-4">
+                    <div>
+                      <h2 className="text-3xl font-bold text-[#5c3d28] mb-2">{product.productName}</h2>
+                      <p className="text-[#7b5a3b] text-lg">Product ID: {product.product_id || product.id}</p>
+                    </div>
+                    <div className="flex gap-3">
                       {getStatusBadge(product.approval_status)}
                       {getStatusBadge(product.status)}
                     </div>
@@ -283,113 +179,95 @@ const ProductDetail = ({ productId, isOpen, onClose }) => {
             </Card>
 
             {/* Product Details */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Product Details</CardTitle>
+            <Card className="bg-white/80 backdrop-blur-sm border-[#d5bfae]/30 shadow-lg">
+              <CardHeader className="bg-gradient-to-r from-[#a4785a]/10 to-[#7b5a3b]/10 rounded-t-lg">
+                <CardTitle className="flex items-center gap-3 text-[#5c3d28] text-xl">
+                  <div className="h-8 w-8 bg-gradient-to-br from-[#a4785a] to-[#7b5a3b] rounded-lg flex items-center justify-center">
+                    <DollarSign className="h-4 w-4 text-white" />
+                  </div>
+                  Product Details
+                </CardTitle>
               </CardHeader>
-              <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="text-sm font-medium text-gray-500">Product ID</label>
-                  <p className="text-lg">{product.product_id || product.id}</p>
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-gray-500">Category</label>
-                  <p className="text-lg">{product.category || "N/A"}</p>
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-gray-500">Price</label>
-                  <p className="text-lg flex items-center gap-2">
-                    <DollarSign className="h-4 w-4 text-gray-400" />
-                    ₱{Number(product.productPrice).toFixed(2)}
-                  </p>
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-gray-500">Quantity</label>
-                  <p className="text-lg flex items-center gap-2">
-                    <ShoppingCart className="h-4 w-4 text-gray-400" />
-                    {product.productQuantity}
-                  </p>
-                </div>
-                <div className="md:col-span-2">
-                  <label className="text-sm font-medium text-gray-500">Description</label>
-                  <p className="text-lg">{product.productDescription || "No description provided"}</p>
+              <CardContent className="p-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="bg-gradient-to-r from-[#a4785a]/5 to-[#7b5a3b]/5 rounded-lg p-4 border border-[#d5bfae]/20">
+                    <label className="text-sm font-semibold text-[#5c3d28] flex items-center gap-2 mb-2">
+                      <Package className="h-4 w-4 text-[#a4785a]" />
+                      Product ID
+                    </label>
+                    <p className="text-lg font-medium text-[#5c3d28]">{product.product_id || product.id}</p>
+                  </div>
+                  <div className="bg-gradient-to-r from-[#a4785a]/5 to-[#7b5a3b]/5 rounded-lg p-4 border border-[#d5bfae]/20">
+                    <label className="text-sm font-semibold text-[#5c3d28] flex items-center gap-2 mb-2">
+                      <Package className="h-4 w-4 text-[#a4785a]" />
+                      Category
+                    </label>
+                    <p className="text-lg font-medium text-[#5c3d28]">{product.category || "N/A"}</p>
+                  </div>
+                  <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg p-4 border border-green-200">
+                    <label className="text-sm font-semibold text-green-800 flex items-center gap-2 mb-2">
+                      <DollarSign className="h-4 w-4 text-green-600" />
+                      Price
+                    </label>
+                    <p className="text-2xl font-bold text-green-600">₱{Number(product.productPrice).toFixed(2)}</p>
+                  </div>
+                  <div className="bg-gradient-to-r from-blue-50 to-cyan-50 rounded-lg p-4 border border-blue-200">
+                    <label className="text-sm font-semibold text-blue-800 flex items-center gap-2 mb-2">
+                      <Package className="h-4 w-4 text-blue-600" />
+                      Quantity Available
+                    </label>
+                    <p className="text-2xl font-bold text-blue-600">{product.productQuantity} units</p>
+                  </div>
+                  <div className="md:col-span-2 bg-gradient-to-r from-[#a4785a]/5 to-[#7b5a3b]/5 rounded-lg p-4 border border-[#d5bfae]/20">
+                    <label className="text-sm font-semibold text-[#5c3d28] flex items-center gap-2 mb-2">
+                      <Package className="h-4 w-4 text-[#a4785a]" />
+                      Description
+                    </label>
+                    <p className="text-lg text-[#7b5a3b] leading-relaxed">{product.productDescription || "No description provided"}</p>
+                  </div>
                 </div>
               </CardContent>
             </Card>
 
             {/* Seller Information */}
             {product.seller && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <User className="h-5 w-5" />
+              <Card className="bg-white/80 backdrop-blur-sm border-[#d5bfae]/30 shadow-lg">
+                <CardHeader className="bg-gradient-to-r from-[#a4785a]/10 to-[#7b5a3b]/10 rounded-t-lg">
+                  <CardTitle className="flex items-center gap-3 text-[#5c3d28] text-xl">
+                    <div className="h-8 w-8 bg-gradient-to-br from-[#a4785a] to-[#7b5a3b] rounded-lg flex items-center justify-center">
+                      <User className="h-4 w-4 text-white" />
+                    </div>
                     Seller Information
                   </CardTitle>
                 </CardHeader>
-                <CardContent>
-                  <div className="flex items-center gap-4">
-                    <Avatar className="h-12 w-12">
-                      <AvatarImage 
-                        src={product.seller.profile_image_url} 
-                        alt={product.seller.user?.userName}
-                      />
-                      <AvatarFallback>
-                        {product.seller.user?.userName?.slice(0, 2).toUpperCase() || "SE"}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <h3 className="font-semibold">{product.seller.user?.userName || "N/A"}</h3>
-                      <p className="text-gray-600">Seller ID: {product.seller.sellerID}</p>
-                      <p className="text-gray-600">{product.seller.user?.userAddress || "N/A"}</p>
+                <CardContent className="p-6">
+                  <div className="flex items-center gap-6">
+                    <div className="relative">
+                      <Avatar className="h-16 w-16 border-4 border-[#a4785a]/20 shadow-lg">
+                        <AvatarImage 
+                          src={product.seller.profile_image_url} 
+                          alt={product.seller.user?.userName}
+                        />
+                        <AvatarFallback className="bg-gradient-to-br from-[#a4785a] to-[#7b5a3b] text-white font-bold text-lg">
+                          {product.seller.user?.userName?.slice(0, 2).toUpperCase() || "SE"}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="absolute -bottom-1 -right-1 h-6 w-6 bg-green-500 rounded-full border-2 border-white flex items-center justify-center">
+                        <div className="h-2 w-2 bg-white rounded-full"></div>
+                      </div>
+                    </div>
+                    <div className="flex-1 space-y-2">
+                      <h3 className="text-2xl font-bold text-[#5c3d28]">{product.seller.user?.userName || "N/A"}</h3>
+                      <div className="space-y-1">
+                        <p className="text-[#7b5a3b] text-lg">Seller ID: {product.seller.sellerID}</p>
+                        <p className="text-[#7b5a3b] text-lg">{product.seller.user?.userAddress || "N/A"}</p>
+                      </div>
                     </div>
                   </div>
                 </CardContent>
               </Card>
             )}
 
-            {/* Statistics */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Statistics</CardTitle>
-              </CardHeader>
-              <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="text-center p-4 bg-blue-50 rounded-lg">
-                  <div className="text-2xl font-bold text-blue-600">0</div>
-                  <div className="text-sm text-gray-600">Total Sales</div>
-                </div>
-                <div className="text-center p-4 bg-green-50 rounded-lg">
-                  <div className="text-2xl font-bold text-green-600">₱0.00</div>
-                  <div className="text-sm text-gray-600">Total Revenue</div>
-                </div>
-                <div className="text-center p-4 bg-purple-50 rounded-lg">
-                  <div className="text-2xl font-bold text-purple-600">0</div>
-                  <div className="text-sm text-gray-600">Views</div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Timestamps */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Timestamps</CardTitle>
-              </CardHeader>
-              <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="text-sm font-medium text-gray-500">Created</label>
-                  <p className="text-lg flex items-center gap-2">
-                    <Calendar className="h-4 w-4 text-gray-400" />
-                    {product.created_at ? new Date(product.created_at).toLocaleDateString() : "N/A"}
-                  </p>
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-gray-500">Last Updated</label>
-                  <p className="text-lg flex items-center gap-2">
-                    <Calendar className="h-4 w-4 text-gray-400" />
-                    {product.updated_at ? new Date(product.updated_at).toLocaleDateString() : "N/A"}
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
           </div>
         )}
       </DialogContent>

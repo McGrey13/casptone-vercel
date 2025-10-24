@@ -18,7 +18,6 @@ import {
   DollarSign,
   Users,
   CreditCard,
-  Download,
   RefreshCw,
   Calendar,
   BarChart3,
@@ -30,9 +29,11 @@ import { Button } from "../ui/button";
 import { Badge } from "../ui/badge";
 import { Progress } from "../ui/progress";
 import "./AdminTableDesign.css";
-import { getAuthToken, testAuthentication, setupTestAuth } from '../../utils/authHelper';
+import api from '../../api';
+import { useUser } from '../Context/UserContext';
 
 const CommissionDashboard = () => {
+  const { user, loading: userLoading } = useUser();
   const [commissionData, setCommissionData] = useState(null);
   const [itemCommissionData, setItemCommissionData] = useState(null);
   const [categoryCommissionData, setCategoryCommissionData] = useState(null);
@@ -47,108 +48,57 @@ const CommissionDashboard = () => {
   const fetchCommissionData = async () => {
     try {
       setLoading(true);
-      let token = getAuthToken();
       
-      if (!token) {
-        console.log('No authentication token found, setting up test token...');
-        setupTestAuth();
-        token = getAuthToken();
-        
-        if (!token) {
-          console.error('Failed to set up authentication token');
-          setLoading(false);
-          setAuthError(true);
-          return;
-        }
-      }
-
-      // Test authentication first
-      const authTest = await testAuthentication();
-      if (!authTest) {
-        console.error('Authentication test failed');
+      // Check if user is authenticated
+      if (!user) {
+        console.error('User not authenticated');
         setLoading(false);
         setAuthError(true);
         return;
       }
-      
-      const params = new URLSearchParams({
+
+      const params = {
         from_date: dateRange.from,
         to_date: dateRange.to
-      });
-
-      const baseURL = 'http://localhost:8080';
-      const headers = {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-        'X-Requested-With': 'XMLHttpRequest'
       };
 
       // Fetch system commission data
-      const commissionResponse = await fetch(`${baseURL}/api/admin/reports/system-commission?${params}`, {
-        method: 'GET',
-        headers: headers,
-        credentials: 'include'
-      });
-
-      if (commissionResponse.status === 401) {
-        console.error('Authentication failed - token may be expired');
-        // Redirect to login or show error message
-        window.location.href = '/login';
-        return;
-      }
-
-      if (!commissionResponse.ok) {
-        throw new Error(`Failed to fetch commission data: ${commissionResponse.status} ${commissionResponse.statusText}`);
-      }
-
-      const commissionResult = await commissionResponse.json();
-      setCommissionData(commissionResult.data);
+      const commissionResponse = await api.get('/admin/reports/system-commission', { params });
+      setCommissionData(commissionResponse.data.data);
 
       // Fetch item-level commission data
-      const itemResponse = await fetch(`${baseURL}/api/admin/reports/item-commission?${params}`, {
-        method: 'GET',
-        headers: headers,
-        credentials: 'include'
-      });
-
-      if (itemResponse.ok) {
-        const itemResult = await itemResponse.json();
-        setItemCommissionData(itemResult.data);
+      try {
+        const itemResponse = await api.get('/admin/reports/item-commission', { params });
+        setItemCommissionData(itemResponse.data.data);
+      } catch (itemError) {
+        console.warn('Item commission data not available:', itemError);
       }
 
       // Fetch category commission data
-      const categoryResponse = await fetch(`${baseURL}/api/admin/reports/category-commission?${params}`, {
-        method: 'GET',
-        headers: headers,
-        credentials: 'include'
-      });
-
-      if (categoryResponse.ok) {
-        const categoryResult = await categoryResponse.json();
-        setCategoryCommissionData(categoryResult.data);
+      try {
+        const categoryResponse = await api.get('/admin/reports/category-commission', { params });
+        setCategoryCommissionData(categoryResponse.data.data);
+      } catch (categoryError) {
+        console.warn('Category commission data not available:', categoryError);
       }
 
     } catch (error) {
       console.error('Error fetching commission data:', error);
-      setAuthError(true);
+      if (error.response?.status === 401) {
+        setAuthError(true);
+      } else {
+        setAuthError(true);
+      }
     } finally {
       setLoading(false);
     }
   };
 
-  const handleSetupTestAuth = () => {
-    setupTestAuth();
-    setAuthError(false);
-    // Retry fetching data
-    setTimeout(() => {
-      fetchCommissionData();
-    }, 1000);
-  };
-
   useEffect(() => {
-    fetchCommissionData();
-  }, [dateRange]);
+    if (user && !userLoading) {
+      fetchCommissionData();
+    }
+  }, [user, userLoading, dateRange]);
 
   const handlePeriodChange = (period) => {
     setSelectedPeriod(period);
@@ -180,52 +130,6 @@ const CommissionDashboard = () => {
     setDateRange({ from, to });
   };
 
-  const exportCommissionData = async () => {
-    try {
-      const token = localStorage.getItem('token');
-      
-      if (!token) {
-        alert('Please log in to export data');
-        return;
-      }
-      
-      const params = new URLSearchParams({
-        from_date: dateRange.from,
-        to_date: dateRange.to,
-        type: 'revenue'
-      });
-
-      const baseURL = 'http://localhost:8080';
-      const headers = {
-        'Authorization': `Bearer ${token}`,
-        'Accept': 'application/json',
-        'X-Requested-With': 'XMLHttpRequest'
-      };
-
-      const response = await fetch(`${baseURL}/api/admin/reports/export?${params}`, {
-        method: 'GET',
-        headers: headers,
-        credentials: 'include'
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to export data');
-      }
-
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `commission_report_${dateRange.from}_to_${dateRange.to}.csv`;
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
-    } catch (error) {
-      console.error('Error exporting data:', error);
-      alert('Failed to export commission data');
-    }
-  };
 
   if (loading) {
     return (
@@ -240,7 +144,23 @@ const CommissionDashboard = () => {
     );
   }
 
-  if (authError) {
+  // Show loading while checking authentication
+  if (userLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 py-8 px-4">
+        <div className="container mx-auto max-w-7xl">
+          <div className="text-center">
+            <RefreshCw className="h-16 w-16 text-gray-400 mx-auto mb-4 animate-spin" />
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">Loading...</h2>
+            <p className="text-gray-600">Checking authentication status...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Show authentication error if user is not authenticated
+  if (!user || authError) {
     return (
       <div className="min-h-screen bg-gray-50 py-8 px-4">
         <div className="container mx-auto max-w-7xl">
@@ -252,28 +172,15 @@ const CommissionDashboard = () => {
             </p>
             <div className="space-y-4">
               <Button 
-                onClick={handleSetupTestAuth}
+                onClick={() => window.location.href = '/login'}
                 className="bg-[#a4785a] hover:bg-[#8a6a5a] text-white px-6 py-3"
               >
                 <Key className="h-5 w-5 mr-2" />
-                Setup Test Authentication
+                Go to Login
               </Button>
               <p className="text-sm text-gray-500">
-                This will set up a test authentication token for development purposes.
+                Please log in with your admin account to access the commission dashboard.
               </p>
-              
-              <div className="mt-6 p-4 bg-blue-50 rounded-lg text-left max-w-2xl mx-auto">
-                <h3 className="font-semibold text-blue-900 mb-2">Alternative Setup (Browser Console)</h3>
-                <p className="text-sm text-blue-800 mb-2">
-                  If the button doesn't work, open your browser console (F12) and run:
-                </p>
-                <code className="block bg-blue-100 p-2 rounded text-xs text-blue-900 font-mono">
-                  setupCommissionAuth()
-                </code>
-                <p className="text-xs text-blue-700 mt-2">
-                  Then refresh this page to load the commission data.
-                </p>
-              </div>
             </div>
           </div>
         </div>
@@ -306,16 +213,6 @@ const CommissionDashboard = () => {
             <div>
               <h1 className="text-3xl font-bold text-gray-900 mb-2">Commission Dashboard</h1>
               <p className="text-gray-600">Monitor platform commission earnings and payment analytics</p>
-            </div>
-            <div className="flex items-center gap-4 mt-4 sm:mt-0">
-              <Button onClick={fetchCommissionData} variant="outline" size="sm">
-                <RefreshCw className="h-4 w-4 mr-2" />
-                Refresh
-              </Button>
-              <Button onClick={exportCommissionData} variant="outline" size="sm">
-                <Download className="h-4 w-4 mr-2" />
-                Export
-              </Button>
             </div>
           </div>
         </div>
@@ -424,10 +321,17 @@ const CommissionDashboard = () => {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {payment_methods?.map((method, index) => (
+                {payment_methods?.filter(method => 
+                  method.display_name?.toLowerCase().includes('gcash') || 
+                  method.display_name?.toLowerCase().includes('paymaya') ||
+                  method.payment_method === 'gcash' ||
+                  method.payment_method === 'paymaya'
+                ).map((method, index) => (
                   <div key={index} className="space-y-2">
                     <div className="flex justify-between items-center">
-                      <span className="font-medium">{method.display_name}</span>
+                      <span className="font-medium">
+                        {method.display_name === 'Card' ? 'GCash' : method.display_name}
+                      </span>
                       <div className="flex items-center gap-2">
                         <span className="text-sm text-gray-600">
                           ₱{method.total_amount?.toLocaleString()}

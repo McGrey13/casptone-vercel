@@ -90,23 +90,24 @@ const WorkshopCard = ({
           <span className="font-medium truncate">{participants} participants</span>
         </div>
       </CardContent>
-      <CardFooter className="flex flex-col sm:flex-row justify-between gap-2 sm:gap-0 px-3 sm:px-4 md:px-6 py-3 sm:py-4 md:py-5 bg-[#faf9f8] border-t border-[#e5ded7]">
-        <Button
-          variant="ghost"
-          size="sm"
-          className="rounded-lg text-[#a4785a] hover:bg-white hover:text-[#5c3d28] transition-all duration-200 w-full sm:w-auto text-xs sm:text-sm"
-          onClick={() => onEdit && onEdit()}
-        >
-          Edit
-        </Button>
-        <Button
-          size="sm"
-          className="rounded-lg bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white shadow-md hover:shadow-lg transition-all duration-200"
-          onClick={() => onDelete && onDelete()}
-        >
-          Delete
-        </Button>
-      </CardFooter>
+      <CardFooter className="flex flex-col sm:flex-row justify-between sm:justify-center gap-3 sm:gap-4 px-4 md:px-6 py-4 bg-[#faf9f8] border-t border-[#e5ded7]">
+  <Button
+    variant="ghost"
+    size="sm"
+    className="flex-1 sm:flex-none rounded-lg text-[#a4785a] border border-[#e5ded7] hover:bg-white hover:text-[#5c3d28] transition-all duration-200 text-xs sm:text-sm px-4 py-2"
+    onClick={() => onEdit && onEdit()}
+  >
+    Edit
+  </Button>
+  <Button
+    size="sm"
+    className="flex-1 sm:flex-none rounded-lg bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white shadow-md hover:shadow-lg transition-all duration-200 text-xs sm:text-sm px-4 py-2"
+    onClick={() => onDelete && onDelete()}
+  >
+    Delete
+  </Button>
+</CardFooter>
+
     </Card>
   );
 };
@@ -221,22 +222,35 @@ const WorkshopsEvents = () => {
     <div className="space-y-4 sm:space-y-6">
       {/* Header with craft theme */}
       <div className="bg-gradient-to-r from-[#a4785a] to-[#7b5a3b] rounded-xl sm:rounded-2xl shadow-xl p-4 sm:p-6 md:p-8">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-0">
-          <div>
-            <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-white flex items-center">
-              <Calendar className="h-6 w-6 sm:h-7 sm:w-7 md:h-8 md:w-8 mr-2 sm:mr-3" />
-              Workshops & Events
-            </h1>
-            <p className="text-white/90 mt-2 text-sm sm:text-base md:text-lg">
-              Create and manage engaging workshops and events for your customers
-            </p>
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div className="flex items-center">
+            <Calendar className="h-6 w-6 sm:h-7 sm:w-7 md:h-8 md:w-8 mr-2 sm:mr-3 text-white flex-shrink-0" />
+            <div>
+              <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-white">
+                Workshops & Events
+              </h1>
+              <p className="text-white/90 mt-1 text-sm sm:text-base md:text-lg">
+                Create and manage engaging workshops and events for your customers
+              </p>
+            </div>
           </div>
           <Button 
             onClick={() => setShowCreateForm(!showCreateForm)}
-            className="bg-white text-[#5c3d28] hover:bg-[#faf9f8] shadow-lg hover:shadow-xl transition-all duration-200 w-full sm:w-auto text-xs sm:text-sm"
+            className="bg-white text-[#5c3d28] hover:bg-[#faf9f8] shadow-lg hover:shadow-xl 
+                      transition-all duration-200 px-3 py-3 sm:px-4 sm:py-3 
+                      rounded-lg font-medium text-sm sm:text-base 
+                      w-auto sm:w-[180px] h-[48px] flex items-center justify-center mr-40"
           >
-            <Plus className="h-3 w-3 sm:h-4 sm:w-4 mr-2" /> 
-            {showCreateForm ? 'Cancel' : 'Create New Workshop'}
+            <Plus className="h-4 w-4 mr-2" /> 
+            <span className="hidden md:inline">
+              {showCreateForm ? 'Cancel' : 'Create Workshop'}
+            </span>
+            <span className="hidden sm:inline md:hidden">
+              {showCreateForm ? 'Cancel' : 'Create New'}
+            </span>
+            <span className="sm:hidden">
+              {showCreateForm ? 'Cancel' : 'Create'}
+            </span>
           </Button>
         </div>
       </div>

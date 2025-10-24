@@ -555,35 +555,20 @@ export const AddProductModal = ({ isOpen, onClose, onSave }) => {
                 </div>
 
                 {/* Publish Status */}
-                <div className="bg-gradient-to-br from-white to-[#faf9f8] rounded-lg sm:rounded-xl md:rounded-2xl border-2 border-[#e5ded7] shadow-lg p-4 sm:p-5 md:p-6 hover:shadow-xl transition-shadow duration-300">
-                  <div className="flex items-center gap-2 sm:gap-3 mb-4 sm:mb-6 pb-3 sm:pb-4 border-b-2 border-[#e5ded7]">
-                    <div className="p-1.5 sm:p-2 bg-gradient-to-r from-[#a4785a] to-[#7b5a3b] rounded-lg">
-                      <Check className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
-                    </div>
-                    <h3 className="text-lg sm:text-xl md:text-2xl font-bold text-[#5c3d28]">Publish Status</h3>
-                  </div>
-                  
-                  <select 
-                    value={publishStatus} 
-                    onChange={(e) => setPublishStatus(e.target.value)}
-                    className="w-full px-3 sm:px-4 py-2 sm:py-3 text-sm sm:text-base border-2 border-[#e5ded7] rounded-lg sm:rounded-xl focus:ring-2 focus:ring-[#a4785a] focus:border-[#a4785a] transition-all duration-200 bg-white text-[#5c3d28] font-medium cursor-pointer hover:border-[#a4785a]"
-                  >
-                    <option value="draft">💾 Save as Draft</option>
-                    <option value="published">🚀 Publish Immediately</option>
-                  </select>
-                  <p className="text-xs text-[#7b5a3b] mt-2 sm:mt-3">
-                    {publishStatus === 'draft' 
-                      ? '💾 Save and publish later' 
-                      : '🚀 Your product will be visible to customers immediately'}
-                  </p>
-                </div>
+                
+
 
                 {/* Submit Button */}
                 <div className="sticky bottom-0 pt-3 sm:pt-4">
+                  
+                <button type="submit">
+                    Save as Draft
+                  </button>
+
                   <button
                     type="submit"
                     className="w-full bg-gradient-to-r from-[#a4785a] to-[#7b5a3b] text-white py-3 sm:py-4 px-4 sm:px-6 rounded-lg sm:rounded-xl font-bold text-sm sm:text-base md:text-lg hover:from-[#8a6b4a] hover:to-[#6b4a2f] transition-all duration-300 transform hover:scale-[1.02] hover:shadow-2xl shadow-xl flex items-center justify-center gap-2 sm:gap-3 group"
-                  >
+                  > publish
                     <Plus className="h-5 w-5 sm:h-6 sm:w-6 group-hover:rotate-90 transition-transform duration-300" />
                     {getSubmitButtonText()}
                   </button>

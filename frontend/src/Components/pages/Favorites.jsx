@@ -20,7 +20,7 @@ export function Favorites() {
         setLoading(false);
         return;
       }
-
+      
       setLoading(true);
       try {
         // Fetch full product details for each favorite

@@ -6,7 +6,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
 import { Label } from "../ui/label";
-import { Textarea } from "../ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 import {
   User, Mail, Phone, Shield,
@@ -189,35 +188,13 @@ const AdminSettings = () => {
                     </div>
 
                     <div className="space-y-3">
-                      <Label htmlFor="bio" className="text-sm font-semibold text-gray-700">Bio</Label>
-                      <Textarea
-                        id="bio"
-                        defaultValue={admin.bio || ""}
-                        rows={4}
+                      <Label htmlFor="location" className="text-sm font-semibold text-gray-700">Location</Label>
+                      <Input 
+                        id="location" 
+                        defaultValue={admin.userAddress || ""} 
                         className="border-2 border-gray-200 focus:border-[#a4785a] focus:ring-[#a4785a]/20 transition-all duration-300"
-                        placeholder="Tell us about yourself..."
+                        placeholder="Your location..."
                       />
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div className="space-y-3">
-                        <Label htmlFor="location" className="text-sm font-semibold text-gray-700">Location</Label>
-                        <Input 
-                          id="location" 
-                          defaultValue={admin.userAddress || ""} 
-                          className="border-2 border-gray-200 focus:border-[#a4785a] focus:ring-[#a4785a]/20 transition-all duration-300"
-                          placeholder="Your location..."
-                        />
-                      </div>
-                      <div className="space-y-3">
-                        <Label htmlFor="website" className="text-sm font-semibold text-gray-700">Website</Label>
-                        <Input 
-                          id="website" 
-                          defaultValue={admin.website || ""} 
-                          className="border-2 border-gray-200 focus:border-[#a4785a] focus:ring-[#a4785a]/20 transition-all duration-300"
-                          placeholder="https://yourwebsite.com"
-                        />
-                      </div>
                     </div>
                   </div>
                 </div>
