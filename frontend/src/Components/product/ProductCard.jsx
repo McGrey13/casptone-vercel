@@ -53,14 +53,14 @@ const ProductCard = ({
 
   return (
     <Card
-      className="w-full max-w-[280px] h-[380px] overflow-hidden flex flex-col bg-white hover:shadow-lg transition-shadow duration-300 cursor-pointer"
+      className="w-full max-w-[320px] mx-auto h-[420px] overflow-hidden flex flex-col bg-white hover:shadow-lg transition-shadow duration-300 cursor-pointer"
       onClick={handleCardClick}
     >
-      <div className="relative h-48 overflow-hidden bg-gray-100">
+      <div className="relative h-56 overflow-hidden bg-gray-100">
         <img
           src={image}
           alt={title}
-          className="w-full h-full object-cover transition-transform duration-300 hover:scale-105"
+          className="w-full h-full object-cover object-center transition-transform duration-300 hover:scale-105"
         />
         {isNew && (
           <Badge variant="secondary" className="absolute top-2 left-2 bg-blue-500 text-white">

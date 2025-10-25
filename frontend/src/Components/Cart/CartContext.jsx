@@ -169,47 +169,19 @@ export const CartProvider = ({ children }) => {
             return;
           }
           
-          const response = await fetch("/api/cart/add", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              "Accept": "application/json",
-              "Authorization": `Bearer ${getToken()}`,
-              "X-Requested-With": "XMLHttpRequest"
-            },
-            body: JSON.stringify({
-              product_id: Number(productId),
-              quantity: qty
-            }),
+          const response = await api.post('/cart/add', {
+            product_id: Number(productId),
+            quantity: qty
           });
 
-          let responseData;
-          try {
-            responseData = await response.json();
-          } catch (e) {
-            console.error('Failed to parse JSON response:', e);
-            responseData = {};
-          }
+          console.log('Cart API Response:', response.data);
           
-          console.log('Cart API Response:', { 
-            status: response.status, 
-            statusText: response.statusText,
-            data: responseData 
-          });
-
-          if (!response.ok) {
-            const errorMessage = responseData.message || `Failed to add to cart (${response.status})`;
-            console.error('Failed to add to cart:', errorMessage);
-            resolve({ success: false, error: errorMessage });
-            return;
-          }
-
-          console.log('Successfully added to cart:', responseData);
+          console.log('Successfully added to cart:', response.data);
           
           // Refresh the cart to show updated items
           await fetchCart();
           
-          resolve({ success: true, data: responseData });
+          resolve({ success: true, data: response.data });
         } catch (error) {
           console.error("Error adding to cart:", error);
           resolve({ success: false, error: error.message || 'Failed to add to cart' });
@@ -231,26 +203,13 @@ export const CartProvider = ({ children }) => {
     }
 
     try {
-      const response = await fetch(`/api/cart/update/${item.cartItemId}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${getToken()}`,
-          "Accept": "application/json"
-        },
-        body: JSON.stringify({ quantity: Number(quantity) })
+      const response = await api.put(`/cart/update/${item.cartItemId}`, {
+        quantity: Number(quantity)
       });
-
-      const responseData = await response.json().catch(() => ({}));
-      
-      if (!response.ok) {
-        const errorMessage = responseData.message || 'Failed to update quantity';
-        throw new Error(errorMessage);
-      }
 
       // Refresh the cart to ensure consistency
       await fetchCart();
-      return { success: true, data: responseData };
+      return { success: true, data: response.data };
     } catch (error) {
       console.error("Error updating quantity:", error);
       alert(error.message || 'Failed to update quantity');
@@ -266,41 +225,9 @@ export const CartProvider = ({ children }) => {
 
     try {
       console.log('Removing item from cart:', cartId);
-      const response = await fetch(`/api/cart/remove/${cartId}`, {
-        method: "DELETE",
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-          'Authorization': `Bearer ${getToken()}`
-        },
-      });
+      const response = await api.delete(`/cart/remove/${cartId}`);
 
-      const responseText = await response.text();
-      let responseData;
-      
-      try {
-        responseData = responseText ? JSON.parse(responseText) : {};
-      } catch (e) {
-        console.error('Failed to parse response:', e, 'Response:', responseText);
-        throw new Error('Invalid response from server');
-      }
-
-      if (!response.ok) {
-        console.error('Failed to remove item:', response.status, responseData);
-        
-        if (response.status === 401) {
-          window.location.href = '/login';
-          return { 
-            success: false, 
-            error: 'Your session has expired. Please log in again.',
-            requiresLogin: true
-          };
-        }
-        
-        throw new Error(responseData.message || `Failed to remove item (${response.status})`);
-      }
-
-      console.log('Item removed successfully:', responseData);
+      console.log('Item removed successfully:', response.data);
       
       // Update local cart state
       setCartItems(prevItems => prevItems.filter(item => {
@@ -318,7 +245,7 @@ export const CartProvider = ({ children }) => {
       return { 
         success: true, 
         message: 'Item removed from cart',
-        data: responseData
+        data: response.data
       };
     } catch (error) {
       console.error('Error removing item from cart:', error);
@@ -417,40 +344,8 @@ export const CartProvider = ({ children }) => {
       }
       
       // First, create the order with payment method
-      const orderResponse = await fetch("/api/cart/checkout", {
-        method: "POST",
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-          'Authorization': `Bearer ${getToken()}`,
-        },
-        body: JSON.stringify(checkoutData),
-      });
-
-      const orderResponseText = await orderResponse.text();
-      let orderData;
-      
-      try {
-        orderData = orderResponseText ? JSON.parse(orderResponseText) : {};
-      } catch (e) {
-        console.error('Failed to parse order response:', e, 'Response:', orderResponseText);
-        throw new Error('Invalid response from server during order creation');
-      }
-
-      if (!orderResponse.ok) {
-        console.error('Order creation failed:', orderResponse.status, orderData);
-        
-        if (orderResponse.status === 401) {
-          window.location.href = '/login';
-          return { 
-            success: false, 
-            error: 'Your session has expired. Please log in again.',
-            requiresLogin: true
-          };
-        }
-        
-        throw new Error(orderData.message || `Order creation failed (${orderResponse.status})`);
-      }
+      const orderResponse = await api.post("/cart/checkout", checkoutData);
+      const orderData = orderResponse.data;
 
       console.log('Order created successfully:', orderData);
       
@@ -487,19 +382,9 @@ export const CartProvider = ({ children }) => {
           console.log('OrderID being sent to PayMongo:', orderID);
           
           // Call the payment initiate endpoint (which handles PayMongo)
-          const paymentSessionResponse = await fetch("/api/payments/initiate", {
-            method: "POST",
-            headers: {
-              'Content-Type': 'application/json',
-              'Accept': 'application/json',
-              'Authorization': `Bearer ${getToken()}`,
-            },
-            body: JSON.stringify(sessionPayload)
-          });
-
-          if (paymentSessionResponse.ok) {
-            const paymentData = await paymentSessionResponse.json();
-            console.log('Payment session data:', paymentData);
+          const paymentSessionResponse = await api.post("/payments/initiate", sessionPayload);
+          const paymentData = paymentSessionResponse.data;
+          console.log('Payment session data:', paymentData);
             
             if (paymentData.success) {
               if (paymentData.checkout_url) {
@@ -546,10 +431,6 @@ export const CartProvider = ({ children }) => {
               console.error('Payment failed:', paymentData);
               throw new Error(paymentData.message || 'Payment failed');
             }
-          } else {
-            const errorData = await paymentSessionResponse.json().catch(() => ({}));
-            throw new Error(errorData.message || `Payment session failed (${paymentSessionResponse.status})`);
-          }
         } catch (paymentError) {
           console.error(`Error with ${paymentMethod} payment session:`, paymentError);
           
@@ -594,17 +475,7 @@ export const CartProvider = ({ children }) => {
     }
 
     try {
-      const response = await fetch("/api/cart/clear", {
-        method: "DELETE",
-        headers: {
-          Authorization: `Bearer ${getToken()}`,
-          Accept: "application/json",
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to clear cart.");
-      }
+      const response = await api.delete("/cart/clear");
       
       // Clear local cart state
       setCartItems([]);

@@ -264,7 +264,15 @@ const ArtisanDetail = () => {
     try {
       setAddingToCart(true);
       const quantity = productQuantities[product.id] || 1;
-      const result = await addToCart(product, quantity);
+      
+      // Ensure product has the correct structure for addToCart
+      const productForCart = {
+        ...product,
+        product_id: product.id, // Ensure product_id is set
+        id: product.id
+      };
+      
+      const result = await addToCart(productForCart, quantity);
       if (result.success) {
         alert("Item added to cart successfully!");
       } else {
@@ -568,6 +576,7 @@ const ArtisanStorePreview = ({
   const products = artisanProducts.map((product, index) => ({
     id: product.id,
     name: product.title,
+    title: product.title, // Add title property for compatibility
     price: `₱${Number(product.price).toFixed(2)}`,
     image: product.image || null,
     category: "Handcrafted",
@@ -1025,7 +1034,30 @@ const ArtisanStorePreview = ({
                   ))}
                   <span className="text-xs ml-1" style={{ color: customization.text_color }}>({4.5 + (index * 0.1)})</span>
                 </div>
-                <div className="flex items-center justify-between">
+                {/* Quantity Controls */}
+                <div className="flex items-center justify-center gap-3 mb-3">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => updateQuantity(product.id, -1)}
+                    className="w-8 h-8 p-0"
+                  >
+                    <Minus className="w-4 h-4" />
+                  </Button>
+                  <span className="text-lg font-semibold min-w-[2rem] text-center" style={{ color: customization.text_color }}>
+                    {productQuantities[product.id] || 1}
+                  </span>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => updateQuantity(product.id, 1)}
+                    className="w-8 h-8 p-0"
+                  >
+                    <Plus className="w-4 h-4" />
+                  </Button>
+                </div>
+
+                <div className="flex items-center justify-between mb-3">
                   <span 
                     className="font-bold text-xl"
                     style={{ 
@@ -1035,16 +1067,34 @@ const ArtisanStorePreview = ({
                   >
                     ₱{Number(product.price).toFixed(2)}
                   </span>
-                  <button 
-                    className="font-semibold px-3 py-1 rounded-lg hover:transition text-sm"
+                </div>
+
+                {/* Action Buttons */}
+                <div className="flex gap-2">
+                  <Button
+                    onClick={() => handleAddToCart(product)}
+                    disabled={addingToCart}
+                    className="flex-1 bg-gradient-to-r from-[#a4785a] to-[#7b5a3b] hover:from-[#8f674a] hover:to-[#6a4c34] text-white font-semibold py-2 text-sm"
+                  >
+                    <ShoppingCart className="w-4 h-4 mr-2" />
+                    Add to Cart
+                  </Button>
+                </div>
+
+                {/* View Product Link */}
+                <Link to={`/product/${product.id}`} className="mt-3">
+                  <Button
+                    variant="outline"
+                    className="w-full font-semibold py-2 rounded-lg shadow hover:scale-105 transition-all duration-200 focus:outline-none focus:ring-2 text-sm"
                     style={{ 
-                      backgroundColor: customization.accent_color,
-                      color: customization.text_color
+                      borderColor: customization.accent_color,
+                      color: customization.accent_color,
+                      focusRingColor: customization.accent_color
                     }}
                   >
-                    View
-                  </button>
-                </div>
+                    View Details
+                  </Button>
+                </Link>
               </div>
             </div>
           ))}

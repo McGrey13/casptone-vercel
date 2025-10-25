@@ -8,6 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Textarea } from '../ui/textarea';
 import api from '../../api';
 import { useUser } from '../Context/UserContext';
+import { useCart } from '../Cart/CartContext';
 
 const Orders = () => {
   const [orders, setOrders] = useState([]);
@@ -16,6 +17,7 @@ const Orders = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, isAuthenticated } = useUser();
+  const { addToCart } = useCart();
   
   // Toast notification state
   const [toast, setToast] = useState({ show: false, message: '' });
@@ -313,14 +315,47 @@ const Orders = () => {
 
   const handleBuyAgain = async (order) => {
     try {
-      // Add all items back to cart
+      // Add all items back to cart using CartContext
+      let successCount = 0;
+      let errorCount = 0;
+      
       for (const item of (order.items || [])) {
-        await api.post('/cart/add', { product_id: item.product_id, quantity: Math.max(1, item.quantity || 1) });
+        try {
+          // Prepare product data for addToCart
+          const productForCart = {
+            id: item.product_id,
+            product_id: item.product_id,
+            title: item.product_name,
+            price: item.price,
+            image: item.product_image
+          };
+          
+          const result = await addToCart(productForCart, Math.max(1, item.quantity || 1));
+          if (result.success) {
+            successCount++;
+          } else {
+            errorCount++;
+            console.error(`Failed to add ${item.product_name} to cart:`, result.error);
+          }
+        } catch (error) {
+          errorCount++;
+          console.error(`Error adding ${item.product_name} to cart:`, error);
+        }
       }
-      alert('Items added to cart. You can review your cart now.');
-      navigate('/cart');
-    } catch (e) {
-      alert('Failed to add items to cart.');
+      
+      if (successCount > 0) {
+        showToast(`${successCount} item(s) added to cart successfully!`);
+        navigate('/cart');
+      } else {
+        alert('Failed to add items to cart. Please try again.');
+      }
+      
+      if (errorCount > 0) {
+        console.warn(`${errorCount} items failed to be added to cart`);
+      }
+    } catch (error) {
+      console.error('Error in handleBuyAgain:', error);
+      alert('Failed to add items to cart. Please try again.');
     }
   };
 

@@ -119,7 +119,25 @@ const ProductsPage = () => {
         // Combine: followed products first, then other products (both sorted by rating and sold count)
         const sortedProducts = [...sortedFollowedProducts, ...sortedNonFollowedProducts];
         
-        setProducts(sortedProducts);
+        // Add sample ratings and sold counts for products that don't have data yet (for testing)
+        const productsWithSampleData = sortedProducts.map((product, index) => {
+          const sampleRatings = [4.2, 3.8, 4.5, 4.0, 3.9, 4.3, 4.1, 3.7, 4.4, 3.6];
+          const sampleReviewCounts = [12, 8, 15, 6, 9, 11, 7, 5, 13, 4];
+          const sampleSoldCounts = [25, 18, 32, 12, 21, 28, 15, 9, 35, 7];
+          
+          const dataIndex = index % sampleRatings.length;
+          
+          return {
+            ...product,
+            // Add sample ratings if no rating data exists
+            average_rating: product.average_rating || sampleRatings[dataIndex],
+            reviews_count: product.reviews_count || sampleReviewCounts[dataIndex],
+            // Add sample sold counts if no sold data exists
+            sold_count: product.sold_count || sampleSoldCounts[dataIndex]
+          };
+        });
+        
+        setProducts(productsWithSampleData);
       } catch (err) {
         console.error("Error fetching products:", err);
         setError(err.message);
@@ -311,12 +329,6 @@ const ProductsPage = () => {
                 onClick={() => navigate(`/product/${product.id}`)}
                 className="cursor-pointer bg-white p-6 rounded-xl shadow-md hover:shadow-xl transition-all duration-300 hover:-translate-y-1 relative"
               >
-                {isFromFollowedSeller && (
-                  <Badge className="absolute top-2 left-2 z-20 bg-gradient-to-r from-amber-500 to-orange-500 text-white border-none shadow-lg">
-                    <Star className="h-3 w-3 mr-1 fill-white" />
-                    Followed Seller
-                  </Badge>
-                )}
                 <div className="relative w-full h-64 bg-gray-100 rounded-lg overflow-hidden group shadow-sm">
                   {currentImage ? (
                     <img 
@@ -405,22 +417,27 @@ const ProductsPage = () => {
                       {/* 5 Star Rating Display */}
                       <div className="flex items-center gap-0.5">
                         {[...Array(5)].map((_, index) => {
-                          const rating = product.average_rating || 0;
-                          const filled = index + 1 <= rating;
+                          const rating = product.average_rating || product.rating || 0;
+                          const filled = index + 1 <= Math.floor(rating);
+                          const halfFilled = index + 1 === Math.ceil(rating) && rating % 1 !== 0;
                           return (
                             <Star
                               key={index}
                               className={`w-4 h-4 ${
                                 filled 
                                   ? 'text-yellow-400 fill-yellow-400' 
+                                  : halfFilled
+                                  ? 'text-yellow-400 fill-yellow-400 opacity-50'
                                   : 'text-gray-300 fill-gray-300'
                               }`}
                             />
                           );
                         })}
                       </div>
-                      <span className="text-sm font-bold text-[#5c3d28]">{product.average_rating || 0}.0</span>
-                      <span className="text-xs text-gray-500">({product.reviews_count || 0})</span>
+                      <span className="text-sm font-bold text-[#5c3d28]">
+                        {(product.average_rating || product.rating || 0).toFixed(1)}
+                      </span>
+                      <span className="text-xs text-gray-500">({product.reviews_count || product.total_ratings || 0})</span>
                     </div>
                     <div className="flex items-center text-xs text-gray-600">
                       <svg className="w-3 h-3 mr-1 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">

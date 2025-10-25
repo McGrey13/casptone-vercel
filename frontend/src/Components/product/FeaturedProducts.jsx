@@ -11,6 +11,7 @@ import {
 } from "../ui/select";
 import ProductCard from "./ProductCard";
 import axios from "axios";
+import { useFavorites } from "../favorites/FavoritesContext";
 
 const FeaturedProducts = ({
   title = "Featured Products",
@@ -19,7 +20,7 @@ const FeaturedProducts = ({
   onFavorite = () => {},
 }) => {
   const [currentPage, setCurrentPage] = useState(0);
-  const [activeTab, setActiveTab] = useState("all");
+  const [activeTab, setActiveTab] = useState("All");
   const [sortBy, setSortBy] = useState("featured");
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -27,20 +28,34 @@ const FeaturedProducts = ({
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [showFavoriteModal, setShowFavoriteModal] = useState(false);
   const [modalType, setModalType] = useState('cart'); // 'cart' or 'favorite'
+  const { favorites, toggleFavorite } = useFavorites();
 
-  // Helper function to convert image URLs to relative paths
+  // Helper function to convert image URLs to proper format
   const fixImageUrl = (url) => {
-    if (!url) return url;
-    // If it's already a full URL with localhost, convert to relative path
-    if (url.includes('localhost:8000') || url.includes('localhost:8080')) {
-      const path = new URL(url).pathname;
-      return path;
+    if (!url) {
+      console.log('❌ No image URL provided');
+      return null;
     }
-    // If it's already a relative path, return as is
-    if (url.startsWith('/storage/') || url.startsWith('/images/')) {
+    
+    console.log('🔧 Processing image URL:', url);
+    
+    // For testing, let's try both ports and see which one works
+    if (url.startsWith('http')) {
+      console.log('✅ Full URL detected:', url);
+      // Try the original URL first
       return url;
     }
-    return url;
+    
+    // Handle relative paths - try port 8000 first
+    let cleanPath = url;
+    if (cleanPath.startsWith('/')) {
+      cleanPath = cleanPath.substring(1);
+    }
+    
+    // Try the most common Laravel pattern
+    const testUrl = `http://localhost:8000/${cleanPath}`;
+    console.log('🔄 Trying URL:', testUrl);
+    return testUrl;
   };
 
   useEffect(() => {
@@ -50,11 +65,12 @@ const FeaturedProducts = ({
   const fetchProducts = async () => {
     try {
       setLoading(true);
-      const response = await axios.get('/products/featured', { baseURL: import.meta.env.VITE_BACKEND_URL || 'http://localhost:8080/api' });
+      const response = await axios.get('/products/approved', { baseURL: import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000/api' });
       const data = Array.isArray(response.data) ? response.data : 
                   response.data.data ? response.data.data : [];
       
       console.log('📦 Featured Products Data:', data);
+      console.log('📦 First product image:', data[0]?.productImage);
       
       // Transform the API data to match our component's structure
       const transformedProducts = data.map(product => {
@@ -63,9 +79,24 @@ const FeaturedProducts = ({
           ? (new Date() - new Date(product.created_at)) / (1000 * 60 * 60 * 24) < 7
           : false;
         
+        console.log('Product image data:', {
+          id: product.id,
+          productName: product.productName,
+          productImage: product.productImage,
+          fixedImage: fixImageUrl(product.productImage)
+        });
+        
+        // Debug all products to see image URLs
+        console.log('🔍 DEBUGGING PRODUCT:', {
+          productName: product.productName,
+          originalImage: product.productImage,
+          fixedImage: fixImageUrl(product.productImage),
+          hasImage: !!product.productImage
+        });
+        
         return {
           id: product.id,
-          image: fixImageUrl(product.productImage) || '/placeholder-image.jpg',
+          image: product.productImage || '/placeholder-image.jpg',
           title: product.productName,
           price: parseFloat(product.productPrice),
           artisanName: product.seller?.user?.userName || 'Unknown Artisan',
@@ -91,11 +122,11 @@ const FeaturedProducts = ({
   };
 
   const categories = ["All", "Miniatures & Souvenirs", "Rubber Stamp Engraving", "Traditional Accessories", "Statuary & Sculpture", "Basketry & Weaving"];
-  const itemsPerPage = 4;
+  const itemsPerPage = 6; // 3 products per row × 2 rows
 
   const filteredProducts = products.filter((product) => {
-    if (activeTab === "all") return true;
-    return product.category.toLowerCase() === activeTab.toLowerCase();
+    if (activeTab === "All") return true;
+    return product.category === activeTab;
   });
 
   const sortedProducts = [...filteredProducts].sort((a, b) => {
@@ -177,7 +208,7 @@ const FeaturedProducts = ({
       setShowFavoriteModal(true);
       return;
     }
-    onFavorite(product);
+    toggleFavorite(product);
   };
 
   if (loading) {
@@ -202,14 +233,14 @@ const FeaturedProducts = ({
 
   return (
     <>
-    <section className="w-full max-w-[1200px] mx-auto py-12 px-4 bg-white">
-    <div className="text-center mb-6 md:mb-8">
+    <section className="w-full max-w-[1400px] mx-auto py-8 px-3 bg-white">
+    <div className="text-center mb-4 md:mb-6">
       <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2 transition-transform duration-300 hover:scale-105">{title}</h2>
       <p className="text-sm md:text-base text-gray-600 max-w-2xl mx-auto px-4">{subtitle}</p>
     </div>
   
     {/* Category Tabs + Sort Filter */}
-<div className="flex flex-col w-full items-center mb-6 gap-4">
+<div className="flex flex-col w-full items-center mb-4 gap-3">
   {/* Mobile Dropdown */}
   <div className="w-full sm:hidden">
     <select
@@ -218,7 +249,7 @@ const FeaturedProducts = ({
       className="w-full py-2.5 px-4 bg-white border-2 border-gray-300 rounded-lg text-sm appearance-none cursor-pointer transition-all duration-200 hover:border-[#9F2936] focus:border-[#9F2936] focus:outline-none"
     >
       {categories.map((category) => (
-        <option key={category.toLowerCase()} value={category.toLowerCase()}>
+        <option key={category} value={category}>
           {category}
         </option>
       ))}
@@ -227,12 +258,12 @@ const FeaturedProducts = ({
 
   {/* Desktop Tabs */}
   <div className="hidden sm:block w-full">
-    <Tabs defaultValue="all" value={activeTab} onValueChange={setActiveTab} className="w-full">
+    <Tabs defaultValue="All" value={activeTab} onValueChange={setActiveTab} className="w-full">
       <TabsList className="flex flex-wrap justify-center gap-2 bg-transparent">
         {categories.map((category) => (
           <TabsTrigger
-            key={category.toLowerCase()}
-            value={category.toLowerCase()}
+            key={category}
+            value={category}
             className="px-4 py-2 text-sm border border-gray-300 rounded-lg transition-all duration-200 whitespace-nowrap
                        hover:text-white hover:bg-gradient-to-r hover:from-[#a4785a] hover:to-[#7b5a3b] hover:border-[#a4785a] hover:shadow-md hover:scale-105
                        data-[state=active]:text-white data-[state=active]:bg-gradient-to-r data-[state=active]:from-[#a4785a] data-[state=active]:to-[#7b5a3b] data-[state=active]:border-[#a4785a] data-[state=active]:font-semibold data-[state=active]:shadow-md"
@@ -267,14 +298,197 @@ const FeaturedProducts = ({
         No products found in this category.
       </div>
     ) : (
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {paginatedProducts.map((product) => (
-          <ProductCard
+          <div
             key={product.id}
-            {...product}
-            onAddToCart={handleAddToCartWithAuth}
-            onFavorite={handleFavoriteWithAuth}
-          />
+            className="relative h-[300px] rounded-lg overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer group bg-gray-100"
+            onClick={() => window.location.href = `/product/${product.id}`}
+          >
+            {/* Background Image */}
+            <img 
+              src={fixImageUrl(product.image) || 'https://via.placeholder.com/400x300?text=Test+Image'}
+              alt={product.title}
+              className="absolute inset-0 w-full h-full object-cover object-center transition-transform duration-300 group-hover:scale-105"
+              onLoad={(e) => {
+                console.log('✅ Image loaded successfully:', 
+                  'Product:', product.title,
+                  'URL:', e.target.src
+                );
+                // Show the overlay when image loads successfully
+                const overlay = e.target.parentElement.querySelector('.image-overlay');
+                if (overlay) {
+                  overlay.style.display = 'block';
+                }
+                // Show overlay and update styling when image loads
+                const contentOverlay = e.target.parentElement.querySelector('.content-overlay');
+                if (contentOverlay) {
+                  // Change text to white for better contrast over image
+                  contentOverlay.style.color = 'white';
+                  // Update all text elements to white
+                  const textElements = contentOverlay.querySelectorAll('h3, p, span, div');
+                  textElements.forEach(el => {
+                    if (!el.className.includes('bg-')) { // Don't change button backgrounds
+                      el.style.color = 'white';
+                    }
+                  });
+                }
+              }}
+              onError={(e) => {
+                console.log('❌ Image failed to load:', 
+                  'Product:', product.title,
+                  'URL:', e.target.src
+                );
+                
+                // Prevent infinite retry loops
+                const currentSrc = e.target.src;
+                const originalImage = product.image;
+                
+                // Track retry attempts to prevent infinite loops
+                if (!e.target.retryCount) {
+                  e.target.retryCount = 0;
+                }
+                e.target.retryCount++;
+                
+                // Max 2 retries
+                if (e.target.retryCount > 2) {
+                  console.log('🛑 Max retries reached, hiding image');
+                  e.target.style.display = 'none';
+                  return;
+                }
+                
+                // Try alternative URL formats
+                if (originalImage && e.target.retryCount === 1) {
+                  let retryUrl;
+                  if (originalImage.startsWith('http')) {
+                    // If it's a full URL, try switching port
+                    if (originalImage.includes('localhost:8000')) {
+                      retryUrl = originalImage.replace('localhost:8000', 'localhost:8080');
+                    } else {
+                      retryUrl = originalImage.replace('localhost:8080', 'localhost:8000');
+                    }
+                  } else {
+                    // Try with /storage/ prefix for relative paths
+                    retryUrl = `http://localhost:8000/storage/${originalImage.replace(/^\/+/, '')}`;
+                  }
+                  console.log('🔄 Retry 1 - Trying URL:', retryUrl);
+                  e.target.src = retryUrl;
+                  return;
+                }
+                
+                if (originalImage && e.target.retryCount === 2) {
+                  // Final retry - hide image
+                  console.log('🛑 Retry 2 - Hiding image');
+                  e.target.style.display = 'none';
+                  return;
+                }
+                
+                // Final fallback - hide image and keep text dark
+                console.log('🛑 All retries failed, hiding image');
+                e.target.style.display = 'none';
+              }}
+              />
+            
+            {/* Dark Overlay - only show when image loads successfully */}
+            <div className="image-overlay absolute inset-0 bg-black bg-opacity-40 group-hover:bg-opacity-50 transition-all duration-300" style={{display: 'none'}} />
+            
+            {/* Content Overlay */}
+            <div className="content-overlay absolute inset-0 flex flex-col justify-between p-4 text-gray-800">
+              {/* Top Section - Badges */}
+              <div className="flex justify-between items-start">
+                <div className="flex gap-2">
+                  {product.isNew && (
+                    <span className="bg-blue-500 text-white px-2 py-1 rounded-md text-xs font-medium">
+                      New
+                    </span>
+                  )}
+                  {product.isFeatured && (
+                    <span className="bg-amber-500 text-white px-2 py-1 rounded-md text-xs font-medium">
+                      Featured
+                    </span>
+                  )}
+                </div>
+                
+                {/* Favorite Button */}
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="favorite-btn bg-white/80 hover:bg-white/90 rounded-full p-2 h-8 w-8"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleFavoriteWithAuth(product);
+                  }}
+                >
+                  <Heart 
+                    className={`h-4 w-4 ${
+                      favorites.some(fav => fav.id === product.id) 
+                        ? "text-red-500 fill-red-500" 
+                        : "text-gray-600"
+                    }`} 
+                  />
+                </Button>
+              </div>
+
+              {/* Bottom Section - Product Details */}
+              <div className="space-y-3">
+                {/* Product Name & Category */}
+                <div>
+                  <h3 className="text-lg font-bold text-gray-800 mb-1 line-clamp-2">
+                    {product.title}
+                  </h3>
+                  <p className="text-sm text-gray-600 opacity-90">
+                    {product.category}
+                  </p>
+                </div>
+
+                {/* Artisan/Store Info */}
+                <div className="flex items-center gap-2 text-sm text-gray-600">
+                  {product.storeLogo && (
+                    <img 
+                      src={product.storeLogo} 
+                      alt={product.storeName || product.artisanName} 
+                      className="w-5 h-5 rounded-full object-cover border border-white/30"
+                      onError={(e) => { e.target.style.display = 'none'; }}
+                    />
+                  )}
+                  <span className="truncate">{product.storeName || product.artisanName}</span>
+                </div>
+
+                {/* Rating & Price */}
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-1">
+                    {[...Array(5)].map((_, i) => (
+                      <svg
+                        key={i}
+                        className={`w-4 h-4 ${i < Math.floor(product.rating) ? "text-yellow-400" : "text-gray-400"}`}
+                        fill="currentColor"
+                        viewBox="0 0 20 20"
+                      >
+                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118l-2.8-2.034c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                      </svg>
+                    ))}
+                    <span className="ml-1 text-sm text-gray-800">{product.rating}</span>
+                  </div>
+                  
+                  <div className="text-xl font-bold text-gray-800">
+                    ₱{product.price.toFixed(2)}
+                  </div>
+                </div>
+
+                {/* Add to Cart Button */}
+                <Button
+                  className="w-full bg-gradient-to-r from-[#a4785a] to-[#7b5a3b] hover:from-[#8f674a] hover:to-[#6a4c34] text-white font-semibold py-2 rounded-lg transition-all duration-200 flex items-center justify-center gap-2"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleAddToCartWithAuth(product);
+                  }}
+                >
+                  <ShoppingCart className="h-4 w-4" />
+                  Add to Cart
+                </Button>
+              </div>
+            </div>
+          </div>
         ))}
       </div>
     )}

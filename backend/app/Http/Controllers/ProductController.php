@@ -1005,6 +1005,13 @@ class ProductController extends Controller
                     $totalSold = \DB::table('order_products')
                         ->where('product_id', $product->product_id)
                         ->sum('quantity');
+                    
+                    // Log sold count for debugging
+                    Log::info('Product sold count calculated', [
+                        'product_id' => $product->product_id,
+                        'product_name' => $product->productName,
+                        'sold_count' => $totalSold
+                    ]);
                 } catch (\Exception $e) {
                     Log::warning('Error calculating sold count', [
                         'product_id' => $product->product_id,
@@ -1113,14 +1120,20 @@ class ProductController extends Controller
     public function followedSellerProducts(Request $request)
     {
         try {
-            $user = $request->user();
+            $user = Auth::user();
             
             if (!$user) {
                 return response()->json(['message' => 'Unauthenticated'], 401);
             }
 
-            // Get followed seller IDs
-            $followedSellerIds = $user->followedSellers()->pluck('sellerID');
+            Log::info('Fetching followed seller products for user: ' . $user->userID);
+
+            // Get followed seller IDs using a direct query
+            $followedSellerIds = \DB::table('seller_follows')
+                ->where('userID', $user->userID)
+                ->pluck('sellerID');
+
+            Log::info('Followed seller IDs: ' . json_encode($followedSellerIds->toArray()));
 
             if ($followedSellerIds->isEmpty()) {
                 return response()->json([]);
@@ -1209,9 +1222,10 @@ class ProductController extends Controller
                 return $productData;
             });
 
+            Log::info('Returning ' . $productsWithImages->count() . ' transformed products');
             return response()->json($productsWithImages);
         } catch (\Exception $e) {
-            Log::error('Error fetching followed seller products:', ['error' => $e->getMessage()]);
+            Log::error('Error fetching followed seller products:', ['error' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
             return response()->json(['message' => 'Error fetching followed seller products: ' . $e->getMessage()], 500);
         }
     }

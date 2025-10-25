@@ -135,7 +135,7 @@ export function Favorites() {
                           e.stopPropagation();
                           handleRemove(product.product_id || product.id);
                         }}
-                        className="absolute top-2 right-2 bg-white rounded-full p-2 shadow-lg hover:bg-red-50 transition-colors"
+                        className="absolute top-2 right-2 bg-white/80 hover:bg-white/90 rounded-full p-2 shadow-lg transition-all duration-200"
                       >
                         <Heart className="h-5 w-5 text-red-500 fill-red-500" />
                       </button>

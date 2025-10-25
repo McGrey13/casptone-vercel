@@ -43,10 +43,10 @@ const Navbar = () => {
 
       {/* Navigation Links - Horizontal */}
       <div className="navbar-links">
-        <Link to="/categories">Categories</Link>
+        <Link to="/categories">Stores</Link>
         <Link to="/artisan">Artisans</Link>
         <Link to="/about">About</Link>
-        <Link to="/contact">Contact</Link>
+        <Link to="/contact">Contact Us</Link>
       </div>
 
       {/* Right Side Icons */}
