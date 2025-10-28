@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
 import { Textarea } from "../ui/textarea";
@@ -12,6 +12,7 @@ import { useUser } from "../Context/UserContext";
 const ContactPage = () => {
   const { user } = useUser();
   const navigate = useNavigate();
+  const location = useLocation();
   
   const [formData, setFormData] = useState({
     name: "",
@@ -23,6 +24,21 @@ const ContactPage = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [error, setError] = useState("");
+
+  // Handle smooth scrolling to anchor links
+  useEffect(() => {
+    if (location.hash) {
+      setTimeout(() => {
+        const element = document.querySelector(location.hash);
+        if (element) {
+          element.scrollIntoView({ 
+            behavior: 'smooth',
+            block: 'start'
+          });
+        }
+      }, 100);
+    }
+  }, [location]);
 
   // Auto-fill name and email if user is logged in, or restore saved form data
   useEffect(() => {
@@ -150,9 +166,9 @@ const ContactPage = () => {
   const isMessageValid = wordCount >= 10;
 
   return (
-    <div className="min-h-screen flex flex-col bg-white">
+    <div id="contactus" className="min-h-screen flex flex-col bg-white">
       <div className="container mx-auto px-4 py-8">
-        <div className="flex items-center mb-6 text-sm">
+        <div className="flex items-center mb-6 text-sm" >
           <Link to="/" className="text-gray-500 hover:text-primary">Home</Link>
           <span className="mx-2">/</span>
           <span className="font-medium">Contact Us</span>
@@ -203,18 +219,6 @@ const ContactPage = () => {
               </CardContent>
             </Card>
 
-            <Card>
-              <CardContent className="p-6">
-                <h2 className="text-xl font-semibold mb-4">Connect With Us</h2>
-                <div className="flex space-x-4">
-                  {["Facebook", "Instagram", "Twitter"].map((name, i) => (
-                    <a key={i} href="#" className="w-10 h-10 rounded-full bg-[#a47c68]/10 flex items-center justify-center hover:bg-[#a47c68] hover:text-white transition-colors" aria-label={name}>
-                      <span className="text-sm font-bold uppercase">{name[0]}</span>
-                    </a>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
           </div>
 
           <div className="lg:col-span-2">
@@ -339,7 +343,7 @@ const ContactPage = () => {
           </div>
         </div>
 
-        <div className="mb-12">
+        <div id="faqs" className="mb-12 scroll-mt-20">
           <h2 className="text-xl font-semibold mb-4">FAQs</h2>
           <div className="space-y-4">
             {faqs.map((faq, i) => (

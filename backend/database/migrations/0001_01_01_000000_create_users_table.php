@@ -25,6 +25,8 @@ return new class extends Migration
             $table->string('otp')->nullable();
             $table->timestamp('otp_expires_at')->nullable();
             $table->boolean('is_verified')->default(false);
+            $table->enum('status',['active', 'deactivated'])->default('active');
+            $table->timestamp('last_login_at')->nullable(); // Track last login
             $table->rememberToken();
             $table->timestamps();
         });

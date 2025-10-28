@@ -8,6 +8,8 @@ use App\Models\SellerBalance;
 use App\Models\Payout;
 use App\Models\Seller;
 use App\Models\Payment;
+use App\Models\Order;
+use App\Models\Product;
 use App\Services\CommissionService;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -194,13 +196,49 @@ class SellerDashboardController extends Controller
                     ];
                 });
 
+            // Get recent orders for this seller
+            $recentOrders = Order::with(['orderProducts.product.seller', 'user'])
+                ->whereHas('orderProducts.product', function($q) use ($sellerId) {
+                    $q->where('seller_id', $sellerId);
+                })
+                ->orderBy('created_at', 'desc')
+                ->limit(5)
+                ->get()
+                ->map(function($order) {
+                    return [
+                        'id' => 'ORD-' . $order->orderID,
+                        'customer' => $order->user->userName ?? 'Unknown Customer',
+                        'date' => $order->created_at->format('Y-m-d'),
+                        'amount' => '₱' . number_format($order->totalAmount, 2),
+                        'status' => ucfirst($order->status),
+                    ];
+                });
+
+            // Get top rated products for this seller
+            $topRatedProducts = Product::where('seller_id', $sellerId)
+                ->where('approval_status', 'approved')
+                ->where('publish_status', 'published')
+                ->withCount('reviews')
+                ->orderBy('average_rating', 'desc')
+                ->limit(5)
+                ->get()
+                ->map(function($product) {
+                    return [
+                        'name' => $product->productName,
+                        'rating' => number_format($product->average_rating, 1),
+                        'reviews' => $product->reviews_count,
+                    ];
+                });
+
             return response()->json([
                 'success' => true,
                 'data' => [
                     'balance' => $balanceData,
                     'transaction_summary' => $transactionSummary,
                     'recent_transactions' => $recentTransactions,
-                    'recent_earnings' => $recentEarnings
+                    'recent_earnings' => $recentEarnings,
+                    'recentOrders' => $recentOrders,
+                    'topRatedProducts' => $topRatedProducts
                 ]
             ]);
 

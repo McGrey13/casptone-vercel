@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Eye, MoreHorizontal, Filter, Search, X, Edit, RefreshCw } from "lucide-react";
+import { Eye, MoreHorizontal, Filter, Search, X, Edit, RefreshCw, UserX, UserCheck, Key, AlertTriangle } from "lucide-react";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
 import { Card, CardContent } from "../ui/card";
@@ -36,6 +36,12 @@ const CustomerTable = () => {
   const [selectedCustomer, setSelectedCustomer] = useState(null);
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+
+  // State for account management actions
+  const [isActionLoading, setIsActionLoading] = useState(false);
+  const [actionMessage, setActionMessage] = useState("");
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [confirmAction, setConfirmAction] = useState(null);
 
   const fetchCustomers = async () => {
     try {
@@ -87,6 +93,103 @@ const CustomerTable = () => {
         customer.userID === updatedCustomer.userID ? updatedCustomer : customer
       )
     );
+  };
+
+  // Account management functions
+  const handleDeactivateCustomer = async (customer) => {
+    setConfirmAction({
+      type: 'deactivate',
+      customer: customer,
+      title: 'Deactivate Customer Account',
+      message: `Are you sure you want to deactivate ${customer.userName}'s account? They will no longer be able to log in or make purchases.`,
+      confirmText: 'Deactivate Account',
+      action: async () => {
+        try {
+          setIsActionLoading(true);
+          await api.post(`/admin/customers/${customer.userID}/deactivate`);
+          
+          // Update customer status locally
+          setCustomers(prev => prev.map(c => 
+            c.userID === customer.userID ? { ...c, status: 'deactivated' } : c
+          ));
+          
+          setActionMessage(`${customer.userName}'s account has been deactivated successfully.`);
+          setTimeout(() => setActionMessage(""), 5000);
+        } catch (error) {
+          console.error('Error deactivating customer:', error);
+          setActionMessage(`Failed to deactivate ${customer.userName}'s account. Please try again.`);
+          setTimeout(() => setActionMessage(""), 5000);
+        } finally {
+          setIsActionLoading(false);
+        }
+      }
+    });
+    setShowConfirmModal(true);
+  };
+
+  const handleReactivateCustomer = async (customer) => {
+    setConfirmAction({
+      type: 'reactivate',
+      customer: customer,
+      title: 'Reactivate Customer Account',
+      message: `Are you sure you want to reactivate ${customer.userName}'s account? They will be able to log in and make purchases again.`,
+      confirmText: 'Reactivate Account',
+      action: async () => {
+        try {
+          setIsActionLoading(true);
+          await api.post(`/admin/customers/${customer.userID}/reactivate`);
+          
+          // Update customer status locally
+          setCustomers(prev => prev.map(c => 
+            c.userID === customer.userID ? { ...c, status: 'active' } : c
+          ));
+          
+          setActionMessage(`${customer.userName}'s account has been reactivated successfully.`);
+          setTimeout(() => setActionMessage(""), 5000);
+        } catch (error) {
+          console.error('Error reactivating customer:', error);
+          setActionMessage(`Failed to reactivate ${customer.userName}'s account. Please try again.`);
+          setTimeout(() => setActionMessage(""), 5000);
+        } finally {
+          setIsActionLoading(false);
+        }
+      }
+    });
+    setShowConfirmModal(true);
+  };
+
+  const handleResetPassword = async (customer) => {
+    setConfirmAction({
+      type: 'reset_password',
+      customer: customer,
+      title: 'Reset Customer Password',
+      message: `Are you sure you want to reset ${customer.userName}'s password? A new temporary password will be sent to ${customer.userEmail}.`,
+      confirmText: 'Reset Password',
+      action: async () => {
+        try {
+          setIsActionLoading(true);
+          await api.post(`/admin/customers/${customer.userID}/reset-password`);
+          
+          setActionMessage(`Password reset email has been sent to ${customer.userEmail} successfully.`);
+          setTimeout(() => setActionMessage(""), 5000);
+        } catch (error) {
+          console.error('Error resetting password:', error);
+          setActionMessage(`Failed to reset password for ${customer.userName}. Please try again.`);
+          setTimeout(() => setActionMessage(""), 5000);
+        } finally {
+          setIsActionLoading(false);
+        }
+      }
+    });
+    setShowConfirmModal(true);
+  };
+
+  const handleConfirmAction = async () => {
+    if (confirmAction && confirmAction.action) {
+      await confirmAction.action();
+      setShowConfirmModal(false);
+      setConfirmAction(null);
+    }
   };
 
   const filteredCustomers = customers.filter(
@@ -160,6 +263,13 @@ const CustomerTable = () => {
 
   return (
     <div className="space-y-8">
+      {/* Action Message */}
+      {actionMessage && (
+        <div className="bg-gradient-to-r from-green-50 to-green-100 border-2 border-green-500 text-green-800 px-6 py-4 rounded-xl shadow-md">
+          <span className="block sm:inline font-medium">✓ {actionMessage}</span>
+        </div>
+      )}
+
       {/* Page Header */}
       <div className="bg-gradient-to-r from-[#a4785a] to-[#7b5a3b] rounded-2xl shadow-xl p-8">
         <div className="flex items-center justify-between flex-wrap gap-4">
@@ -454,10 +564,31 @@ const CustomerTable = () => {
                             <Edit className="h-4 w-4 mr-2 text-[#a4785a]" /> Edit Details
                           </DropdownMenuItem>
                           <DropdownMenuSeparator className="bg-[#d5bfae]" />
-                          <DropdownMenuItem className="text-red-600 hover:bg-red-50 cursor-pointer">
-                            <X className="h-4 w-4 mr-2" />
-                            Deactivate Account
+                          <DropdownMenuItem
+                            onClick={() => handleResetPassword(customer)}
+                            className="text-blue-600 hover:bg-blue-50 cursor-pointer"
+                          >
+                            <Key className="h-4 w-4 mr-2" />
+                            Reset Password
                           </DropdownMenuItem>
+                          <DropdownMenuSeparator className="bg-[#d5bfae]" />
+                          {customer.status === 'active' ? (
+                            <DropdownMenuItem 
+                              onClick={() => handleDeactivateCustomer(customer)}
+                              className="text-red-600 hover:bg-red-50 cursor-pointer"
+                            >
+                              <UserX className="h-4 w-4 mr-2" />
+                              Deactivate Account
+                            </DropdownMenuItem>
+                          ) : (
+                            <DropdownMenuItem 
+                              onClick={() => handleReactivateCustomer(customer)}
+                              className="text-green-600 hover:bg-green-50 cursor-pointer"
+                            >
+                              <UserCheck className="h-4 w-4 mr-2" />
+                              Reactivate Account
+                            </DropdownMenuItem>
+                          )}
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </div>
@@ -524,6 +655,60 @@ const CustomerTable = () => {
         }}
         onSave={handleSaveCustomer}
       />
+
+      {/* Confirmation Modal */}
+      {showConfirmModal && confirmAction && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl max-w-md w-full shadow-2xl">
+            <div className="p-6">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="p-2 bg-red-100 rounded-full">
+                  <AlertTriangle className="h-6 w-6 text-red-600" />
+                </div>
+                <h3 className="text-xl font-bold text-[#5c3d28]">{confirmAction.title}</h3>
+              </div>
+              
+              <p className="text-[#7b5a3b] mb-6 leading-relaxed">
+                {confirmAction.message}
+              </p>
+              
+              <div className="flex gap-3">
+                <Button
+                  onClick={() => {
+                    setShowConfirmModal(false);
+                    setConfirmAction(null);
+                  }}
+                  variant="outline"
+                  className="flex-1 border-[#d5bfae] text-[#5c3d28] hover:bg-[#f5f0eb]"
+                  disabled={isActionLoading}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={handleConfirmAction}
+                  disabled={isActionLoading}
+                  className={`flex-1 text-white ${
+                    confirmAction.type === 'deactivate' 
+                      ? 'bg-red-500 hover:bg-red-600' 
+                      : confirmAction.type === 'reactivate'
+                      ? 'bg-green-500 hover:bg-green-600'
+                      : 'bg-blue-500 hover:bg-blue-600'
+                  }`}
+                >
+                  {isActionLoading ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
+                      Processing...
+                    </>
+                  ) : (
+                    confirmAction.confirmText
+                  )}
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

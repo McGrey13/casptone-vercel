@@ -179,16 +179,6 @@ const PaymentTracking = () => {
 
   return (
     <div className="space-y-2 sm:space-y-3 max-w-[412px] sm:max-w-none mx-auto px-2 sm:px-0">
-      {/* Header */}
-      <div className="bg-gradient-to-r from-[#a4785a] to-[#7b5a3b] rounded-lg shadow p-3">
-        <h1 className="text-base font-bold text-white flex items-center">
-          <Wallet className="h-5 w-5 mr-2" />
-          Payment Tracking
-        </h1>
-        <p className="text-white/90 mt-1 text-xs">
-          Track payments and COD deliveries
-        </p>
-      </div>
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">

@@ -446,4 +446,161 @@ class AdminController extends AuthController
             return 'file';
         }
     }
+
+    /**
+     * Deactivate a customer account
+     */
+    public function deactivateCustomer($customerId)
+    {
+        $this->checkAdminRole();
+        
+        try {
+            $user = User::findOrFail($customerId);
+            
+            if ($user->role !== 'customer') {
+                return response()->json(['message' => 'User is not a customer'], 400);
+            }
+            
+            $user->status = 'deactivated';
+            $user->save();
+            
+            return response()->json([
+                'message' => 'Customer account deactivated successfully',
+                'user' => $user
+            ]);
+        } catch (\Exception $e) {
+            return response()->json(['message' => 'Failed to deactivate customer: ' . $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Reactivate a customer account
+     */
+    public function reactivateCustomer($customerId)
+    {
+        $this->checkAdminRole();
+        
+        try {
+            $user = User::findOrFail($customerId);
+            
+            if ($user->role !== 'customer') {
+                return response()->json(['message' => 'User is not a customer'], 400);
+            }
+            
+            $user->status = 'active';
+            $user->save();
+            
+            return response()->json([
+                'message' => 'Customer account reactivated successfully',
+                'user' => $user
+            ]);
+        } catch (\Exception $e) {
+            return response()->json(['message' => 'Failed to reactivate customer: ' . $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Deactivate a seller account
+     */
+    public function deactivateSeller($sellerId)
+    {
+        $this->checkAdminRole();
+        
+        try {
+            $seller = Seller::with('user')->findOrFail($sellerId);
+            $user = $seller->user;
+            
+            $user->status = 'deactivated';
+            $user->save();
+            
+            return response()->json([
+                'message' => 'Seller account deactivated successfully',
+                'user' => $user
+            ]);
+        } catch (\Exception $e) {
+            return response()->json(['message' => 'Failed to deactivate seller: ' . $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Reactivate a seller account
+     */
+    public function reactivateSeller($sellerId)
+    {
+        $this->checkAdminRole();
+        
+        try {
+            $seller = Seller::with('user')->findOrFail($sellerId);
+            $user = $seller->user;
+            
+            $user->status = 'active';
+            $user->save();
+            
+            return response()->json([
+                'message' => 'Seller account reactivated successfully',
+                'user' => $user
+            ]);
+        } catch (\Exception $e) {
+            return response()->json(['message' => 'Failed to reactivate seller: ' . $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Reset password for a customer
+     */
+    public function resetCustomerPassword($customerId)
+    {
+        $this->checkAdminRole();
+        
+        try {
+            $user = User::findOrFail($customerId);
+            
+            if ($user->role !== 'customer') {
+                return response()->json(['message' => 'User is not a customer'], 400);
+            }
+            
+            // Generate temporary password
+            $tempPassword = \Illuminate\Support\Str::random(12);
+            
+            $user->userPassword = \Illuminate\Support\Facades\Hash::make($tempPassword);
+            $user->save();
+            
+            // Send email with temporary password
+            \App\Services\EmailService::sendPasswordResetEmail($user->userEmail, $user->userName, $tempPassword);
+            
+            return response()->json([
+                'message' => 'Password reset email sent successfully'
+            ]);
+        } catch (\Exception $e) {
+            return response()->json(['message' => 'Failed to reset password: ' . $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Reset password for a seller
+     */
+    public function resetSellerPassword($sellerId)
+    {
+        $this->checkAdminRole();
+        
+        try {
+            $seller = Seller::with('user')->findOrFail($sellerId);
+            $user = $seller->user;
+            
+            // Generate temporary password
+            $tempPassword = \Illuminate\Support\Str::random(12);
+            
+            $user->userPassword = \Illuminate\Support\Facades\Hash::make($tempPassword);
+            $user->save();
+            
+            // Send email with temporary password
+            \App\Services\EmailService::sendPasswordResetEmail($user->userEmail, $user->userName, $tempPassword);
+            
+            return response()->json([
+                'message' => 'Password reset email sent successfully'
+            ]);
+        } catch (\Exception $e) {
+            return response()->json(['message' => 'Failed to reset password: ' . $e->getMessage()], 500);
+        }
+    }
 }

@@ -19,8 +19,20 @@ class ChatController extends Controller
         ]);
 
         try {
-            $user = auth()->user();
+            // Try to get authenticated user, but don't require it for now
+            $user = auth('sanctum')->user() ?? auth()->user();
+            
+            if (!$user) {
+                \Log::error('User not authenticated in createConversation');
+                return response()->json(['error' => 'User not authenticated. Please log in to send messages.'], 401);
+            }
+            
             $seller = \App\Models\Seller::find($request->seller_id);
+            
+            if (!$seller) {
+                \Log::error('Seller not found in createConversation', ['seller_id' => $request->seller_id]);
+                return response()->json(['error' => 'Seller not found'], 404);
+            }
             
             // Check if conversation already exists (using existing schema)
             $existingConversation = Conversation::where('sender_id', $user->userID)
@@ -65,6 +77,11 @@ class ChatController extends Controller
             ]);
 
         } catch (\Exception $e) {
+            \Log::error('Error in createConversation', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+                'request' => $request->all()
+            ]);
             return response()->json(['error' => 'Failed to create conversation.'], 500);
         }
     }
@@ -72,10 +89,18 @@ class ChatController extends Controller
     public function getConversationWithSeller($sellerId)
     {
         try {
-            $user = auth()->user();
+            // Try to get authenticated user, but don't require it for now
+            $user = auth('sanctum')->user() ?? auth()->user();
+            
+            if (!$user) {
+                \Log::error('User not authenticated in getConversationWithSeller');
+                return response()->json(['error' => 'User not authenticated. Please log in to view messages.'], 401);
+            }
+            
             $seller = \App\Models\Seller::find($sellerId);
             
             if (!$seller) {
+                \Log::error('Seller not found', ['sellerId' => $sellerId]);
                 return response()->json(['error' => 'Seller not found'], 404);
             }
             
@@ -97,6 +122,11 @@ class ChatController extends Controller
             ]);
 
         } catch (\Exception $e) {
+            \Log::error('Error in getConversationWithSeller', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+                'sellerId' => $sellerId
+            ]);
             return response()->json(['error' => 'Failed to get conversation.'], 500);
         }
     }
@@ -109,25 +139,52 @@ class ChatController extends Controller
             'receiver_id' => 'required|exists:users,userID',
         ]);
 
-        DB::beginTransaction();
-
         try {
+            // Get authenticated user
+            $user = auth('sanctum')->user() ?? auth()->user();
+            
+            if (!$user) {
+                \Log::error('User not authenticated in sendMessage');
+                return response()->json(['error' => 'User not authenticated. Please log in to send messages.'], 401);
+            }
+
+            DB::beginTransaction();
+
+            // Ensure message_text is not empty (use empty string if null or empty)
+            $messageText = $request->message_text ?? '';
+            
             \Log::info('Sending message', [
                 'conversation_id' => $conversationId,
-                'sender_id' => auth()->user()->userID,
+                'sender_id' => $user->userID,
                 'receiver_id' => $request->receiver_id,
-                'message_text' => $request->message_text
+                'message_text' => $messageText
             ]);
 
             $message = Message::create([
                 'conversation_id' => $conversationId,
-                'sender_id' => auth()->user()->userID,
+                'sender_id' => $user->userID,
                 'receiver_id' => $request->receiver_id,
-                'message' => $request->message_text,
+                'message' => $messageText,
                 'message_type' => $request->message_type ?? 'general',
             ]);
 
+            // Handle attachments if present
+            if ($request->has('attachments') && is_array($request->attachments)) {
+                foreach ($request->attachments as $attachment) {
+                    if (isset($attachment['file_url']) && isset($attachment['file_type'])) {
+                        \App\Models\MessageAttachment::create([
+                            'message_id' => $message->message_id,
+                            'messageAttachment' => $attachment['file_url'],
+                            'file_type' => $attachment['file_type'],
+                        ]);
+                    }
+                }
+            }
+
             DB::commit();
+
+            // Load the message with attachments
+            $message->load('attachments');
 
             \Log::info('Message created successfully', ['message_id' => $message->message_id]);
 
@@ -137,7 +194,9 @@ class ChatController extends Controller
             DB::rollBack();
             \Log::error('Error sending message', [
                 'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
+                'trace' => $e->getTraceAsString(),
+                'conversation_id' => $conversationId,
+                'request' => $request->all()
             ]);
             return response()->json(['error' => 'Message failed to send.'], 500);
         }
@@ -145,9 +204,25 @@ class ChatController extends Controller
 
     public function getMessages($conversationId)
     {
-        return Message::where('conversation_id', $conversationId)
-                      ->orderBy('created_at', 'asc')
-                      ->get();
+        try {
+            \Log::info('Getting messages for conversation', ['conversation_id' => $conversationId]);
+            
+            $messages = Message::where('conversation_id', $conversationId)
+                              ->with('attachments')
+                              ->orderBy('created_at', 'asc')
+                              ->get();
+            
+            \Log::info('Messages retrieved', ['count' => $messages->count()]);
+            
+            return response()->json($messages);
+        } catch (\Exception $e) {
+            \Log::error('Error getting messages', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+                'conversation_id' => $conversationId
+            ]);
+            return response()->json(['error' => 'Failed to get messages.'], 500);
+        }
     }
 
     public function getSellerConversations(Request $request)
@@ -248,6 +323,57 @@ class ChatController extends Controller
                 'trace' => $e->getTraceAsString()
             ]);
             return response()->json(['error' => 'Failed to mark messages as read'], 500);
+        }
+    }
+
+    public function getCustomerConversations(Request $request)
+    {
+        try {
+            $user = auth()->user();
+            
+            if (!$user) {
+                return response()->json(['error' => 'Unauthenticated'], 401);
+            }
+
+            \Log::info('Fetching conversations for customer', [
+                'user_id' => $user->userID
+            ]);
+
+            // Get all conversations where the customer is the sender
+            $conversations = Conversation::where('sender_id', $user->userID)
+                ->with(['receiver.seller', 'messages' => function($query) {
+                    $query->orderBy('created_at', 'desc')->limit(1);
+                }])
+                ->orderBy('updated_at', 'desc')
+                ->get()
+                ->map(function($conversation) {
+                    $receiverUser = $conversation->receiver;
+                    return [
+                        'conversation_id' => $conversation->conversation_id,
+                        'seller' => [
+                            'userName' => $receiverUser->userName ?? 'Seller',
+                            'userEmail' => $receiverUser->userEmail ?? '',
+                        ],
+                        'receiver' => [
+                            'userName' => $receiverUser->userName ?? 'Seller',
+                            'userEmail' => $receiverUser->userEmail ?? '',
+                        ],
+                        'messages' => $conversation->messages,
+                        'created_at' => $conversation->created_at,
+                        'updated_at' => $conversation->updated_at,
+                    ];
+                });
+
+            \Log::info('Found conversations for customer', ['count' => $conversations->count()]);
+
+            return response()->json($conversations);
+
+        } catch (\Exception $e) {
+            \Log::error('Error fetching customer conversations', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            return response()->json(['error' => 'Failed to fetch conversations'], 500);
         }
     }
 }

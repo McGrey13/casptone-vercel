@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import axios from "axios";
+import api from "../../api";
 
 // Helper function for notifications until react-hot-toast is installed
 const showNotification = (type, message) => {
@@ -34,22 +34,14 @@ export default function ChatBox({ conversationId, user, customer }) {
 
     const fetchMessages = async () => {
       try {
-        const response = await axios.get(`/api/chat/${conversationId}/messages`, {
-          headers: {
-            'Authorization': `Bearer ${sessionStorage.getItem('auth_token')}`
-          }
-        });
+        const response = await api.get(`/chat/${conversationId}/messages`);
         const data = Array.isArray(response.data) ? response.data : response.data.messages || [];
         setMessages(data);
         
         // Mark messages as read if user is a seller
         if (user.role === 'seller') {
           try {
-            await axios.post(`/api/chat/${conversationId}/mark-read`, {}, {
-              headers: {
-                'Authorization': `Bearer ${sessionStorage.getItem('auth_token')}`
-              }
-            });
+            await api.post(`/chat/${conversationId}/mark-read`, {});
           } catch (err) {
             console.error("Failed to mark messages as read:", err);
           }
@@ -82,18 +74,18 @@ export default function ChatBox({ conversationId, user, customer }) {
     formData.append("message_type", type);
     formData.append("receiver_id", customer?.userID || user.id);
 
+    // Handle file upload if present
     if (file) {
       try {
         // First upload the file
         const fileFormData = new FormData();
         fileFormData.append("file", file);
         
-        const uploadResponse = await axios.post(
-          `/api/upload`,
+        const uploadResponse = await api.post(
+          `/upload`,
           fileFormData,
           {
             headers: {
-              'Authorization': `Bearer ${sessionStorage.getItem('auth_token')}`,
               'Content-Type': 'multipart/form-data'
             }
           }
@@ -104,30 +96,28 @@ export default function ChatBox({ conversationId, user, customer }) {
         formData.append("attachments[0][file_type]", getFileType(file));
       } catch (error) {
         console.error("File upload failed:", error);
-        showNotification('error', "Failed to upload file");
+        showNotification('error', "Failed to upload file: " + (error.response?.data?.message || "Unknown error"));
         setIsLoading(false);
+        setFile(null);
         return;
       }
     }
 
     try {
-      const response = await axios.post(
-        `/api/chat/${conversationId}/send`,
+      await api.post(
+        `/chat/${conversationId}/send`,
         formData,
         {
           headers: {
-            'Authorization': `Bearer ${sessionStorage.getItem('auth_token')}`,
             'Content-Type': 'multipart/form-data'
           }
         }
       );
 
-      const newMessage = response.data;
-      
-      // Only update messages if we haven't received it through websockets
-      if (!messages.find(m => m.id === newMessage.id)) {
-        setMessages(prev => [...prev, newMessage]);
-      }
+      // Re-fetch all messages to get the complete message with attachments
+      const response2 = await api.get(`/chat/${conversationId}/messages`);
+      const updatedMessages = Array.isArray(response2.data) ? response2.data : response2.data.messages || [];
+      setMessages(updatedMessages);
       
       setText("");    
       setFile(null);
@@ -148,8 +138,8 @@ export default function ChatBox({ conversationId, user, customer }) {
   };
 
   return (
-    <div className="chat-box border p-4 rounded-lg bg-white shadow">
-      <div className="messages h-96 overflow-y-auto mb-4 space-y-4">
+    <div className="chat-box flex flex-col h-full">
+      <div className="messages flex-1 overflow-y-auto mb-4 space-y-3 px-2">
         {messages.length === 0 ? (
           <div className="flex items-center justify-center h-full text-gray-500">
             No messages yet. Start the conversation!
@@ -175,20 +165,20 @@ export default function ChatBox({ conversationId, user, customer }) {
                   </span>
                 </div>
                 
-                <p className="break-words">{m.message || "📎 Attachment only"}</p>
+                {m.message && <p className="break-words mb-2">{m.message}</p>}
                 
-                {m.attachments && m.attachments.map((a, i) => (
+                {m.attachments && m.attachments.length > 0 && m.attachments.map((a, i) => (
                   <div key={i} className="mt-2">
                     {a.file_type === "image" ? (
                       <img 
-                        src={`/storage/${a.file_url}`} 
+                        src={`http://localhost:8000/storage/${a.messageAttachment}`} 
                         alt="attachment" 
-                        className="max-w-full rounded-lg shadow"
+                        className="max-w-full rounded-lg shadow max-h-64 object-contain"
                         loading="lazy"
                       />
                     ) : (
                       <a 
-                        href={`/storage/${a.file_url}`}
+                        href={`http://localhost:8000/storage/${a.messageAttachment}`}
                         target="_blank" 
                         rel="noopener noreferrer"
                         className={`flex items-center gap-2 ${
@@ -205,6 +195,10 @@ export default function ChatBox({ conversationId, user, customer }) {
                   </div>
                 ))}
                 
+                {!m.message && (!m.attachments || m.attachments.length === 0) && (
+                  <p className="break-words text-gray-500 italic">📎 Attachment only</p>
+                )}
+                
                 <div className="text-xs mt-1 opacity-75">
                   {new Date(m.created_at).toLocaleTimeString()}
                 </div>
@@ -215,12 +209,12 @@ export default function ChatBox({ conversationId, user, customer }) {
         <div ref={messagesEndRef} />
       </div>
 
-      <div className="flex flex-col gap-3 border-t pt-4">
+      <div className="flex flex-col gap-2 border-t pt-3 px-2 pb-2">
         <div className="flex gap-2">
           <select 
             value={type} 
             onChange={e => setType(e.target.value)} 
-            className="border rounded px-3 py-2 bg-white text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            className="border rounded px-2 py-1.5 bg-white text-xs focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
           >
             <option value="general">General</option>
             <option value="custom_request">Customization</option>
@@ -248,7 +242,7 @@ export default function ChatBox({ conversationId, user, customer }) {
             value={text}
             onChange={e => setText(e.target.value)}
             placeholder="Type a message..."
-            className="flex-1 border rounded px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            className="flex-1 border rounded px-2 py-1.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             onKeyPress={e => e.key === 'Enter' && !e.shiftKey && sendMessage()}
           />
 
@@ -259,7 +253,7 @@ export default function ChatBox({ conversationId, user, customer }) {
               className="hidden"
               accept="image/*,.pdf,.doc,.docx"
             />
-            <div className="w-10 h-10 flex items-center justify-center border rounded hover:bg-gray-50">
+            <div className="w-8 h-8 flex items-center justify-center border rounded hover:bg-gray-50 text-lg">
               📎
             </div>
           </label>
@@ -267,7 +261,7 @@ export default function ChatBox({ conversationId, user, customer }) {
           <button
             onClick={sendMessage}
             disabled={isLoading || (!text.trim() && !file)}
-            className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+            className="bg-blue-500 text-white px-3 py-1.5 rounded text-sm hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
           >
             {isLoading ? (
               <>

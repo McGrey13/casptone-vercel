@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { MessageCircle, Clock, User } from 'lucide-react';
+import api from '../../api';
 
 const ConversationList = ({ onSelectConversation, currentConversationId }) => {
   const [conversations, setConversations] = useState([]);
@@ -19,27 +20,19 @@ const ConversationList = ({ onSelectConversation, currentConversationId }) => {
       const token = sessionStorage.getItem('auth_token');
       console.log('Fetching conversations with token:', token ? 'present' : 'missing');
       
-      const response = await fetch('/api/chat/seller/conversations', {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Accept': 'application/json',
-        }
-      });
-
-      console.log('Conversations API response status:', response.status);
-
-      if (response.ok) {
-        const data = await response.json();
-        console.log('Conversations data:', data);
-        setConversations(data);
-      } else {
-        const errorData = await response.json().catch(() => ({}));
-        console.error('Failed to fetch conversations:', response.status, errorData);
-        setError(`Failed to load conversations: ${response.status} ${errorData.error || 'Unknown error'}`);
+      if (!token) {
+        setError('Not authenticated. Please log in.');
+        setLoading(false);
+        return;
       }
-    } catch (error) {
-      console.error('Error fetching conversations:', error);
-      setError(`Network error: ${error.message}`);
+
+      const response = await api.get('/chat/seller/conversations');
+      console.log('Conversations API response:', response.data);
+      setConversations(response.data);
+    } catch (err) {
+      console.error('Error fetching conversations:', err);
+      const errorMessage = err.response?.data?.message || err.message || 'Failed to load conversations';
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -58,9 +51,9 @@ const ConversationList = ({ onSelectConversation, currentConversationId }) => {
 
   if (loading) {
     return (
-      <div className="w-80 bg-white border-r border-gray-200 flex flex-col">
+      <div className="w-48 sm:w-56 bg-white border-r border-gray-200 flex flex-col">
         <div className="p-4 border-b border-gray-200">
-          <h3 className="font-semibold text-gray-800">Customer Messages</h3>
+          <h3 className="font-semibold text-gray-800 text-sm">Customer Messages</h3>
         </div>
         <div className="flex-1 flex items-center justify-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#a4785a]"></div>
@@ -70,11 +63,11 @@ const ConversationList = ({ onSelectConversation, currentConversationId }) => {
   }
 
   return (
-    <div className="w-80 bg-white border-r border-gray-200 flex flex-col">
-      <div className="p-4 border-b border-gray-200">
-        <h3 className="font-semibold text-gray-800 flex items-center">
-          <MessageCircle className="h-4 w-4 mr-2 text-[#a4785a]" />
-          Customer Messages ({conversations.length})
+    <div className="w-48 sm:w-56 bg-white border-r border-gray-200 flex flex-col">
+      <div className="p-3 border-b border-gray-200">
+        <h3 className="font-semibold text-gray-800 flex items-center text-sm">
+          <MessageCircle className="h-3 w-3 mr-2 text-[#a4785a]" />
+          Messages ({conversations.length})
         </h3>
       </div>
       

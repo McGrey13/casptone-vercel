@@ -122,6 +122,13 @@ const StoreDetails = ({
                   <SelectItem value="Traditional Accessories">Traditional Accessories</SelectItem>
                   <SelectItem value="Statuary & Sculpture">Statuary & Sculpture</SelectItem>
                   <SelectItem value="Basketry & Weaving">Basketry & Weaving</SelectItem>
+                  <SelectItem value="Shoe & Sandals Making">Shoe & Sandals Making</SelectItem>
+                  <SelectItem value="Leather Crafts">Leather Crafts</SelectItem>
+                  <SelectItem value="Candle Making">Candle Making</SelectItem>
+                  <SelectItem value="Wood Carving">Wood Carving</SelectItem>
+                  <SelectItem value="House Garments">House Garments</SelectItem>
+                  <SelectItem value="Beadwork">Beadwork</SelectItem>
+                  <SelectItem value="Crochet">Crochet</SelectItem>
                 </SelectContent>
               </Select>
             </div>

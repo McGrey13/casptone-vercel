@@ -1,0 +1,12 @@
+.public-layout {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.public-main-content {
+  flex: 1;
+  /* This will push the footer to the bottom */
+}
+
+

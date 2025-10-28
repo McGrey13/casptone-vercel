@@ -4,8 +4,6 @@ import api from "../../api";
 import {
   LayoutDashboard,
   ShoppingBag,
-  CreditCard,
-  Truck,
   Megaphone,
   Calendar,
   Share2,
@@ -16,7 +14,6 @@ import {
   LogOut,
   UserCircle,
   MessageCircle,
-  FileText,
   Menu,
   X,
 } from "lucide-react";
@@ -38,30 +35,24 @@ import {
 
 import Dashboard from "../Seller/SellerDashboard";
 import StorefrontCustomizer from "../Seller/StorefrontCustomizer";
-import PaymentSettings from "./PaymentSettings";
+import Payment from "./Payment";
 import OrderInventoryManager from "./OrderInventoryManager";
 import MarketingTools from "./MarketingTools";
-import ShippingSettings from "./ShippingSettings";
 import SocialMedia from "./SocialMedia";
 import WorkshopsEvents from "./WorkshopsEvents";
 import SellerSettings from "./SellerSettings";
-import ProfilePage from "./ProfilePage";
-import ShippingSimulation from "./ShippingSimulation";
-import EReceiptWaybill from "./EReceiptWaybill";
-import PaymentTracking from "./PaymentTracking";
-import { Wallet } from "lucide-react";
+// import ProfilePage from "./ProfilePage";
+import InventoryManager from "./InventoryManager";
+import { Wallet, Package } from "lucide-react";
 
 const sidebarItems = [
   { key: "storefront", label: "Storefront Customizer", icon: <Palette className="h-5 w-5" /> },
   { key: "dashboard", label: "Dashboard", icon: <LayoutDashboard className="h-5 w-5" /> },
-  { key: "profile", label: "My Profile", icon: <UserCircle className="h-5 w-5" /> },
-  { key: "payments", label: "E-payment Settings", icon: <Wallet className="h-5 w-5" /> },
-  { key: "payment-tracking", label: "Payment Tracking", icon: <Wallet className="h-5 w-5" /> },
-  { key: "orders", label: "Orders & Inventory", icon: <ShoppingBag className="h-5 w-5" /> },
-  { key: "shipping-sim", label: "Shipping", icon: <Truck className="h-5 w-5" /> },
-  { key: "receipts", label: "E-Receipts & Waybills", icon: <FileText className="h-5 w-5" /> },
+  // { key: "profile", label: "My Profile", icon: <UserCircle className="h-5 w-5" /> },
+  { key: "payments", label: "Payments", icon: <Wallet className="h-5 w-5" /> },
+  { key: "orders", label: "Orders & Shipping", icon: <ShoppingBag className="h-5 w-5" /> },
+  { key: "inventory", label: "Inventory", icon: <Package className="h-5 w-5" /> },
   { key: "marketing", label: "Marketing Tools", icon: <Megaphone className="h-5 w-5" /> },
-  { key: "shipping", label: "Shipping Settings", icon: <Truck className="h-5 w-5" /> },
   { key: "workshops", label: "Workshops & Events", icon: <Calendar className="h-5 w-5" /> },
   { key: "social", label: "Social Media", icon: <Share2 className="h-5 w-5" /> },
   { key: "settings", label: "Settings", icon: <Settings className="h-5 w-5" /> },
@@ -210,19 +201,13 @@ const SellerLayout = () => {
       case "profile":
         return <ProfilePage />;
       case "payments":
-        return <PaymentSettings />;
-      case "payment-tracking":
-        return <PaymentTracking />;
+        return <Payment />;
       case "orders":
         return <OrderInventoryManager />;
-      case "shipping-sim":
-        return <ShippingSimulation />;
-      case "receipts":
-        return <EReceiptWaybill />;
+      case "inventory":
+        return <InventoryManager />;
       case "marketing":
         return <MarketingTools />;
-      case "shipping":
-        return <ShippingSettings />;
       case "workshops":
         return <WorkshopsEvents />;
       case "social":
@@ -517,54 +502,61 @@ const SellerLayout = () => {
       </div>
 
       {/* Floating Chat Button */}
-      <button
-        onClick={() => setIsChatOpen(true)}
-        className="
-          fixed bottom-4 sm:bottom-6 right-4 sm:right-6 
-          bg-gradient-to-r from-[#a4785a] to-[#7b5a3b] 
-          text-white 
-          p-3 sm:p-4 
-          rounded-full 
-          shadow-xl 
-          transition-all duration-300 
-          hover:scale-110 
-          hover:shadow-2xl 
-          focus:outline-none 
-          focus:ring-4 
-          focus:ring-[#a4785a]/30 
-          group 
-          border-2 border-white
-          z-40
-        "
-      >
-        <MessageCircle className="h-5 w-5 sm:h-6 sm:w-6 transition-transform duration-300 group-hover:rotate-12 group-hover:scale-110" />
-        <div className="absolute -top-1 -right-1 w-2.5 h-2.5 sm:w-3 sm:h-3 bg-gradient-to-r from-red-500 to-red-600 rounded-full animate-pulse"></div>
-      </button>
+      {!isChatOpen && (
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            console.log('Opening chat...');
+            setIsChatOpen(true);
+          }}
+          className="
+            fixed bottom-4 sm:bottom-6 right-4 sm:right-6 
+            bg-gradient-to-r from-[#a4785a] to-[#7b5a3b] 
+            text-white 
+            p-3 sm:p-4 
+            rounded-full 
+            shadow-xl 
+            transition-all duration-300 
+            hover:scale-110 
+            hover:shadow-2xl 
+            focus:outline-none 
+            focus:ring-4 
+            focus:ring-[#a4785a]/30 
+            group 
+            border-2 border-white
+            z-40
+          "
+        >
+          <MessageCircle className="h-5 w-5 sm:h-6 sm:w-6 transition-transform duration-300 group-hover:rotate-12 group-hover:scale-110" />
+          <div className="absolute -top-1 -right-1 w-2.5 h-2.5 sm:w-3 sm:h-3 bg-gradient-to-r from-red-500 to-red-600 rounded-full animate-pulse"></div>
+        </button>
+      )}
 
       {/* Chat Popup */}
       {isChatOpen && (
-        <div className="
+        <div 
+          onClick={(e) => e.stopPropagation()}
+          className="
           fixed 
-          sm:bottom-20 sm:right-6 
-          inset-0 sm:inset-auto
-          sm:w-[600px] md:w-[700px] lg:w-[800px] 
-          h-full sm:h-[600px]
+          top-0 left-0 right-0 bottom-0 sm:top-auto sm:left-auto sm:right-6 sm:bottom-20
+          sm:w-[450px] md:w-[550px] lg:w-[650px] 
+          sm:h-[500px]
           bg-white 
           sm:rounded-2xl 
           shadow-2xl 
           border-0 sm:border-2 border-[#e5ded7] 
           overflow-hidden 
           transition-all duration-300 
-          animate-slideUp 
           flex 
-          backdrop-blur-sm
+          flex-col
           z-50
         ">
-          <ConversationList 
-            onSelectConversation={handleSelectConversation}
-            currentConversationId={currentConversation?.conversation_id}
-          />
-          <div className="flex-1 flex flex-col">
+          <div className="flex flex-1 overflow-hidden">
+            <ConversationList 
+              onSelectConversation={handleSelectConversation}
+              currentConversationId={currentConversation?.conversation_id}
+            />
+            <div className="flex-1 flex flex-col border-l border-gray-200">
             <div className="flex justify-between items-center bg-gradient-to-r from-[#a4785a] to-[#7b5a3b] text-white px-3 sm:px-6 py-3 sm:py-4">
               <h3 className="font-semibold flex items-center text-sm sm:text-base lg:text-lg">
                 <div className="p-1 sm:p-1.5 bg-white/20 rounded-lg mr-2 sm:mr-3">
@@ -584,11 +576,13 @@ const SellerLayout = () => {
               </button>
             </div>
             {currentConversation ? (
-              <ChatBox 
-                conversationId={currentConversation.conversation_id} 
-                user={currentUser}
-                customer={currentConversation.sender}
-              />
+              <div className="flex-1 overflow-hidden">
+                <ChatBox 
+                  conversationId={currentConversation.conversation_id} 
+                  user={currentUser}
+                  customer={currentConversation.sender}
+                />
+              </div>
             ) : (
               <div className="flex-1 flex items-center justify-center bg-gradient-to-br from-[#faf9f8] to-white p-4">
                 <div className="text-center">
@@ -600,6 +594,7 @@ const SellerLayout = () => {
                 </div>
               </div>
             )}
+            </div>
           </div>
         </div>
       )}

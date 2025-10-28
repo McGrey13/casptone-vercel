@@ -28,6 +28,8 @@ import ArtisanDetail from './Components/Artisans/ArtisanDetail';
 import Register from './Components/Auth/Register';
 import Login from './Components/Auth/Login';
 import OtpVerification from './Components/Auth/otpVerification';
+import ForgotPassword from './Components/Auth/ForgotPassword';
+import ResetPassword from './Components/Auth/ResetPassword';
 import ProductsPage from './Components/product/ProductsPage';
 import ProductDetails from './Components/product/ProductDetails';
 import { Favorites } from './Components/pages/Favorites';
@@ -45,7 +47,6 @@ import MarketingTools from './Components/Seller/MarketingTools';
 import OrderInventoryManager from './Components/Seller/OrderInventoryManager';
 import PaymentSettings from './Components/Seller/PaymentSettings';
 import SellerSettings from './Components/Seller/SellerSettings';
-import ShippingSettings from './Components/Seller/ShippingSettings';
 import SocialMedia from './Components/Seller/SocialMedia';
 import StorefrontCustomizer from './Components/Seller/StorefrontCustomizer';
 import WorkshopsEvents from './Components/Seller/WorkshopsEvents';
@@ -84,8 +85,15 @@ function App() {
   {/* Store View Route */}
   <Route path="/storeview" element={<StoreView />} />
 
+        {/* Auth Routes - No Navbar (Standalone) */}
+        <Route path="verify-otp" element={<OtpVerification />} />
+        <Route path="forgot-password" element={<ForgotPassword />} />
+        <Route path="reset-password" element={<ResetPassword />} />
+
         {/* Public Routes */}
         <Route path="/" element={<PublicLayout />}>
+          <Route path="register" element={<Register />} />
+          <Route path="login" element={<Login />} />
           <Route path="home" element={<Home />} />
           <Route path="favorites" element={<Favorites />} />
           <Route path="/cart" element={<ShoppingCart />} />
@@ -100,9 +108,6 @@ function App() {
           <Route path="category/:id" element={<CategoryProducts />} />
           <Route path="artisan" element={<Artisan />} />
           <Route path="artisans/:id" element={<ArtisanDetail />} />
-          <Route path="register" element={<Register />} />
-          <Route path="login" element={<Login />} />
-          <Route path="verify-otp" element={<OtpVerification />} />
           <Route path="products" element={<ProductsPage />} />
           <Route path="product/:id" element={<ProductDetails />} />
           <Route path="store/:id" element={<ArtisanDetail />} />
@@ -119,7 +124,6 @@ function App() {
           <Route path="order-inventory-manager" element={<OrderInventoryManager />} />
           <Route path="payment-settings" element={<PaymentSettings />} />
           <Route path="seller-settings" element={<SellerSettings />} />
-          <Route path="shipping-settings" element={<ShippingSettings />} />
           <Route path="social-media" element={<SocialMedia />} />
           <Route path="storefront-customizer" element={<StorefrontCustomizer />} />
           <Route path="workshops-events" element={<WorkshopsEvents />} />

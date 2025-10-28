@@ -239,19 +239,6 @@ const ArtisanDetail = () => {
     });
   };
 
-  // Buy Now functionality
-  const handleBuyNow = async (product) => {
-    const token = sessionStorage.getItem("auth_token");
-    if (!token) {
-      alert("Please log in to purchase items");
-      navigate("/login");
-      return;
-    }
-
-    const quantity = productQuantities[product.id] || 1;
-    navigate("/checkout", { state: { product: { ...product, quantity } } });
-  };
-
   // Add to Cart functionality
   const handleAddToCart = async (product) => {
     const token = sessionStorage.getItem("auth_token");
@@ -484,7 +471,6 @@ const ArtisanDetail = () => {
           workshops={workshops}
           productQuantities={productQuantities}
           updateQuantity={updateQuantity}
-          handleBuyNow={handleBuyNow}
           handleAddToCart={handleAddToCart}
           addingToCart={addingToCart}
           searchQuery={searchQuery}
@@ -543,7 +529,6 @@ const ArtisanStorePreview = ({
   workshops = [],
   productQuantities = {},
   updateQuantity,
-  handleBuyNow,
   handleAddToCart,
   addingToCart,
   searchQuery,
@@ -848,7 +833,60 @@ const ArtisanStorePreview = ({
             
       {/* Seller Discounts */}
       <div className="max-w-5xl mx-auto mt-4 sm:mt-6 z-10 relative px-4 sm:px-6">
-        {/* ... [Discounts content remains unchanged] */}
+        <div
+          className="rounded-xl sm:rounded-2xl shadow p-4 sm:p-6"
+          style={{ backgroundColor: customization.background_color }}
+        >
+          <div 
+            className="w-full rounded-xl border p-3 sm:p-4"
+            style={{ borderColor: customization.accent_color, backgroundColor: customization.background_color }}
+          >
+            <div className="flex items-center justify-between mb-2 sm:mb-3">
+              <span className="text-base sm:text-lg font-bold" style={{ color: customization.primary_color }}>🎁 Seller Discount Codes</span>
+            </div>
+            <div className="space-y-2 max-h-48 overflow-auto pr-1">
+              {discountCodes && discountCodes.length > 0 ? (
+                discountCodes.map((dc) => (
+                  <div 
+                    key={dc.id} 
+                    className="rounded-lg border px-3 sm:px-4 py-2 flex items-center justify-between hover:shadow-md transition-shadow"
+                    style={{ borderColor: `${customization.accent_color}55`, backgroundColor: `${customization.background_color}` }}
+                  >
+                    <div className="flex-1">
+                      <div className="text-sm sm:text-base font-semibold" style={{ color: customization.primary_color }}>
+                        {dc.code || dc.name || 'DISCOUNT'}
+                      </div>
+                      <div className="text-xs sm:text-sm" style={{ color: customization.text_color }}>
+                        {(dc.type === 'percentage' || dc.type === 'percent') 
+                          ? `${dc.value}% off` 
+                          : `₱${Number(dc.value).toFixed(2)} off`}
+                        {dc.description && ` - ${dc.description}`}
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => {
+                        const codeToCopy = dc.code || dc.name || 'DISCOUNT';
+                        navigator.clipboard.writeText(codeToCopy);
+                        alert(`Discount code "${codeToCopy}" copied to clipboard!`);
+                      }}
+                      className="ml-3 px-3 py-1 sm:py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all duration-200 hover:scale-105"
+                      style={{ 
+                        backgroundColor: customization.accent_color,
+                        color: customization.text_color
+                      }}
+                    >
+                      Copy
+                    </button>
+                  </div>
+                ))
+              ) : (
+                <div className="text-sm sm:text-base text-center py-4" style={{ color: customization.text_color }}>
+                  No discount codes available at this time
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Search and Filter Section */}

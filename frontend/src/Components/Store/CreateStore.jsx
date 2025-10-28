@@ -33,7 +33,15 @@ const CreateStore = () => {
     "Rubber Stamp Engraving",
     "Traditional Accessories",
     "Statuary & Sculpture",
-    "Basketry & Weaving"
+    "Basketry & Weaving",
+    "Shoe & Sandals Making",
+    "Leather Crafts",
+    "Candle Making",
+    "Wood Carving",
+    "House Garments",
+    "Beadwork",
+    "Crochet",
+    
   ];
   const [isSubmitted, setIsSubmitted] = useState(false);
 

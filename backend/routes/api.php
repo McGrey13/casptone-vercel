@@ -49,6 +49,42 @@ Route::middleware([])->group(function () {
         ]);
     });
     
+    // Public endpoint to get active discount codes
+    Route::get('/public/discount-codes', function () {
+        try {
+            $discountCodes = App\Models\DiscountCode::where(function($query) {
+                // Check if not expired
+                $query->whereNull('expires_at')
+                      ->orWhere('expires_at', '>', now());
+            })
+            ->where(function($query) {
+                // Check if usage limit not reached
+                $query->whereNull('usage_limit')
+                      ->orWhereColumn('times_used', '<', 'usage_limit');
+            })
+            ->get();
+            
+            return response()->json([
+                'success' => true,
+                'discount_codes' => $discountCodes->map(function($code) {
+                    return [
+                        'id' => $code->id,
+                        'code' => $code->code ?? $code->code_name ?? ($code->name ?? 'CODE'),
+                        'name' => $code->name ?? $code->code_name ?? null,
+                        'type' => $code->type ?? ($code->is_percentage ? 'percentage' : 'fixed'),
+                        'value' => (float) ($code->value ?? 0),
+                        'description' => $code->description ?? null,
+                        'usage_limit' => $code->usage_limit ?? null,
+                        'times_used' => $code->times_used ?? 0,
+                        'expires_at' => $code->expires_at ? $code->expires_at->toIso8601String() : null,
+                    ];
+                })
+            ]);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'error' => $e->getMessage()], 500);
+        }
+    });
+    
     // CSRF token endpoint for session-based authentication
     Route::get('/csrf-token', function () {
         return response()->json([
@@ -161,6 +197,8 @@ Route::middleware([])->group(function () {
         Route::post('/login', [SecureAuthController::class, 'login']);
         Route::post('/verify-otp', [SecureAuthController::class, 'verifyOtp']);
         Route::post('/refresh-token', [SecureAuthController::class, 'refreshToken']);
+        Route::post('/forgot-password', [AuthController::class, 'forgotPassword']);
+        Route::post('/reset-password', [AuthController::class, 'resetPassword']);
         Route::get('/profile', [SecureAuthController::class, 'profile'])->middleware('auth:sanctum');
         Route::put('/profile', [AuthController::class, 'updateProfile'])->middleware('auth:sanctum');
         Route::post('/profile', [AuthController::class, 'updateProfile'])->middleware('auth:sanctum'); // For multipart/form-data with _method override
@@ -423,6 +461,16 @@ Route::middleware([])->group(function () {
 
 // Protected routes 
 Route::middleware(['auth:sanctum'])->group(function () {
+    //Customer Chat Routes (protected)
+    Route::get('/chat/conversations', [ChatController::class, 'getCustomerConversations']);
+    Route::post('/conversations', [ChatController::class, 'createConversation']);
+    Route::get('/conversations/with-seller/{sellerId}', [ChatController::class, 'getConversationWithSeller']);
+    Route::post('/chat/{conversation}/send', [ChatController::class, 'sendMessage']);
+    Route::get('/chat/{conversation}/messages', [ChatController::class, 'getMessages']);
+    
+    // File upload route for chat attachments
+    Route::post('/upload', [\App\Http\Controllers\Api\FileUploadController::class, 'store']);
+    
     // Protected review routes
     Route::prefix('products/{product}')->group(function () {
         Route::post('/reviews', [ReviewController::class, 'store']);
@@ -529,6 +577,16 @@ Route::middleware(['auth:sanctum'])->group(function () {
             Route::post('/stores/{storeId}/reject', [AdminController::class, 'rejectStore']);
             Route::get('/verification-stats', [AdminController::class, 'getVerificationStats']);
             Route::post('/sellers/{sellerId}/verify', [AdminController::class, 'verifySeller']);
+            
+            // Customer management routes
+            Route::post('/customers/{customerId}/deactivate', [AdminController::class, 'deactivateCustomer']);
+            Route::post('/customers/{customerId}/reactivate', [AdminController::class, 'reactivateCustomer']);
+            Route::post('/customers/{customerId}/reset-password', [AdminController::class, 'resetCustomerPassword']);
+            
+            // Seller management routes
+            Route::post('/sellers/{sellerId}/deactivate', [AdminController::class, 'deactivateSeller']);
+            Route::post('/sellers/{sellerId}/reactivate', [AdminController::class, 'reactivateSeller']);
+            Route::post('/sellers/{sellerId}/reset-password', [AdminController::class, 'resetSellerPassword']);
         });
         
         // Analytics routes (admin only - but endpoints are public for easier access)
@@ -749,12 +807,7 @@ Route::middleware(['auth:sanctum'])->get('/admin/products', [ProductController::
 
     // NOTE: Order routes are defined in the protected middleware group above (lines 414-419)
     // The /orders endpoint is at line 415 with proper auth:sanctum protection
-
-    //Customer Chat Routes 
-    Route::post('/conversations', [ChatController::class, 'createConversation']);
-    Route::get('/conversations/with-seller/{sellerId}', [ChatController::class, 'getConversationWithSeller']);
-    Route::post('/chat/{conversation}/send', [ChatController::class, 'sendMessage']);
-    Route::get('/chat/{conversation}/messages', [ChatController::class, 'getMessages']);
+    // NOTE: Chat routes are now in the protected middleware group above (around line 431)
 
     Route::post('/payments/initiate', [PaymentController::class, 'initiatePayment']);
     Route::post('/payments/confirm', [PaymentController::class, 'confirmPayment']);
@@ -902,5 +955,25 @@ if (env('APP_ENV') === 'local' || env('APP_DEBUG')) {
                 ])
             ]);
         });
-    });
-}
+          });
+  }
+
+// Test endpoint for debugging
+Route::post('/test-forgot-password', function(Request $request) {
+    try {
+        return response()->json([
+            'message' => 'Test endpoint working',
+            'email' => $request->userEmail,
+            'env' => [
+                'frontend_url' => env('FRONTEND_URL'),
+                'mail_host' => env('MAIL_HOST'),
+                'mail_port' => env('MAIL_PORT'),
+            ]
+        ]);
+    } catch (\Exception $e) {
+        return response()->json([
+            'error' => $e->getMessage(),
+            'trace' => $e->getTraceAsString()
+        ], 500);
+    }
+});

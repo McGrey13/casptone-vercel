@@ -7,6 +7,8 @@ import {
   ShoppingBag,
   Store,
   Mail,
+  Eye,
+  EyeOff,
 } from "lucide-react";
 import { useUser } from "../Context/UserContext";
 import { setToken } from "../../api";
@@ -16,6 +18,7 @@ import "./Login.css";
 const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
   const [role, setRole] = useState("");
   const [error, setError] = useState("");
@@ -249,12 +252,23 @@ useEffect(() => {
               <input
                 id="password"
                 placeholder="Enter your password"
-                type="password"
+                type={showPassword ? "text" : "password"}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                className="w-full pl-10 pr-4 py-2 border border-[#d5bfae] rounded-md text-base transition-all focus:border-[#a4785a] focus:outline-none focus:ring-2 focus:ring-[#a4785a]/20"
+                className="w-full pl-10 pr-10 py-2 border border-[#d5bfae] rounded-md text-base transition-all focus:border-[#a4785a] focus:outline-none focus:ring-2 focus:ring-[#a4785a]/20"
               />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute top-1/2 right-3 -translate-y-1/2 text-[#a4785a] hover:text-[#8f674a] transition-colors"
+              >
+                {showPassword ? (
+                  <EyeOff className="h-4 w-4" />
+                ) : (
+                  <Eye className="h-4 w-4" />
+                )}
+              </button>
             </div>
           </div>
 

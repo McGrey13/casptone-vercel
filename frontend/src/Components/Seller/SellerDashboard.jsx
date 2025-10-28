@@ -303,7 +303,7 @@ const SellerDashboard = () => {
               Recent Orders
             </CardTitle>
             <CardDescription className="text-[#7b5a3b]">
-              Latest 5 orders placed on the platform
+              Latest 5 orders from customers
             </CardDescription>
           </CardHeader>
           <CardContent className="pt-6">
@@ -352,7 +352,7 @@ const SellerDashboard = () => {
               Top Rated Products
             </CardTitle>
             <CardDescription className="text-[#7b5a3b]">
-              Products with highest customer ratings
+              Top 5 products with highest customer ratings
             </CardDescription>
           </CardHeader>
           <CardContent className="pt-6">

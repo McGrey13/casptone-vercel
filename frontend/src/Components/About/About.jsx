@@ -1,8 +1,24 @@
-import React from "react";
-import { Link } from "react-router-dom";
+import React, { useEffect } from "react";
+import { Link, useLocation } from "react-router-dom";
 import { Button } from "../ui/button";
 
 const AboutPage = () => {
+  const location = useLocation();
+
+  // Handle smooth scrolling to anchor links
+  useEffect(() => {
+    if (location.hash) {
+      setTimeout(() => {
+        const element = document.querySelector(location.hash);
+        if (element) {
+          element.scrollIntoView({ 
+            behavior: 'smooth',
+            block: 'start'
+          });
+        }
+      }, 100);
+    }
+  }, [location]);
   const teamMembers = [
     {
       name: "Gio Mc Grey O. Calugas",
@@ -22,7 +38,7 @@ const AboutPage = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-white flex items-center justify-center overflow-auto px-4 py-8">
+    <div id="aboutus" className="min-h-screen bg-white flex items-center justify-center overflow-auto px-4 py-8">
       <div className="w-full max-w-7xl">
         {/* Breadcrumb */}
         <div className="flex items-center mb-6 text-sm">
@@ -151,6 +167,108 @@ const AboutPage = () => {
                 </div>
               </div>
             ))}
+          </div>
+        </div>
+
+        {/* Terms of Service */}
+        <div id="terms-of-service" className="mb-12 scroll-mt-20">
+          <div className="bg-white p-6 rounded-lg shadow-sm">
+            <div className="flex items-center gap-2 mb-4">
+              <span className="text-2xl">🧾</span>
+              <h2 className="text-2xl font-bold">Terms of Service</h2>
+            </div>
+            <p className="text-gray-600 text-sm mb-4">Last Updated: October 2025</p>
+            <div className="space-y-4 text-gray-700">
+              <p>Welcome to CraftConnect, a web-based marketplace designed for Laguna artisans to showcase and sell their handmade crafts. By accessing or using our platform, you agree to comply with these Terms of Service. Please read them carefully before using CraftConnect.</p>
+              <h3 className="font-semibold text-lg">1. Acceptance of Terms</h3>
+              <p>By registering, browsing, or purchasing through CraftConnect, you agree to be bound by these Terms. If you do not agree, please discontinue using the platform.</p>
+              <h3 className="font-semibold text-lg">2. Platform Overview</h3>
+              <p>CraftConnect serves as a digital marketplace connecting artisans (sellers) and customers (buyers). We facilitate transactions but do not own or manufacture listed products.</p>
+              <h3 className="font-semibold text-lg">3. Account Registration</h3>
+              <p>Users must provide accurate and complete information during registration. Each account is personal and must not be shared. Sellers must ensure all products are handmade and comply with CraftConnect's authenticity standards.</p>
+              <h3 className="font-semibold text-lg">4. Use of the Platform</h3>
+              <p>You agree not to post or sell counterfeit or prohibited items, engage in fraudulent, abusive, or misleading conduct, or circumvent payment or delivery processes.</p>
+              <h3 className="font-semibold text-lg">5. Payments</h3>
+              <p>All payments are processed securely through approved methods (e.g., Cash on Delivery or E-Wallet). CraftConnect is not liable for delays caused by third-party payment gateways.</p>
+              <h3 className="font-semibold text-lg">6. Intellectual Property</h3>
+              <p>All content on CraftConnect — including logos, text, images, and software — is protected by copyright laws. Users retain ownership of their own product photos and descriptions but grant CraftConnect a license to display them for promotional purposes.</p>
+              <h3 className="font-semibold text-lg">7. Limitation of Liability</h3>
+              <p>CraftConnect acts only as an intermediary. We are not responsible for the quality, safety, or legality of items sold by artisans.</p>
+              <h3 className="font-semibold text-lg">8. Termination</h3>
+              <p>We reserve the right to suspend or terminate accounts that violate our policies or engage in fraudulent activity.</p>
+              <h3 className="font-semibold text-lg">9. Updates to Terms</h3>
+              <p>CraftConnect may revise these Terms from time to time. Continued use of the platform signifies acceptance of any changes.</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Privacy Policy */}
+        <div id="privacy-policy" className="mb-12 scroll-mt-20">
+          <div className="bg-white p-6 rounded-lg shadow-sm">
+            <div className="flex items-center gap-2 mb-4">
+              <span className="text-2xl">🔒</span>
+              <h2 className="text-2xl font-bold">Privacy Policy</h2>
+            </div>
+            <p className="text-gray-600 text-sm mb-4">Last Updated: October 2025</p>
+            <div className="space-y-4 text-gray-700">
+              <p>CraftConnect values your privacy and is committed to protecting your personal information.</p>
+              <h3 className="font-semibold text-lg">1. Information We Collect</h3>
+              <p>Personal Data: Name, email, phone number, and address (for account creation and delivery). Transaction Data: Orders, payments, and refund history. Usage Data: Login activity, preferences, and browsing behavior.</p>
+              <h3 className="font-semibold text-lg">2. Use of Information</h3>
+              <p>We collect and process data to facilitate transactions between buyers and sellers, improve system performance and user experience, and send updates, promotions, or notifications (only with consent).</p>
+              <h3 className="font-semibold text-lg">3. Data Protection</h3>
+              <p>We implement encryption, secure payment gateways, and strict access controls. Your information will never be sold or shared with third parties without consent, except when required by law.</p>
+              <h3 className="font-semibold text-lg">4. Cookies</h3>
+              <p>CraftConnect uses cookies to improve functionality and personalize the user experience.</p>
+              <h3 className="font-semibold text-lg">5. User Rights</h3>
+              <p>You may request to update, access, or delete your personal data at any time through your account settings or by contacting our support team.</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Shipping Policy */}
+        <div id="shipping-policy" className="mb-12 scroll-mt-20">
+          <div className="bg-white p-6 rounded-lg shadow-sm">
+            <div className="flex items-center gap-2 mb-4">
+              <span className="text-2xl">🚚</span>
+              <h2 className="text-2xl font-bold">Shipping Policy</h2>
+            </div>
+            <p className="text-gray-600 text-sm mb-4">Last Updated: October 2025</p>
+            <div className="space-y-4 text-gray-700">
+              <p>CraftConnect supports local shipping across the province of Laguna, managed directly by artisans.</p>
+              <h3 className="font-semibold text-lg">1. Processing Time</h3>
+              <p>Orders are processed within 3–5 business days after confirmation. Custom-made items may require additional time.</p>
+              <h3 className="font-semibold text-lg">2. Delivery</h3>
+              <p>Deliveries are handled through local couriers or seller-managed delivery services. Real-time order tracking is available on the platform. Customers will be notified once their orders are shipped.</p>
+              <h3 className="font-semibold text-lg">3. Shipping Fees</h3>
+              <p>Shipping costs are computed at checkout and may vary depending on location and courier rates.</p>
+              <h3 className="font-semibold text-lg">4. Failed Delivery</h3>
+              <p>If a delivery attempt fails due to incorrect address or unavailability, customers may contact the seller for re-delivery options (additional fees may apply).</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Returns & Refunds Policy */}
+        <div id="returns-refunds" className="mb-12 scroll-mt-20">
+          <div className="bg-white p-6 rounded-lg shadow-sm">
+            <div className="flex items-center gap-2 mb-4">
+              <span className="text-2xl">💰</span>
+              <h2 className="text-2xl font-bold">Returns & Refunds Policy</h2>
+            </div>
+            <p className="text-gray-600 text-sm mb-4">Last Updated: October 2025</p>
+            <div className="space-y-4 text-gray-700">
+              <p>CraftConnect ensures customer satisfaction while supporting fair artisan practices.</p>
+              <h3 className="font-semibold text-lg">1. Eligibility for Return or Refund</h3>
+              <p>Returns or refunds may be requested if the item arrives damaged or defective, the item is lost during shipping, or the product received is significantly different from its description.</p>
+              <h3 className="font-semibold text-lg">2. Request Procedure</h3>
+              <p>Report the issue within 5 calendar days of delivery. Provide photo or video proof of the issue. Items must be unused and kept in their original packaging.</p>
+              <h3 className="font-semibold text-lg">3. Processing</h3>
+              <p>Approved refunds are issued within 7–14 business days to the original payment method. Partial refunds may apply if the item shows signs of use, alteration, or missing parts.</p>
+              <h3 className="font-semibold text-lg">4. Non-Refundable Items</h3>
+              <p>Custom-made or personalized products are not eligible for return unless defective.</p>
+              <h3 className="font-semibold text-lg">5. Support</h3>
+              <p>Contact our Help Center for assistance. CraftConnect and the seller will coordinate to find a fair resolution (refund, replacement, or repair).</p>
+            </div>
           </div>
         </div>
 

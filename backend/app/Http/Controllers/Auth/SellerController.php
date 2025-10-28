@@ -63,7 +63,11 @@ class SellerController extends AuthController
 
       public function getAllSellers()
     {
-        $sellers = Seller::with(['user', 'products.reviews', 'store'])->get();
+        $sellers = Seller::with(['user', 'products.reviews', 'store'])
+            ->whereHas('user', function($q) {
+                $q->where('status', 'active'); // Only show active sellers
+            })
+            ->get();
         
         // Transform the data to include profile image URLs and ratings
         $sellersWithImages = $sellers->map(function ($seller) {

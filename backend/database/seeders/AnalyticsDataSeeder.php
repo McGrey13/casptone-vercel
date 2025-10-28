@@ -293,14 +293,14 @@ class AnalyticsDataSeeder extends Seeder
         $this->command->info('Using existing customers for analytics data...');
 
         // Get all existing customer users instead of creating new ones
-        $customers = User::where('role', 'customer')->get()->toArray();
+        $customers = User::where('role', 'customer')->get();
         
-        if (empty($customers)) {
+        if ($customers->isEmpty()) {
             $this->command->warn('No customers found. Please run CustomerSeeder first.');
             return;
         }
         
-        $this->command->info('Found ' . count($customers) . ' existing customers.');
+        $this->command->info('Found ' . $customers->count() . ' existing customers.');
 
         // Create sample orders using existing customers
         $this->createSampleOrders($customers);
@@ -317,7 +317,7 @@ class AnalyticsDataSeeder extends Seeder
         $orderCount = rand(50, 100);
         
         for ($i = 0; $i < $orderCount; $i++) {
-            $customer = $customers[array_rand($customers)];
+            $customer = $customers->random();
             $seller = $sellers->random();
             $sellerProducts = $products->where('seller_id', $seller->sellerID);
             

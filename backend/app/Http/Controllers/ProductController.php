@@ -887,6 +887,9 @@ class ProductController extends Controller
                 ->where('approval_status', 'approved')
                 ->where('publish_status', 'published')
                 ->where('is_featured', true)
+                ->whereHas('seller.user', function($q) {
+                    $q->where('status', 'active'); // Only show products from active sellers
+                })
                 ->get();
 
             // Transform products to include full image URLs
@@ -968,6 +971,9 @@ class ProductController extends Controller
             $products = Product::with(['seller.user', 'seller.store', 'reviews.user'])
                 ->where('approval_status', 'approved')
                 ->where('publish_status', 'published')
+                ->whereHas('seller.user', function($q) {
+                    $q->where('status', 'active'); // Only show products from active sellers
+                })
                 ->get();
 
             // Transform products to include full image URLs
@@ -1144,6 +1150,9 @@ class ProductController extends Controller
                 ->whereIn('seller_id', $followedSellerIds)
                 ->where('approval_status', 'approved')
                 ->where('publish_status', 'published')
+                ->whereHas('seller.user', function($q) {
+                    $q->where('status', 'active'); // Only show products from active sellers
+                })
                 ->orderByRaw('FIELD(seller_id, ' . implode(',', $followedSellerIds->toArray()) . ') DESC')
                 ->get();
 

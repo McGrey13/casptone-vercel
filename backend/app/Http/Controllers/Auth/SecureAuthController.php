@@ -52,6 +52,11 @@ class SecureAuthController extends Controller
             return response()->json(['message' => 'Please verify your account before logging in.'], 403);
         }
 
+        // Check if account is deactivated
+        if (isset($user->status) && $user->status === 'deactivated') {
+            return response()->json(['message' => 'Your account has been deactivated. Please contact support.'], 403);
+        }
+
         // Create access and refresh tokens
         $accessToken = $this->tokenService->createAccessToken($user);
         $refreshToken = $this->tokenService->createRefreshToken($user);
@@ -269,6 +274,11 @@ class SecureAuthController extends Controller
     
         if ($user->otp !== $request->otp || Carbon::now()->greaterThan($user->otp_expires_at)) {
             return response()->json(['message' => 'Invalid or expired OTP'], 400);
+        }
+
+        // Check if account is deactivated
+        if (isset($user->status) && $user->status === 'deactivated') {
+            return response()->json(['message' => 'Your account has been deactivated. Please contact support.'], 403);
         }
     
         $user->is_verified = true;

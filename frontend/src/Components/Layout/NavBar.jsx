@@ -24,7 +24,7 @@ const Navbar = () => {
   const cartItemCount = cartItems.reduce((total, item) => total + (item.quantity || 1), 0);
 
   return (
-    <>
+  <>
       <nav className="navbar">
         {/* Left: Brand */}
         <div className="navbar-section left">
@@ -36,7 +36,7 @@ const Navbar = () => {
           <Link to="/Categories" className="nav-link">Categories</Link>
           <Link to="/Artisan" className="nav-link">Artisans</Link>
           <Link to="/About" className="nav-link">About</Link>
-          <Link to="/Contact" className="nav-link">Contact</Link>
+          <Link to="/Contact" className="nav-link">Contact Us</Link>
         </div>
 
         {/* Right: Icons */}
@@ -90,7 +90,7 @@ const Navbar = () => {
           <Link to="/Categories" onClick={() => setIsMenuOpen(false)}>Categories</Link>
           <Link to="/Artisan" onClick={() => setIsMenuOpen(false)}>Artisans</Link>
           <Link to="/About" onClick={() => setIsMenuOpen(false)}>About</Link>
-          <Link to="/Contact" onClick={() => setIsMenuOpen(false)}>Contact</Link>
+          <Link to="/Contact" onClick={() => setIsMenuOpen(false)}>Contact Us</Link>
         </div>
       )}
     </>

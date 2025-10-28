@@ -4,20 +4,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
 import { Input } from "../ui/input";
 import { Label } from "../ui/label";
 import { Button } from "../ui/button";
-import { Slider } from "../ui/slider";
-import { Switch } from "../ui/switch";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "../ui/select";
 import {
   Palette,
-  Layout,
-  Type,
-  Sliders,
   Key,
   Save,
   Eye,
@@ -38,41 +26,73 @@ import ErrorState from "../ui/ErrorState";
 import EmptyState from "../ui/EmptyState";
 import { setupTestSellerAuth } from "../../utils/sellerAuthHelper";
 
-const ColorPicker = ({ label, value, onChange }) => (
-  <div className="space-y-2 sm:space-y-3">
-    <div className="flex items-center justify-between">
-      <Label htmlFor={label} className="text-xs sm:text-sm font-semibold text-[#5c3d28]">{label}</Label>
-      <div className="flex items-center gap-1 sm:gap-2">
-        <div
-          className="h-5 w-5 sm:h-6 sm:w-6 rounded-lg border-2 border-[#e5ded7] shadow-sm"
-          style={{ backgroundColor: value }}
-        />
-        <span className="text-[10px] sm:text-xs text-[#7b5a3b] font-mono font-medium bg-[#faf9f8] px-1.5 sm:px-2 py-0.5 sm:py-1 rounded">{value}</span>
-      </div>
-    </div>
-    <div className="flex gap-2 sm:gap-3">
-      <div className="relative group">
-        <Input
-          id={label}
-          type="color"
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          className="h-8 w-8 sm:h-12 sm:w-12 p-0.5 sm:p-1 cursor-pointer border-2 border-[#e5ded7] rounded-lg hover:border-[#a4785a] transition-all duration-200"
-        />
-        <div className="absolute -top-6 sm:-top-8 left-1/2 transform -translate-x-1/2 bg-[#5c3d28] text-white text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 sm:py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
-          Pick Color
-        </div>
-      </div>
-      <Input
-        type="text"
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        className="flex-1 text-xs sm:text-sm border-2 border-[#e5ded7] focus:border-[#a4785a] bg-white text-[#5c3d28] font-mono transition-all duration-200"
-        placeholder="#000000"
-      />
-    </div>
-  </div>
-);
+// Pre-defined color themes
+const colorThemes = [
+  {
+    name: "Earth & Craft",
+    primary: "#8B4513",
+    secondary: "#CD853F",
+    background: "#FFF8DC",
+    text: "#3E2723",
+    accent: "#D2691E"
+  },
+  {
+    name: "Ocean Breeze",
+    primary: "#2E5266",
+    secondary: "#6E9887",
+    background: "#F5F7FA",
+    text: "#1A1F2E",
+    accent: "#4A90A4"
+  },
+  {
+    name: "Forest Green",
+    primary: "#2D5016",
+    secondary: "#558B2F",
+    background: "#E8F5E9",
+    text: "#1B5E20",
+    accent: "#7CB342"
+  },
+  {
+    name: "Sunset Orange",
+    primary: "#D84315",
+    secondary: "#FF6F00",
+    background: "#FFF3E0",
+    text: "#BF360C",
+    accent: "#FF8F00"
+  },
+  {
+    name: "Purple Dream",
+    primary: "#4A148C",
+    secondary: "#7B1FA2",
+    background: "#F3E5F5",
+    text: "#4A148C",
+    accent: "#AB47BC"
+  },
+  {
+    name: "Classic Black",
+    primary: "#212121",
+    secondary: "#424242",
+    background: "#FAFAFA",
+    text: "#212121",
+    accent: "#616161"
+  },
+  {
+    name: "Sky Blue",
+    primary: "#0277BD",
+    secondary: "#0288D1",
+    background: "#E3F2FD",
+    text: "#01579B",
+    accent: "#03A9F4"
+  },
+  {
+    name: "Rose Gold",
+    primary: "#B71C1C",
+    secondary: "#D32F2F",
+    background: "#FFEBEE",
+    text: "#C62828",
+    accent: "#F44336"
+  }
+];
 
 const StorefrontCustomizer = () => {
   const [storeData, setStoreData] = useState(null);
@@ -83,6 +103,7 @@ const StorefrontCustomizer = () => {
   const [success, setSuccess] = useState(null);
   const [authError, setAuthError] = useState(false);
   const [discountCodes, setDiscountCodes] = useState([]);
+  const [selectedTheme, setSelectedTheme] = useState(null);
   const [customization, setCustomization] = useState({
     primary_color: "#6366f1",
     secondary_color: "#f43f5e",
@@ -252,10 +273,16 @@ const StorefrontCustomizer = () => {
     }
   };
 
-  // };
-
-  const handleCustomizationChange = (key, value) => {
-    setCustomization({ ...customization, [key]: value });
+  const applyTheme = (theme) => {
+    setSelectedTheme(theme);
+    setCustomization({
+      ...customization,
+      primary_color: theme.primary,
+      secondary_color: theme.secondary,
+      background_color: theme.background,
+      text_color: theme.text,
+      accent_color: theme.accent,
+    });
   };
 
 const handleImageUpload = (type, file) => {
@@ -538,7 +565,7 @@ const handleImageUpload = (type, file) => {
 
         <div className="w-full lg:w-1/3 space-y-6">
           <Tabs defaultValue="branding">
-            <TabsList className="grid w-full grid-cols-4 bg-gradient-to-r from-[#faf9f8] to-white p-2 min-h-[80px] sm:min-h-[90px] rounded-lg border-2 border-[#e5ded7] shadow-md">
+            <TabsList className="grid w-full grid-cols-2 bg-gradient-to-r from-[#faf9f8] to-white p-2 min-h-[80px] sm:min-h-[90px] rounded-lg border-2 border-[#e5ded7] shadow-md">
               <TabsTrigger 
                 value="branding"
                 className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-[#a4785a] data-[state=active]:to-[#7b5a3b] data-[state=active]:text-white data-[state=active]:shadow-sm transition-all duration-200 hover:bg-[#faf9f8] rounded h-full px-2 py-2 text-[10px] sm:text-base flex flex-col sm:flex-row items-center justify-center"
@@ -547,25 +574,11 @@ const handleImageUpload = (type, file) => {
                 <span className="font-medium">Brand</span>
               </TabsTrigger>
               <TabsTrigger 
-                value="colors"
+                value="theme"
                 className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-[#a4785a] data-[state=active]:to-[#7b5a3b] data-[state=active]:text-white data-[state=active]:shadow-sm transition-all duration-200 hover:bg-[#faf9f8] rounded h-full px-2 py-2 text-[10px] sm:text-base flex flex-col sm:flex-row items-center justify-center"
               >
                 <Palette className="h-3 w-3 sm:h-4 sm:w-4 mb-0.5 sm:mb-0 sm:mr-2" />
-                <span className="font-medium">Colors</span>
-              </TabsTrigger>
-              <TabsTrigger 
-                value="typography"
-                className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-[#a4785a] data-[state=active]:to-[#7b5a3b] data-[state=active]:text-white data-[state=active]:shadow-sm transition-all duration-200 hover:bg-[#faf9f8] rounded h-full px-2 py-2 text-[10px] sm:text-base flex flex-col sm:flex-row items-center justify-center"
-              >
-                <Type className="h-3 w-3 sm:h-4 sm:w-4 mb-0.5 sm:mb-0 sm:mr-2" />
-                <span className="font-medium">Type</span>
-              </TabsTrigger>
-              <TabsTrigger 
-                value="layout"
-                className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-[#a4785a] data-[state=active]:to-[#7b5a3b] data-[state=active]:text-white data-[state=active]:shadow-sm transition-all duration-200 hover:bg-[#faf9f8] rounded h-full px-2 py-2 text-[10px] sm:text-base flex flex-col sm:flex-row items-center justify-center"
-              >
-                <Layout className="h-3 w-3 sm:h-4 sm:w-4 mb-0.5 sm:mb-0 sm:mr-2" />
-                <span className="font-medium">Layout</span>
+                <span className="font-medium">Theme</span>
               </TabsTrigger>
             </TabsList>
 
@@ -758,269 +771,163 @@ const handleImageUpload = (type, file) => {
               </Card>
             </TabsContent>
 
-            {/* Colors Tab */}
-            <TabsContent value="colors" className="space-y-4 pt-4">
-              <Card className="p-6 space-y-6 border-2 border-[#e5ded7] shadow-xl rounded-2xl bg-gradient-to-br from-white to-[#faf9f8]">
-                <div className="flex items-center gap-3 pb-4 border-b-2 border-[#e5ded7]">
-                  <div className="p-2 bg-gradient-to-r from-[#a4785a] to-[#7b5a3b] rounded-lg">
-                    <Palette className="h-5 w-5 text-white" />
+            {/* Theme Tab */}
+            <TabsContent value="theme" className="space-y-4 pt-4">
+              <Card className="p-4 sm:p-6 space-y-4 sm:space-y-6 border-2 border-[#e5ded7] shadow-xl rounded-xl sm:rounded-2xl bg-gradient-to-br from-white to-[#faf9f8]">
+                <div className="flex items-center gap-2 sm:gap-3 pb-3 sm:pb-4 border-b-2 border-[#e5ded7]">
+                  <div className="p-1.5 sm:p-2 bg-gradient-to-r from-[#a4785a] to-[#7b5a3b] rounded-lg">
+                    <Palette className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
                   </div>
-                  <h3 className="text-lg font-bold text-[#5c3d28]">Color Scheme</h3>
+                  <h3 className="text-base sm:text-lg font-bold text-[#5c3d28]">Choose Your Theme</h3>
                 </div>
-                <div className="space-y-5">
-                  <div className="p-2 sm:p-4 bg-gradient-to-r from-[#faf9f8] to-white border-2 border-[#e5ded7] rounded-lg sm:rounded-xl hover:border-[#a4785a] transition-all duration-200">
-                    <ColorPicker 
-                      label="🎨 Primary Color" 
-                      value={customization.primary_color} 
-                      onChange={(val) => handleCustomizationChange("primary_color", val)} 
-                    />
+                
+                <p className="text-sm text-[#7b5a3b]">
+                  Select a pre-designed color theme that best represents your brand. These themes have been carefully crafted for optimal visual appeal.
+                </p>
+
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
+                  {colorThemes.map((theme) => (
+                    <button
+                      key={theme.name}
+                      onClick={() => applyTheme(theme)}
+                      className={`
+                        relative overflow-hidden rounded-lg sm:rounded-xl border-2 transition-all duration-200 hover:scale-105 hover:shadow-lg
+                        ${selectedTheme?.name === theme.name 
+                          ? 'border-[#a4785a] shadow-lg ring-2 ring-[#a4785a]/50' 
+                          : 'border-[#e5ded7] hover:border-[#a4785a]'
+                        }
+                      `}
+                    >
+                      <div className="aspect-square flex flex-col items-center justify-center gap-2 sm:gap-3 p-3 sm:p-4">
+                        {/* Color Swatches */}
+                        <div className="flex flex-wrap gap-1.5 justify-center">
+                          <div 
+                            className="w-5 h-5 sm:w-6 sm:h-6 rounded shadow-sm"
+                            style={{ backgroundColor: theme.primary }}
+                            title="Primary"
+                          />
+                          <div 
+                            className="w-5 h-5 sm:w-6 sm:h-6 rounded shadow-sm"
+                            style={{ backgroundColor: theme.secondary }}
+                            title="Secondary"
+                          />
+                          <div 
+                            className="w-5 h-5 sm:w-6 sm:h-6 rounded shadow-sm"
+                            style={{ backgroundColor: theme.accent }}
+                            title="Accent"
+                          />
+                          <div 
+                            className="w-5 h-5 sm:w-6 sm:h-6 rounded shadow-sm border border-gray-300"
+                            style={{ backgroundColor: theme.background }}
+                            title="Background"
+                          />
+                        </div>
+                        <span className="text-[10px] sm:text-xs font-semibold text-[#5c3d28] text-center">
+                          {theme.name}
+                        </span>
+                      </div>
+                      
+                      {selectedTheme?.name === theme.name && (
+                        <div className="absolute top-2 right-2">
+                          <div className="bg-gradient-to-r from-[#a4785a] to-[#7b5a3b] text-white rounded-full p-1 shadow-md">
+                            <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                              <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                            </svg>
+                          </div>
+                        </div>
+                      )}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Font Selection */}
+                <div className="border-t-2 border-[#e5ded7] pt-4 sm:pt-6 space-y-4 sm:space-y-6">
+                  <div className="flex items-center gap-2 sm:gap-3 pb-3 border-b-2 border-[#e5ded7]">
+                    <div className="p-1.5 sm:p-2 bg-gradient-to-r from-[#a4785a] to-[#7b5a3b] rounded-lg">
+                      <svg className="h-4 w-4 sm:h-5 sm:w-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                      </svg>
+                    </div>
+                    <h3 className="text-base sm:text-lg font-bold text-[#5c3d28]">Font Selection</h3>
                   </div>
-                  <div className="p-4 bg-gradient-to-r from-[#faf9f8] to-white border-2 border-[#e5ded7] rounded-xl hover:border-[#a4785a] transition-all duration-200">
-                    <ColorPicker 
-                      label="🌟 Secondary Color" 
-                      value={customization.secondary_color} 
-                      onChange={(val) => handleCustomizationChange("secondary_color", val)} 
-                    />
+                  
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                    <div className="space-y-2">
+                      <Label className="text-xs sm:text-sm font-semibold text-[#5c3d28]">Heading Font</Label>
+                      <select
+                        value={customization.heading_font}
+                        onChange={(e) => setCustomization({ ...customization, heading_font: e.target.value })}
+                        className="w-full px-3 py-2 text-xs sm:text-sm border-2 border-[#e5ded7] focus:border-[#a4785a] rounded-lg bg-white text-[#5c3d28] transition-all duration-200"
+                      >
+                        <option value="Inter">Inter</option>
+                        <option value="Roboto">Roboto</option>
+                        <option value="Montserrat">Montserrat</option>
+                        <option value="Playfair Display">Playfair Display</option>
+                        <option value="Merriweather">Merriweather</option>
+                        <option value="Poppins">Poppins</option>
+                      </select>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label className="text-xs sm:text-sm font-semibold text-[#5c3d28]">Body Font</Label>
+                      <select
+                        value={customization.body_font}
+                        onChange={(e) => setCustomization({ ...customization, body_font: e.target.value })}
+                        className="w-full px-3 py-2 text-xs sm:text-sm border-2 border-[#e5ded7] focus:border-[#a4785a] rounded-lg bg-white text-[#5c3d28] transition-all duration-200"
+                      >
+                        <option value="Inter">Inter</option>
+                        <option value="Roboto">Roboto</option>
+                        <option value="Open Sans">Open Sans</option>
+                        <option value="Lato">Lato</option>
+                        <option value="Source Sans Pro">Source Sans Pro</option>
+                        <option value="Poppins">Poppins</option>
+                      </select>
+                    </div>
                   </div>
-                  <div className="p-4 bg-gradient-to-r from-[#faf9f8] to-white border-2 border-[#e5ded7] rounded-xl hover:border-[#a4785a] transition-all duration-200">
-                    <ColorPicker 
-                      label="🖼️ Background Color" 
-                      value={customization.background_color} 
-                      onChange={(val) => handleCustomizationChange("background_color", val)} 
-                    />
-                  </div>
-                  <div className="p-4 bg-gradient-to-r from-[#faf9f8] to-white border-2 border-[#e5ded7] rounded-xl hover:border-[#a4785a] transition-all duration-200">
-                    <ColorPicker 
-                      label="📝 Text Color" 
-                      value={customization.text_color} 
-                      onChange={(val) => handleCustomizationChange("text_color", val)} 
-                    />
-                  </div>
-                  <div className="p-4 bg-gradient-to-r from-[#faf9f8] to-white border-2 border-[#e5ded7] rounded-xl hover:border-[#a4785a] transition-all duration-200">
-                    <ColorPicker 
-                      label="✨ Accent Color" 
-                      value={customization.accent_color} 
-                      onChange={(val) => handleCustomizationChange("accent_color", val)} 
-                    />
+                  
+                  <div className="grid grid-cols-2 gap-3 sm:gap-4">
+                    <div className="space-y-2">
+                      <Label className="text-xs sm:text-sm font-semibold text-[#5c3d28]">Heading Size: {customization.heading_size}px</Label>
+                      <input
+                        type="range"
+                        min="14"
+                        max="28"
+                        step="1"
+                        value={customization.heading_size}
+                        onChange={(e) => setCustomization({ ...customization, heading_size: parseInt(e.target.value) })}
+                        className="w-full h-2 bg-[#e5ded7] rounded-lg appearance-none cursor-pointer accent-[#a4785a]"
+                      />
+                      <div className="flex justify-between text-xs text-[#7b5a3b]">
+                        <span>14px</span>
+                        <span>21px</span>
+                        <span>28px</span>
+                      </div>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label className="text-xs sm:text-sm font-semibold text-[#5c3d28]">Body Size: {customization.body_size}px</Label>
+                      <input
+                        type="range"
+                        min="12"
+                        max="18"
+                        step="1"
+                        value={customization.body_size}
+                        onChange={(e) => setCustomization({ ...customization, body_size: parseInt(e.target.value) })}
+                        className="w-full h-2 bg-[#e5ded7] rounded-lg appearance-none cursor-pointer accent-[#a4785a]"
+                      />
+                      <div className="flex justify-between text-xs text-[#7b5a3b]">
+                        <span>12px</span>
+                        <span>15px</span>
+                        <span>18px</span>
+                      </div>
+                    </div>
                   </div>
                 </div>
-                <div className="p-4 bg-blue-50 border-2 border-blue-200 rounded-xl">
-                  <p className="text-sm text-blue-800 flex items-center gap-2">
+
+                <div className="p-3 sm:p-4 bg-blue-50 border-2 border-blue-200 rounded-xl">
+                  <p className="text-xs sm:text-sm text-blue-800 flex items-center gap-2">
                     <span className="text-lg">💡</span>
-                    <span className="font-medium">Tip: Choose colors that reflect your brand identity and create visual harmony</span>
-                  </p>
-                </div>
-              </Card>
-            </TabsContent>
-
-            {/* Typography Tab */}
-            <TabsContent value="typography" className="space-y-4 pt-4">
-              <Card className="p-6 space-y-6 border-2 border-[#e5ded7] shadow-xl rounded-2xl bg-gradient-to-br from-white to-[#faf9f8]">
-                <div className="flex items-center gap-3 pb-4 border-b-2 border-[#e5ded7]">
-                  <div className="p-2 bg-gradient-to-r from-[#a4785a] to-[#7b5a3b] rounded-lg">
-                    <Type className="h-5 w-5 text-white" />
-                  </div>
-                  <h3 className="text-lg font-bold text-[#5c3d28]">Typography</h3>
-                </div>
-                
-                <div className="space-y-3">
-                  <Label className="text-sm font-semibold text-[#5c3d28] flex items-center gap-2">
-                    <span className="p-1 bg-[#a4785a]/10 rounded">Aa</span>
-                    Heading Font
-                  </Label>
-                  <Select value={customization.heading_font} onValueChange={(val) => handleCustomizationChange("heading_font", val)}>
-                    <SelectTrigger className="bg-white border-2 border-[#e5ded7] focus:border-[#a4785a] hover:border-[#a4785a] transition-all duration-200">
-                      <SelectValue placeholder="Select font" />
-                    </SelectTrigger>
-                    <SelectContent className="bg-white border-2 border-[#e5ded7]">
-                      <SelectItem value="Inter" className="hover:bg-[#faf9f8]">Inter</SelectItem>
-                      <SelectItem value="Roboto" className="hover:bg-[#faf9f8]">Roboto</SelectItem>
-                      <SelectItem value="Montserrat" className="hover:bg-[#faf9f8]">Montserrat</SelectItem>
-                      <SelectItem value="Playfair Display" className="hover:bg-[#faf9f8]">Playfair Display</SelectItem>
-                      <SelectItem value="Merriweather" className="hover:bg-[#faf9f8]">Merriweather</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-3">
-                  <Label className="text-sm font-semibold text-[#5c3d28] flex items-center gap-2">
-                    <span className="p-1 bg-[#a4785a]/10 rounded">Aa</span>
-                    Body Font
-                  </Label>
-                  <Select value={customization.body_font} onValueChange={(val) => handleCustomizationChange("body_font", val)}>
-                    <SelectTrigger className="bg-white border-2 border-[#e5ded7] focus:border-[#a4785a] hover:border-[#a4785a] transition-all duration-200">
-                      <SelectValue placeholder="Select font" />
-                    </SelectTrigger>
-                    <SelectContent className="bg-white border-2 border-[#e5ded7]">
-                      <SelectItem value="Inter" className="hover:bg-[#faf9f8]">Inter</SelectItem>
-                      <SelectItem value="Roboto" className="hover:bg-[#faf9f8]">Roboto</SelectItem>
-                      <SelectItem value="Open Sans" className="hover:bg-[#faf9f8]">Open Sans</SelectItem>
-                      <SelectItem value="Lato" className="hover:bg-[#faf9f8]">Lato</SelectItem>
-                      <SelectItem value="Source Sans Pro" className="hover:bg-[#faf9f8]">Source Sans Pro</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-3">
-                  <Label className="text-sm font-semibold text-[#5c3d28] flex items-center justify-between">
-                    <span className="flex items-center gap-2">
-                      <span className="p-1 bg-[#a4785a]/10 rounded">H</span>
-                      Heading Size
-                    </span>
-                    <span className="text-[#a4785a] font-bold">{customization.heading_size}px</span>
-                  </Label>
-                  <div className="p-4 bg-gradient-to-r from-[#faf9f8] to-white border-2 border-[#e5ded7] rounded-xl">
-                    <Slider 
-                      value={[customization.heading_size]} 
-                      min={12} 
-                      max={36} 
-                      step={1} 
-                      onValueChange={(val) => handleCustomizationChange("heading_size", val[0])} 
-                      className="cursor-pointer"
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-3">
-                  <Label className="text-sm font-semibold text-[#5c3d28] flex items-center justify-between">
-                    <span className="flex items-center gap-2">
-                      <span className="p-1 bg-[#a4785a]/10 rounded">T</span>
-                      Body Size
-                    </span>
-                    <span className="text-[#a4785a] font-bold">{customization.body_size}px</span>
-                  </Label>
-                  <div className="p-4 bg-gradient-to-r from-[#faf9f8] to-white border-2 border-[#e5ded7] rounded-xl">
-                    <Slider 
-                      value={[customization.body_size]} 
-                      min={12} 
-                      max={24} 
-                      step={1} 
-                      onValueChange={(val) => handleCustomizationChange("body_size", val[0])} 
-                      className="cursor-pointer"
-                    />
-                  </div>
-                </div>
-                
-                <div className="p-4 bg-amber-50 border-2 border-amber-200 rounded-xl">
-                  <p className="text-sm text-amber-800 flex items-center gap-2">
-                    <span className="text-lg">📖</span>
-                    <span className="font-medium">Typography affects readability and brand personality</span>
-                  </p>
-                </div>
-              </Card>
-            </TabsContent>
-
-            {/* Layout Tab */}
-            <TabsContent value="layout" className="space-y-4 pt-4">
-              <Card className="p-6 space-y-6 border-2 border-[#e5ded7] shadow-xl rounded-2xl bg-gradient-to-br from-white to-[#faf9f8]">
-                <div className="flex items-center gap-3 pb-4 border-b-2 border-[#e5ded7]">
-                  <div className="p-2 bg-gradient-to-r from-[#a4785a] to-[#7b5a3b] rounded-lg">
-                    <Layout className="h-5 w-5 text-white" />
-                  </div>
-                  <h3 className="text-lg font-bold text-[#5c3d28]">Layout Settings</h3>
-                </div>
-                
-                <div className="flex items-center justify-between p-4 bg-gradient-to-r from-[#faf9f8] to-white border-2 border-[#e5ded7] rounded-xl hover:border-[#a4785a] transition-all duration-200 group">
-                  <Label className="text-sm font-semibold text-[#5c3d28] flex items-center gap-2 cursor-pointer">
-                    <span className="p-1 bg-[#a4785a]/10 rounded group-hover:bg-[#a4785a]/20 transition-all">🎯</span>
-                    Show Hero Section
-                  </Label>
-                  <Switch 
-                    checked={customization.show_hero_section} 
-                    onCheckedChange={(val) => handleCustomizationChange("show_hero_section", val)} 
-                    className="data-[state=checked]:bg-gradient-to-r data-[state=checked]:from-[#a4785a] data-[state=checked]:to-[#7b5a3b]"
-                  />
-                </div>
-
-                <div className="flex items-center justify-between p-4 bg-gradient-to-r from-[#faf9f8] to-white border-2 border-[#e5ded7] rounded-xl hover:border-[#a4785a] transition-all duration-200 group">
-                  <Label className="text-sm font-semibold text-[#5c3d28] flex items-center gap-2 cursor-pointer">
-                    <span className="p-1 bg-[#a4785a]/10 rounded group-hover:bg-[#a4785a]/20 transition-all">⭐</span>
-                    Show Featured Products
-                  </Label>
-                  <Switch 
-                    checked={customization.show_featured_products} 
-                    onCheckedChange={(val) => handleCustomizationChange("show_featured_products", val)} 
-                    className="data-[state=checked]:bg-gradient-to-r data-[state=checked]:from-[#a4785a] data-[state=checked]:to-[#7b5a3b]"
-                  />
-                </div>
-
-                <div className="space-y-3">
-                  <Label className="text-sm font-semibold text-[#5c3d28] flex items-center gap-2">
-                    <span className="p-1 bg-[#a4785a]/10 rounded">🃏</span>
-                    Product Card Style
-                  </Label>
-                  <Select 
-                    value={customization.product_card_style} 
-                    onValueChange={(val) => handleCustomizationChange("product_card_style", val)}
-                  >
-                    <SelectTrigger className="bg-white border-2 border-[#e5ded7] focus:border-[#a4785a] hover:border-[#a4785a] transition-all duration-200">
-                      <SelectValue placeholder="Select style" />
-                    </SelectTrigger>
-                    <SelectContent className="bg-white border-2 border-[#e5ded7]">
-                      <SelectItem value="minimal" className="hover:bg-[#faf9f8]">Minimal</SelectItem>
-                      <SelectItem value="detailed" className="hover:bg-[#faf9f8]">Detailed</SelectItem>
-                      <SelectItem value="compact" className="hover:bg-[#faf9f8]">Compact</SelectItem>
-                      <SelectItem value="elegant" className="hover:bg-[#faf9f8]">Elegant</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-3">
-                  <Label className="text-sm font-semibold text-[#5c3d28] flex items-center justify-between">
-                    <span className="flex items-center gap-2">
-                      <span className="p-1 bg-[#a4785a]/10 rounded">🖥️</span>
-                      Desktop Columns
-                    </span>
-                    <span className="text-[#a4785a] font-bold">{customization.desktop_columns}</span>
-                  </Label>
-                  <div className="p-4 bg-gradient-to-r from-[#faf9f8] to-white border-2 border-[#e5ded7] rounded-xl">
-                    <Slider 
-                      value={[customization.desktop_columns]} 
-                      min={2} 
-                      max={6} 
-                      step={1} 
-                      onValueChange={(val) => handleCustomizationChange("desktop_columns", val[0])} 
-                      className="cursor-pointer"
-                    />
-                    <div className="flex justify-between mt-2 text-xs text-[#7b5a3b]">
-                      <span>2</span>
-                      <span>3</span>
-                      <span>4</span>
-                      <span>5</span>
-                      <span>6</span>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="space-y-3">
-                  <Label className="text-sm font-semibold text-[#5c3d28] flex items-center justify-between">
-                    <span className="flex items-center gap-2">
-                      <span className="p-1 bg-[#a4785a]/10 rounded">📱</span>
-                      Mobile Columns
-                    </span>
-                    <span className="text-[#a4785a] font-bold">{customization.mobile_columns}</span>
-                  </Label>
-                  <div className="p-4 bg-gradient-to-r from-[#faf9f8] to-white border-2 border-[#e5ded7] rounded-xl">
-                    <Slider 
-                      value={[customization.mobile_columns]} 
-                      min={1} 
-                      max={3} 
-                      step={1} 
-                      onValueChange={(val) => handleCustomizationChange("mobile_columns", val[0])} 
-                      className="cursor-pointer"
-                    />
-                    <div className="flex justify-between mt-2 text-xs text-[#7b5a3b]">
-                      <span>1</span>
-                      <span>2</span>
-                      <span>3</span>
-                    </div>
-                  </div>
-                </div>
-                
-                <div className="p-4 bg-purple-50 border-2 border-purple-200 rounded-xl">
-                  <p className="text-sm text-purple-800 flex items-center gap-2">
-                    <span className="text-lg">📐</span>
-                    <span className="font-medium">Layout options help optimize your store for different devices</span>
+                    <span className="font-medium">Tips: Choose a theme that matches your brand personality and product style</span>
                   </p>
                 </div>
               </Card>

@@ -168,11 +168,19 @@ export const AddProductModal = ({ isOpen, onClose, onSave }) => {
 
   // Merge API categories with required static categories for reliability
   const staticCategoryNames = [
+    "Native Handicraft",
     'Miniatures & Souvenirs',
     'Rubber Stamp Engraving',
     'Traditional Accessories',
     'Statuary & Sculpture',
-    'Basketry & Weaving'
+    'Basketry & Weaving',
+    "Shoe & Sandals Making",
+    "Leather Crafts",
+    "Candle Making",
+    "Wood Carving",
+    "House Garments",
+    "Beadwork",
+    "Crochet",
   ];
   const normalizedApiCategories = (apiCategories || []).map((c) => ({
     id: c.category_id || c.id || (c.category_name || c.name),

@@ -603,18 +603,6 @@ const EReceiptWaybill = () => {
 
   return (
     <div className="space-y-4 sm:space-y-6 max-w-[405px] mx-auto sm:max-w-none px-2 sm:px-0">
-      {/* Header */}
-      <div className="bg-gradient-to-r from-[#a4785a] to-[#7b5a3b] rounded-lg sm:rounded-xl shadow-xl p-3 sm:p-6 md:p-8">
-        <div className="flex items-center gap-2 sm:gap-3">
-          <div className="p-2 sm:p-3 bg-white/20 rounded-lg sm:rounded-xl backdrop-blur-sm">
-            <FileText className="h-6 w-6 sm:h-7 sm:w-7 md:h-8 md:w-8 text-white" />
-          </div>
-          <div>
-            <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-white">E-Receipt & Waybill</h1>
-            <p className="text-white/90 mt-1 text-sm sm:text-base">Generate delivery waybills and customer e-receipts</p>
-          </div>
-        </div>
-      </div>
 
       {/* Tabs */}
       <div className="flex flex-col sm:flex-row gap-2 sm:gap-4 border-b-2 border-[#e5ded7]">

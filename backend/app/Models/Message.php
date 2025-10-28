@@ -51,6 +51,11 @@ class Message extends Model
         return $this->belongsTo(User::class, 'receiver_id', 'userID');
     }
 
+    public function attachments()
+    {
+        return $this->hasMany(\App\Models\MessageAttachment::class, 'message_id', 'message_id');
+    }
+
     public function markAsRead(): void
     {
         if (is_null($this->read_at)) {

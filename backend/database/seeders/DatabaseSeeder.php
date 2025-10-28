@@ -66,6 +66,87 @@ class DatabaseSeeder extends Seeder
             ],
 
             [
+                'userName' => 'Jose Levitico',
+                'userEmail' => 'joselevitico@example.com',
+                'role' => 'seller',
+                'userContactNumber' => '09567890123',
+                'userAddress' => 'Purok 2, Barangay San Antonio',
+                'userCity' => 'Pila',
+                'userProvince' => 'Laguna',
+            ],
+
+            [
+                'userName' => 'Jamiah Sophia M. Guinto',
+                'userEmail' => 'jamiahguinto@example.com',
+                'role' => 'seller',
+                'userContactNumber' => '09678901234',
+                'userAddress' => 'San Isidro',
+                'userCity' => 'Cabuyao City',
+                'userProvince' => 'Laguna',
+            ],
+
+            
+            [
+                'userName' => 'Reca Ocenar',
+                'userEmail' => 'recaocen@example.com',
+                'role' => 'seller',
+                'userContactNumber' => '09678901234',
+                'userAddress' => 'Cabuyao',
+                'userCity' => 'Cabuyao City',
+                'userProvince' => 'Laguna',
+            ],
+
+            [
+                'userName' => 'Shine Faith G. Anol',
+                'userEmail' => 'shinefaithanol@example.com',
+                'role' => 'seller',
+                'userContactNumber' => '09678901234',
+                'userAddress' => 'Don Vicente Villas, Pulo',
+                'userCity' => 'Cabuyao City',
+                'userProvince' => 'Laguna',
+            ],
+
+            [
+                'userName' => 'Mica Panganiban',
+                'userEmail' => 'micapanganiban@example.com',
+                'role' => 'seller',
+                'userContactNumber' => '09678901234',
+                'userAddress' => 'Canlubang',
+                'userCity' => 'Calamba City',
+                'userProvince' => 'Laguna',
+            ],
+
+            [
+                'userName' => 'Mario Uranza',
+                'userEmail' => 'mariouranza@example.com',
+                'role' => 'seller',
+                'userContactNumber' => '09678901234',
+                'userAddress' => 'Barangay Pag Asa',
+                'userCity' => 'Liliw',
+                'userProvince' => 'Laguna',
+            ],
+
+            [
+                'userName' => 'Nena Barrios',
+                'userEmail' => 'nenabarios@example.com',
+                'role' => 'seller',
+                'userContactNumber' => '09678901234',
+                'userAddress' => 'Barangay Pag Asa',
+                'userCity' => 'Liliw',
+                'userProvince' => 'Laguna',
+            ],
+
+            [
+                'userName' => 'Jackie',
+                'userEmail' => 'jackie@example.com',
+                'role' => 'seller',
+                'userContactNumber' => '09678901234',
+                'userAddress' => 'Barangay Pag Asa',
+                'userCity' => 'Liliw',
+                'userProvince' => 'Laguna',
+            ],
+
+            [
                 'userName' => 'Renel Baltralo',
                 'userEmail' => 'renel@example.com',
                 'role' => 'seller',
@@ -76,8 +157,8 @@ class DatabaseSeeder extends Seeder
             ],
 
             [
-                'userName' => 'Tatay Cesar',
-                'userEmail' => 'tataycesar@example.com',
+                'userName' => 'Cesar Sunna',
+                'userEmail' => 'cesarsunna@example.com',
                 'role' => 'seller',
                 'userContactNumber' => '09789012345',
                 'userAddress' => '456 Rizal Avenue, Barangay Labuin',

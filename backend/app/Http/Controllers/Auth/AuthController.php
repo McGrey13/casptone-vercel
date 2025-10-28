@@ -82,7 +82,8 @@ class AuthController extends Controller
                         'profile_image_url' => $profileImageUrl,
                         'total_spent' => $totalSpent,
                         'last_purchase' => $lastPurchase,
-                        'status' => $status,
+                        'status' => $user->status ?? 'active', // Account status from database
+                        'activity_status' => $status, // Activity-based status
                         'orders_count' => $customer ? $customer->orders->count() : 0
                     ];
                 });
@@ -133,13 +134,14 @@ public function getSellers()
                 'total_revenue' => $totalRevenue,
                 'total_orders' => $totalOrders,
                 'last_sale' => $lastSaleDate,
-                'status' => $status,
+                'status' => $seller->user->status ?? 'active', // Account status from database
+                'activity_status' => $status, // Activity-based status
                 'user' => [
                     'userID' => $seller->user->userID,
                     'userName' => $seller->user->userName,
                     'userEmail' => $seller->user->userEmail,
                     'userAddress' => $seller->user->userAddress ?? null,
-                    'userContactNumber' => $seller->user->userContactNumber,
+                    'userContactNumber' => $seller->user->userContactNumber
                 ]
             ];
         });
@@ -296,6 +298,11 @@ public function getSellers()
 
         if (!$user->is_verified) {
             return response()->json(['message' => 'Please verify your account before logging in.'], 403);
+        }
+
+        // Check if account is deactivated
+        if (isset($user->status) && $user->status === 'deactivated') {
+            return response()->json(['message' => 'Your account has been deactivated. Please contact support.'], 403);
         }
 
         // Create token
@@ -685,72 +692,126 @@ public function getSellers()
     public function forgotPassword(Request $request)
     {
         $request->validate([
-            'userEmail' => 'required|email|exists:users,userEmail'
+            'userEmail' => 'required|email'
+        ], [
+            'userEmail.required' => 'Please enter your email address.',
+            'userEmail.email' => 'Please enter a valid email address.',
         ]);
 
         try {
+            // Check if user exists
             $user = User::where('userEmail', $request->userEmail)->first();
             
             if (!$user) {
                 return response()->json([
-                    'message' => 'User not found'
+                    'message' => 'No account found with this email address. Please check your email and try again.',
+                    'errors' => [
+                        'userEmail' => ['No account found with this email address.']
+                    ]
                 ], 404);
             }
 
-            // Generate new OTP
-            $otp = rand(100000, 999999);
-            $user->otp = $otp;
-            $user->otp_expires_at = Carbon::now()->addMinutes(10);
-            $user->save();
+            // Check if account is deactivated
+            if (isset($user->status) && $user->status === 'deactivated') {
+                return response()->json([
+                    'message' => 'Your account has been deactivated. Please contact support for assistance.'
+                ], 403);
+            }
 
-            // Send OTP via email
-            $emailResult = EmailService::sendOtpEmail($user->userEmail, $user->userName, $otp, 'Password Reset');
+            // Generate password reset token
+            $token = \Illuminate\Support\Str::random(64);
             
-            if (!$emailResult['success']) {
-                Log::warning('Password reset OTP email failed to send', [
+            // Store token in password_resets table (using Laravel's built-in table)
+            try {
+                \DB::table('password_reset_tokens')->where('email', $user->userEmail)->delete();
+                \DB::table('password_reset_tokens')->insert([
                     'email' => $user->userEmail,
-                    'error' => $emailResult['error'] ?? 'Unknown error'
+                    'token' => \Illuminate\Support\Facades\Hash::make($token),
+                    'created_at' => now()
+                ]);
+            } catch (\Exception $dbException) {
+                Log::error('Database error storing reset token', [
+                    'email' => $user->userEmail,
+                    'error' => $dbException->getMessage()
                 ]);
                 
                 return response()->json([
-                    'message' => 'Failed to send OTP. Please try again.'
+                    'message' => 'Unable to create reset link. Please try again later.'
+                ], 500);
+            }
+
+            // Generate reset URL
+            $frontendUrl = env('FRONTEND_URL', 'http://localhost:5173');
+            $resetUrl = "{$frontendUrl}/reset-password?token={$token}&email=" . urlencode($user->userEmail);
+
+            // Send reset link via email
+            try {
+                $emailResult = EmailService::sendPasswordResetLink($user->userEmail, $user->userName, $resetUrl);
+                
+                if (!$emailResult['success']) {
+                    Log::warning('Password reset email failed to send', [
+                        'email' => $user->userEmail,
+                        'error' => $emailResult['error'] ?? 'Unknown error'
+                    ]);
+                    
+                    return response()->json([
+                        'message' => 'Failed to send reset link. Please try again.'
+                    ], 500);
+                }
+            } catch (\Exception $emailException) {
+                Log::error('Email service exception', [
+                    'email' => $user->userEmail,
+                    'error' => $emailException->getMessage(),
+                    'trace' => $emailException->getTraceAsString()
+                ]);
+                
+                return response()->json([
+                    'message' => 'Email service is currently unavailable. Please try again later.'
                 ], 500);
             }
 
             return response()->json([
-                'message' => 'OTP sent successfully to your email address',
+                'message' => 'Password reset link sent successfully to your email',
                 'userEmail' => $user->userEmail
             ]);
 
-        } catch (Exception $e) {
+        } catch (\Exception $e) {
             Log::error('Forgot password error', [
                 'email' => $request->userEmail,
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString()
             ]);
 
             return response()->json([
-                'message' => 'An error occurred. Please try again.'
+                'message' => 'An error occurred. Please try again.',
+                'error' => config('app.debug') ? $e->getMessage() : null
             ], 500);
         }
     }
 
     /**
      * Reset password with OTP verification and last password confirmation
-     *
-     * @param \Illuminate\Http\Request $request
-     * @return \Illuminate\Http\JsonResponse
      */
     public function resetPassword(Request $request)
     {
         $request->validate([
-            'userEmail' => 'required|email|exists:users,userEmail',
-            'otp' => 'required|string|size:6',
-            'lastPassword' => 'required|string',
-            'newPassword' => 'required|string|min:8|confirmed'
+            'email' => 'required|email|exists:users,userEmail',
+            'token' => 'required|string',
+            'password' => [
+                'required',
+                'string',
+                'min:8',
+                'confirmed',
+                'regex:/^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#$%^&*(),.?":{}|<>]).+$/'
+            ]
+        ], [
+            'password.regex' => 'Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character.',
         ]);
 
         try {
-            $user = User::where('userEmail', $request->userEmail)->first();
+            $user = User::where('userEmail', $request->email)->first();
             
             if (!$user) {
                 return response()->json([
@@ -758,32 +819,45 @@ public function getSellers()
                 ], 404);
             }
 
-            // Verify OTP
-            if ($user->otp !== $request->otp || Carbon::now()->greaterThan($user->otp_expires_at)) {
+            // Check password reset token
+            $resetRecord = \DB::table('password_reset_tokens')
+                ->where('email', $request->email)
+                ->first();
+
+            if (!$resetRecord) {
                 return response()->json([
-                    'message' => 'Invalid or expired OTP'
+                    'message' => 'Invalid or expired reset link'
                 ], 400);
             }
 
-            // Verify last password
-            if (!Hash::check($request->lastPassword, $user->userPassword)) {
+            // Check if token is expired (1 hour)
+            if (Carbon::parse($resetRecord->created_at)->addHour()->isPast()) {
+                \DB::table('password_reset_tokens')->where('email', $request->email)->delete();
                 return response()->json([
-                    'message' => 'Last password is incorrect'
+                    'message' => 'Reset link has expired. Please request a new one.'
                 ], 400);
             }
 
-            // Check if new password is different from current password
-            if (Hash::check($request->newPassword, $user->userPassword)) {
+            // Verify token
+            if (!Hash::check($request->token, $resetRecord->token)) {
+                return response()->json([
+                    'message' => 'Invalid reset link'
+                ], 400);
+            }
+
+            // Check if new password is different from current password (if user has one)
+            if (Hash::check($request->password, $user->userPassword)) {
                 return response()->json([
                     'message' => 'New password must be different from current password'
                 ], 400);
             }
 
             // Update password
-            $user->userPassword = Hash::make($request->newPassword);
-            $user->otp = null; // Clear OTP after successful reset
-            $user->otp_expires_at = null;
+            $user->userPassword = Hash::make($request->password);
             $user->save();
+
+            // Delete the used reset token
+            \DB::table('password_reset_tokens')->where('email', $request->email)->delete();
 
             // Invalidate all existing tokens for security
             if (method_exists($user, 'tokens')) {
@@ -799,9 +873,9 @@ public function getSellers()
                 'message' => 'Password reset successfully. Please log in with your new password.'
             ]);
 
-        } catch (Exception $e) {
+        } catch (\Exception $e) {
             Log::error('Password reset error', [
-                'email' => $request->userEmail,
+                'email' => $request->email,
                 'error' => $e->getMessage()
             ]);
 
@@ -813,9 +887,6 @@ public function getSellers()
 
     /**
      * Change user password
-     *
-     * @param \Illuminate\Http\Request $request
-     * @return \Illuminate\Http\JsonResponse
      */
     public function changePassword(Request $request)
     {

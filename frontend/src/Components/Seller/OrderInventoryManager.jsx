@@ -12,7 +12,7 @@ import { Button } from "../ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../ui/table";
 import { Badge } from "../ui/badge";
 import { Input } from "../ui/input";
-import { Search, Filter, Plus, Download, RefreshCw, Edit, Trash2, Image as ImageIcon, ShoppingBag, Share2, MoreHorizontal } from "lucide-react";
+import { Search, Filter, Plus, Download, RefreshCw, Edit, Trash2, Image as ImageIcon, ShoppingBag, Share2, MoreHorizontal, Package, Truck } from "lucide-react";
 import { AddProductModal } from "./AddProductModal";
 import EditProductModal from "./EditProductModal";
 import { useOrdersData } from "../../hooks/useOrdersData";
@@ -20,6 +20,11 @@ import LoadingSpinner from "../ui/LoadingSpinner";
 import api from "../../api";
 import ErrorState from "../ui/ErrorState";
 import EmptyState from "../ui/EmptyState";
+import ShippingSimulation from "./ShippingSimulation";
+
+const ShippingTab = () => {
+  return <ShippingSimulation />;
+};
 
 const OrdersTab = () => {
   const { ordersData, loading, error, refetch } = useOrdersData();
@@ -496,7 +501,8 @@ const OrdersTab = () => {
   );
 };
 
-const InventoryTab = () => {
+// InventoryTab moved to InventoryManager.jsx - not used here anymore
+const InventoryTab_DEPRECATED = () => {
   const [inventory, setInventory] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -1986,10 +1992,10 @@ const OrderInventoryManager = () => {
       <div className="bg-gradient-to-r from-[#a4785a] to-[#7b5a3b] rounded-lg p-3">
         <h1 className="text-base font-bold text-white flex items-center">
           <ShoppingBag className="h-5 w-5 mr-2" />
-          Orders & Inventory
+          Orders & Shipping
         </h1>
         <p className="text-white/90 mt-1 text-xs">
-          Manage your orders and product inventory in one place.
+          Manage your orders, shipping, and deliveries in one place.
         </p>
       </div>
 
@@ -2003,18 +2009,18 @@ const OrderInventoryManager = () => {
             Orders
           </TabsTrigger>
           <TabsTrigger 
-            value="inventory"
+            value="shipping"
             className="rounded-sm data-[state=active]:bg-[#7b5a3b] data-[state=active]:text-white transition-all duration-200 text-[10px] py-1.5"
           >
-            Inventory
+            Shipping
           </TabsTrigger>
         </TabsList>
 
         <TabsContent value="orders" className="mt-4 sm:mt-6">
           <OrdersTab />
         </TabsContent>
-        <TabsContent value="inventory" className="mt-4 sm:mt-6">
-          <InventoryTab />
+        <TabsContent value="shipping" className="mt-4 sm:mt-6">
+          <ShippingTab />
         </TabsContent>
       </Tabs>
     </div>
@@ -2022,3 +2028,6 @@ const OrderInventoryManager = () => {
 };
 
 export default OrderInventoryManager;
+
+// Export InventoryTab for use in standalone InventoryManager component
+export const InventoryTab = InventoryTab_DEPRECATED;

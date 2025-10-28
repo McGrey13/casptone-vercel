@@ -271,7 +271,10 @@ class StoreController extends Controller
         ]);
 
         $query = Store::with('seller.user', 'user')
-            ->where('status', 'approved'); // Only show approved stores
+            ->where('status', 'approved') // Only show approved stores
+            ->whereHas('seller.user', function($q) {
+                $q->where('status', 'active'); // Only show stores from active sellers
+            });
 
         // Filter by category if provided
         if ($request->has('category')) {
@@ -810,14 +813,14 @@ class StoreController extends Controller
                 Log::warning('Error fetching recent orders', ['error' => $e->getMessage()]);
             }
 
-            // Top Rated Products - simplified
+            // Top Rated Products - simplified (limit to 5 products)
             $topRatedProducts = [];
             try {
                 $topRatedProducts = Product::where('approval_status', 'approved')
                     ->where('publish_status', 'published')
                     ->withCount('reviews')
                     ->orderBy('average_rating', 'desc')
-                    ->limit(3)
+                    ->limit(5)
                     ->get()
                     ->map(function($product) {
                         return [

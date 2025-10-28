@@ -115,4 +115,80 @@ class EmailService
 
         return self::sendBrevoEmail($to, $subject, $htmlContent, $textContent);
     }
+
+    /**
+     * Send temporary password email
+     */
+    public static function sendPasswordResetEmail($userEmail, $userName, $tempPassword)
+    {
+        $to = [['name' => $userName, 'email' => $userEmail]];
+        
+        $subject = 'Password Reset by Admin - CraftConnect';
+        $htmlContent = "
+            <html>
+            <body>
+                <h2>Password Reset Request</h2>
+                <p>Hello {$userName},</p>
+                <p>Your password has been reset by an administrator. Your new temporary password is:</p>
+                <h3 style='color: #dc3545; font-size: 24px; font-weight: bold;'>{$tempPassword}</h3>
+                <p><strong>Important:</strong> Please change this password immediately after logging in.</p>
+                <p>If you didn't request this password reset, please contact support immediately.</p>
+                <br>
+                <p>Best regards,<br>The CraftConnect Team</p>
+            </body>
+            </html>
+        ";
+        $textContent = "Password Reset Request - Your temporary password is: {$tempPassword}. Please change it after logging in.";
+
+        return self::sendBrevoEmail($to, $subject, $htmlContent, $textContent);
+    }
+
+    /**
+     * Send password reset link email
+     */
+    public static function sendPasswordResetLink($userEmail, $userName, $resetUrl)
+    {
+        $to = [['name' => $userName, 'email' => $userEmail]];
+        
+        $subject = 'Reset Your Password - CraftConnect';
+        $htmlContent = "
+            <html>
+            <body style='font-family: Arial, sans-serif; line-height: 1.6; color: #333;'>
+                <div style='max-width: 600px; margin: 0 auto; padding: 20px;'>
+                    <h2 style='color: #5c3d28;'>Password Reset Request</h2>
+                    <p>Hello {$userName},</p>
+                    <p>We received a request to reset your password for your CraftConnect account.</p>
+                    <p>Click the button below to reset your password:</p>
+                    <div style='text-align: center; margin: 30px 0;'>
+                        <a href='{$resetUrl}' 
+                           style='background: linear-gradient(to right, #a4785a, #7b5a3b); 
+                                  color: white; 
+                                  padding: 14px 28px; 
+                                  text-decoration: none; 
+                                  border-radius: 6px; 
+                                  display: inline-block;
+                                  font-weight: bold;'>
+                            Reset My Password
+                        </a>
+                    </div>
+                    <p style='color: #666; font-size: 14px;'>
+                        Or copy and paste this link into your browser:<br>
+                        <a href='{$resetUrl}' style='color: #a4785a; word-break: break-all;'>{$resetUrl}</a>
+                    </p>
+                    <p style='color: #dc3545; font-size: 14px;'>
+                        <strong>Important:</strong> This link will expire in 1 hour. If you didn't request a password reset, please ignore this email.
+                    </p>
+                    <hr style='border: none; border-top: 1px solid #ddd; margin: 30px 0;'>
+                    <p style='color: #666; font-size: 12px;'>
+                        If you're having trouble clicking the button, copy and paste the URL above into your web browser.
+                    </p>
+                    <p style='color: #666; font-size: 12px;'>Best regards,<br>The CraftConnect Team</p>
+                </div>
+            </body>
+            </html>
+        ";
+        $textContent = "Password Reset Request - Click this link to reset your password: {$resetUrl}. This link will expire in 1 hour.";
+
+        return self::sendBrevoEmail($to, $subject, $htmlContent, $textContent);
+    }
 }
