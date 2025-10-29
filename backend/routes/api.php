@@ -310,9 +310,21 @@ Route::middleware([])->group(function () {
         }
     });
     
-    // Public orders endpoint for testing
+    // Simple test endpoint
+    Route::get('/simple-orders-test', function() {
+        return response()->json([
+            'message' => 'Orders test endpoint working',
+            'timestamp' => now(),
+            'test_data' => [
+                ['id' => 'ORD001', 'customer' => 'Test Customer', 'date' => '2024-01-15', 'amount' => '₱500.00', 'status' => 'Pending', 'items' => 2],
+                ['id' => 'ORD002', 'customer' => 'Another Customer', 'date' => '2024-01-14', 'amount' => '₱750.00', 'status' => 'Processing', 'items' => 1]
+            ]
+        ]);
+    })->withoutMiddleware([\App\Http\Middleware\CustomCorsMiddleware::class]);
+    
+    // Public orders endpoint for admin
     Route::get('/orders-test', function() {
-        $orders = App\Models\Order::with(['customer.user', 'user'])
+        $orders = App\Models\Order::with(['customer.user', 'user', 'products'])
             ->orderBy('created_at', 'desc')
             ->get()
             ->map(function($order) {
@@ -324,18 +336,73 @@ Route::middleware([])->group(function () {
                     $customerName = $order->user->userName;
                 }
                 
+                // Calculate total items
+                $totalItems = $order->products ? $order->products->sum('pivot.quantity') : 0;
+                
                 return [
                     'id' => $order->orderID,
+                    'orderID' => $order->orderID, // Database ID for updates
                     'customer' => $customerName,
                     'date' => $order->created_at->format('Y-m-d'),
+                    'dateFormatted' => $order->created_at->format('M d, Y'),
                     'amount' => '₱' . number_format($order->totalAmount, 2),
+                    'totalAmount' => $order->totalAmount,
                     'status' => ucfirst($order->status),
-                    'items' => 1, // Default for now, can be calculated from order_products table
-                    'location' => $order->location ?? 'N/A'
+                    'paymentStatus' => $order->paymentStatus ?? 'pending',
+                    'paymentMethod' => $order->payment_method ?? 'COD',
+                    'items' => $totalItems,
+                    'location' => $order->location ?? 'N/A',
+                    'canCancel' => in_array(strtolower($order->status), ['pending', 'processing']) && 
+                                  (strtolower($order->payment_method ?? 'cod') === 'cod' || $order->paymentStatus === 'pending'),
+                    'products' => $order->products ? $order->products->map(function($product) {
+                        return [
+                            'name' => $product->productName,
+                            'quantity' => $product->pivot->quantity ?? 1,
+                            'price' => $product->pivot->price ?? $product->productPrice
+                        ];
+                    }) : []
                 ];
             });
         
         return response()->json($orders);
+    });
+    
+    // Cancel order endpoint for admin
+    Route::post('/orders-test/{orderId}/cancel', function($orderId) {
+        try {
+            $order = App\Models\Order::where('orderID', $orderId)->first();
+            
+            if (!$order) {
+                return response()->json(['error' => 'Order not found'], 404);
+            }
+            
+            // Check if order can be cancelled
+            $canCancel = in_array(strtolower($order->status), ['pending', 'processing']) && 
+                        (strtolower($order->payment_method ?? 'cod') === 'cod' || $order->paymentStatus === 'pending');
+            
+            if (!$canCancel) {
+                return response()->json(['error' => 'Order cannot be cancelled'], 400);
+            }
+            
+            // Update order status
+            $order->update([
+                'status' => 'cancelled',
+                'paymentStatus' => 'cancelled'
+            ]);
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'Order cancelled successfully',
+                'order' => [
+                    'id' => $order->orderID,
+                    'status' => 'Cancelled',
+                    'paymentStatus' => 'cancelled'
+                ]
+            ]);
+            
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'Failed to cancel order: ' . $e->getMessage()], 500);
+        }
     });
     
     // Seller routes
@@ -457,6 +524,18 @@ Route::middleware([])->group(function () {
             ], 500);
         }
     });
+});
+
+// Simple test endpoint outside middleware groups
+Route::get('/api/test-simple', function() {
+    return response()->json([
+        'message' => 'Simple test working',
+        'timestamp' => now(),
+        'test_data' => [
+            ['id' => 'ORD001', 'customer' => 'Test Customer', 'date' => '2024-01-15', 'amount' => '₱500.00', 'status' => 'Pending', 'items' => 2],
+            ['id' => 'ORD002', 'customer' => 'Another Customer', 'date' => '2024-01-14', 'amount' => '₱750.00', 'status' => 'Processing', 'items' => 1]
+        ]
+    ]);
 });
 
 // Protected routes 

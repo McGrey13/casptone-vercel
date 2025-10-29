@@ -18,6 +18,9 @@ return Application::configure(basePath: dirname(__DIR__))
             'sanctum/csrf-cookie'
         ]);
         
+        // Global CORS middleware
+        $middleware->append(\Illuminate\Http\Middleware\HandleCors::class);
+        
         $middleware->web(append: [
             \App\Http\Middleware\EncryptCookies::class,
             \Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse::class,
@@ -29,8 +32,11 @@ return Application::configure(basePath: dirname(__DIR__))
             \Illuminate\Routing\Middleware\SubstituteBindings::class,
         ]);
 
+        $middleware->api(prepend: [
+            \App\Http\Middleware\CustomCorsMiddleware::class,
+        ]);
+        
         $middleware->api(append: [
-            \Illuminate\Http\Middleware\HandleCors::class,
             \App\Http\Middleware\DisableSessionsForApi::class,
             \App\Http\Middleware\SecurityHeaders::class,
             'throttle:api',

@@ -232,8 +232,8 @@ const OrdersTab = () => {
                   </TableCell>
                 </TableRow>
               ) : (
-                filteredOrders.map((order) => (
-                  <TableRow key={order.id}>
+                filteredOrders.map((order, index) => (
+                  <TableRow key={order.id || `order-${index}`}>
                     <TableCell className="font-medium text-[10px] px-2 py-2">{order.id}</TableCell>
                     <TableCell className="text-[10px] px-2 py-2 truncate max-w-[80px]">{order.customer}</TableCell>
                     <TableCell className="text-[10px] px-2 py-2 font-semibold">{order.total}</TableCell>
@@ -242,62 +242,78 @@ const OrdersTab = () => {
                         {order.status}
                       </Badge>
                     </TableCell>
-                    <TableCell className="px-2 py-2 relative">
+                    <TableCell className="px-2 py-2">
                       {/* Desktop: Show all actions directly */}
                       <div className="hidden sm:flex items-center gap-2">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleViewOrder(order)}
-                          className="h-6 px-2 text-[10px] hover:bg-[#f8f1ec] text-[#5c3d28]"
+                        <button
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            console.log('View button clicked for order:', order.id);
+                            handleViewOrder(order);
+                          }}
+                          className="px-3 py-1 text-[10px] bg-white border border-[#a4785a] text-[#a4785a] rounded hover:bg-[#a4785a] hover:text-white cursor-pointer"
                         >
-                          View
-                        </Button>
+                          View Details
+                        </button>
                         {(order.status?.toLowerCase() === "pending" || order.status?.toLowerCase() === "processing") && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleStatusChange(order)}
-                            className="h-6 px-2 text-[10px] hover:bg-[#f8f1ec] text-[#5c3d28]"
+                          <button
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              console.log('Pack button clicked for order:', order.id);
+                              handleStatusChange(order);
+                            }}
+                            className="px-3 py-1 text-[10px] bg-white border border-[#a4785a] text-[#a4785a] rounded hover:bg-[#a4785a] hover:text-white cursor-pointer"
                           >
                             Pack
-                          </Button>
+                          </button>
                         )}
                       </div>
                       
                       {/* Mobile: Show dropdown */}
                       <div className="sm:hidden flex items-center justify-end">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => setOpenActionMenu(openActionMenu === order.id ? null : order.id)}
-                          className="h-6 w-6 p-0.5 hover:bg-[#f8f1ec]"
+                        <button
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            const orderKey = order.id || `order-${index}`;
+                            console.log('Mobile menu clicked for order:', orderKey);
+                            setOpenActionMenu(openActionMenu === orderKey ? null : orderKey);
+                          }}
+                          className="p-2 bg-gray-200 hover:bg-gray-300 rounded cursor-pointer"
                         >
-                          <MoreHorizontal className="h-4 w-4 text-[#7b5a3b]" />
-                        </Button>
+                          <MoreHorizontal className="h-4 w-4 text-gray-600" />
+                        </button>
                       </div>
                       
                       {/* Dropdown positioned relative to TableCell */}
-                      {openActionMenu === order.id && (
+                      {openActionMenu === (order.id || `order-${index}`) && (
                         <>
-                          <div className="fixed inset-0 z-[9998]" onClick={() => setOpenActionMenu(null)} />
-                          <div className="absolute right-0 top-full mt-1 bg-white border border-[#e5ded7] rounded-lg shadow-lg z-[9999] min-w-[120px] py-1">
+                          <div className="fixed inset-0 z-40" onClick={() => setOpenActionMenu(null)} />
+                          <div className="absolute right-0 top-full mt-1 bg-white border border-gray-300 rounded shadow-lg z-50 min-w-[120px] py-1">
                             <button
-                              onClick={() => {
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                console.log('View clicked in dropdown for order:', order.id);
                                 handleViewOrder(order);
                                 setOpenActionMenu(null);
                               }}
-                              className="w-full text-left px-3 py-1.5 text-[10px] hover:bg-[#f8f1ec] text-[#5c3d28] transition-colors"
+                              className="w-full text-left px-3 py-1.5 text-[10px] hover:bg-gray-50 text-gray-700 cursor-pointer"
                             >
                               View Details
                             </button>
                             {(order.status?.toLowerCase() === "pending" || order.status?.toLowerCase() === "processing") && (
                               <button
-                                onClick={() => {
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  console.log('Pack clicked in dropdown for order:', order.id);
                                   handleStatusChange(order);
                                   setOpenActionMenu(null);
                                 }}
-                                className="w-full text-left px-3 py-1.5 text-[10px] hover:bg-[#f8f1ec] text-[#5c3d28] transition-colors"
+                                className="w-full text-left px-3 py-1.5 text-[10px] hover:bg-gray-50 text-gray-700 cursor-pointer"
                               >
                                 Pack Order
                               </button>
