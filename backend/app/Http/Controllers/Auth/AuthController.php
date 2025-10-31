@@ -967,32 +967,101 @@ public function getSellers()
             'userRegion' => 'nullable|string|max:100',
             'userProvince' => 'nullable|string|max:100',
             'userPostalCode' => 'nullable|string|max:20',
+            'profile_picture' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:5120', // 5MB max
         ]);
 
         try {
+            // Handle profile picture upload
+            if ($request->hasFile('profile_picture')) {
+                $file = $request->file('profile_picture');
+                $filename = 'admin_' . $user->userID . '_' . time() . '.' . $file->getClientOriginalExtension();
+                $path = $file->storeAs('admin-profile-pictures', $filename, 'public');
+                
+                // Store profile picture based on user role
+                if ($user->role === 'administrator') {
+                    // Get or create administrator record
+                    $administrator = \App\Models\Administrator::firstOrCreate(
+                        ['user_id' => $user->userID],
+                        ['profile_picture_path' => null]
+                    );
+                    
+                    // Delete old profile picture if exists
+                    if ($administrator->profile_picture_path) {
+                        $oldPath = public_path('storage/' . $administrator->profile_picture_path);
+                        if (file_exists($oldPath)) {
+                            unlink($oldPath);
+                        }
+                    }
+                    
+                    // Update administrator profile picture path
+                    $administrator->profile_picture_path = $path;
+                    $administrator->save();
+                } else {
+                    // For other roles, handle accordingly (customer uses customer table, seller uses seller table)
+                    // This is mainly for admin, so we'll focus on administrator
+                }
+            }
+
             // Prepare update data
             $updateData = [];
-            if ($request->has('userName')) $updateData['userName'] = $request->userName;
-            if ($request->has('userEmail')) $updateData['userEmail'] = $request->userEmail;
-            if ($request->has('userContactNumber')) $updateData['userContactNumber'] = $request->userContactNumber;
-            if ($request->has('userAddress')) $updateData['userAddress'] = $request->userAddress;
-            if ($request->has('userCity')) $updateData['userCity'] = $request->userCity;
-            if ($request->has('userRegion')) $updateData['userRegion'] = $request->userRegion;
-            if ($request->has('userProvince')) $updateData['userProvince'] = $request->userProvince;
-            if ($request->has('userPostalCode')) $updateData['userPostalCode'] = $request->userPostalCode;
+            if ($request->filled('userName')) $updateData['userName'] = $request->userName;
+            if ($request->filled('userEmail')) $updateData['userEmail'] = $request->userEmail;
+            if ($request->filled('userContactNumber')) $updateData['userContactNumber'] = $request->userContactNumber;
+            if ($request->filled('userAddress')) $updateData['userAddress'] = $request->userAddress;
+            if ($request->filled('userCity')) $updateData['userCity'] = $request->userCity;
+            if ($request->filled('userRegion')) $updateData['userRegion'] = $request->userRegion;
+            if ($request->filled('userProvince')) $updateData['userProvince'] = $request->userProvince;
+            if ($request->filled('userPostalCode')) $updateData['userPostalCode'] = $request->userPostalCode;
 
             // Update user
+            if (!empty($updateData)) {
             $user->update($updateData);
+            }
 
-            return response()->json([
+            // Refresh user to get latest data with relationships
+            $user = $user->fresh(['administrator']);
+
+            // Prepare response
+            $response = [
                 'message' => 'Profile updated successfully',
-                'user' => $user->fresh()
-            ], 200);
+                'user' => [
+                    'userID' => $user->userID,
+                    'userName' => $user->userName,
+                    'userEmail' => $user->userEmail,
+                    'userContactNumber' => $user->userContactNumber,
+                    'userAddress' => $user->userAddress,
+                    'userCity' => $user->userCity,
+                    'userRegion' => $user->userRegion,
+                    'userProvince' => $user->userProvince,
+                    'userPostalCode' => $user->userPostalCode,
+                    'role' => $user->role,
+                ]
+            ];
+
+            // Include profile image URL if available (check administrator table for admin users)
+            if ($user->role === 'administrator') {
+                $administrator = $user->administrator;
+                if ($administrator && $administrator->profile_picture_path) {
+                    $response['profileImage'] = asset('storage/' . $administrator->profile_picture_path);
+                    $response['profile_image_url'] = asset('storage/' . $administrator->profile_picture_path);
+                    $response['user']['profileImage'] = asset('storage/' . $administrator->profile_picture_path);
+                }
+            }
+
+            return response()->json($response, 200);
 
         } catch (\Exception $e) {
+            Log::error('Profile update error', [
+                'user_id' => $user ? $user->userID : 'unknown',
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
             return response()->json([
                 'message' => 'Failed to update profile',
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine()
             ], 500);
         }
     }

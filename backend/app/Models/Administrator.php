@@ -46,6 +46,7 @@ class Administrator extends Model
      */
     protected $fillable = [
         'user_id',
+        'profile_picture_path',
         // If you had specific admin-only fields not in User, they would go here.
     ];
 

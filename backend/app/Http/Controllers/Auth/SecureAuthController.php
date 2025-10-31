@@ -345,12 +345,21 @@ class SecureAuthController extends Controller
             return response()->json(['message' => 'Unauthenticated.'], 401);
         }
 
-        // Get customer profile picture if user is a customer
+        // Get profile picture based on user role
         $profilePicture = null;
+        $profileImage = null;
+        
         if ($user->role === 'customer') {
             $customer = \App\Models\Customer::where('user_id', $user->userID)->first();
             if ($customer && $customer->profile_picture_path) {
                 $profilePicture = asset('storage/' . $customer->profile_picture_path);
+                $profileImage = $profilePicture;
+            }
+        } elseif ($user->role === 'administrator') {
+            $administrator = \App\Models\Administrator::where('user_id', $user->userID)->first();
+            if ($administrator && $administrator->profile_picture_path) {
+                $profilePicture = asset('storage/' . $administrator->profile_picture_path);
+                $profileImage = $profilePicture;
             }
         }
 
@@ -368,6 +377,7 @@ class SecureAuthController extends Controller
             'userProvince' => $user->userProvince ?? null,
             'userPostalCode' => $user->userPostalCode ?? null,
             'profilePicture' => $profilePicture,
+            'profileImage' => $profileImage,
         ]);
     }
 }

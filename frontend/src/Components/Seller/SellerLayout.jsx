@@ -385,7 +385,8 @@ const SellerLayout = () => {
                 }}
                 className="w-full flex items-center px-3 py-2 rounded-lg text-sm text-[#5c3d28] hover:bg-gradient-to-r hover:from-[#a4785a]/10 hover:to-[#7b5a3b]/10 transition-all duration-200"
               >
-                <Settings className="h-4 w-4 mr-2 text-[#a4785a]" />
+                <Settings className="h-4 w-4 mr-2 text-[
+                ]" />
                 Settings
               </button>
               <div className="border-t border-[#e5ded7] my-2"></div>
@@ -448,8 +449,8 @@ const SellerLayout = () => {
                     transition-all duration-300 
                     group relative 
                     ${activeTab === item.key
-                      ? "bg-gradient-to-r from-[#a4785a] to-[#7b5a3b] text-white shadow-lg transform scale-[1.02]"
-                      : "text-[#5c3d28] hover:bg-gradient-to-r hover:from-[#a4785a]/10 hover:to-[#7b5a3b]/10 hover:text-[#a4785a] hover:shadow-md hover:transform hover:scale-[1.01]"
+                      ? "bg-gradient-to-r from-[#a4785a] to-[#7b5a3b] text-white shadow-md"
+                      : `${['inventory','orders','payments'].includes(item.key) ? '!bg-[#7b5a3b] !text-white' : 'bg-white text-[#5c3d28]'} hover:bg-gradient-to-r hover:from-[#a4785a]/10 hover:to-[#7b5a3b]/10 hover:text-[#a4785a] hover:shadow-md`
                     }
                   `}
                 >
@@ -458,7 +459,7 @@ const SellerLayout = () => {
                     transition-all duration-300 
                     ${activeTab === item.key 
                       ? "text-white" 
-                      : "text-[#a4785a] group-hover:scale-110 group-hover:rotate-3"
+                      : `${['inventory','orders','payments'].includes(item.key) ? '!text-white' : 'text-[#5c3d28]'} group-hover:text-[#a4785a] group-hover:scale-110 group-hover:rotate-3`
                     }
                   `}>
                     {item.icon}
@@ -568,10 +569,11 @@ const SellerLayout = () => {
               </h3>
               <button 
                 onClick={() => setIsChatOpen(false)} 
-                className="text-white hover:text-gray-200 transition-all duration-200 focus:outline-none"
+                className="transition-all duration-200 focus:outline-none"
+                title="Close"
               >
-                <div className="hover:bg-white/20 rounded-full p-1.5 sm:p-2 transition-all duration-200">
-                  <X className="h-4 w-4 sm:h-5 sm:w-5" />
+                <div className="rounded-full p-1.5 sm:p-2 transition-all duration-200 bg-gradient-to-r from-[#a4785a] to-[#7b5a3b] hover:opacity-90 shadow ring-2 ring-white/70">
+                  <X className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
                 </div>
               </button>
             </div>

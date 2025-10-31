@@ -2,7 +2,6 @@ import React, { useState, useEffect } from "react";
 import {
   ArrowUpRight,
   ArrowDownRight,
-  DollarSign,
   Users,
   ShoppingBag,
   Star,
@@ -225,7 +224,7 @@ const Dashboard = () => {
               </div>
               
               <div className="admin-table-stat">
-                <DollarSign className="admin-table-stat-icon" />
+              <span className="h-4 w-4 text-[#a4785a] text-2xl mr-1"> ₱ </span>
                 <div className="flex-1">
                   <div className="admin-table-stat-value">₱{summary.average_order_value?.toFixed(2) || '0.00'}</div>
                   <div className="admin-table-stat-label">Average Order Value</div>
@@ -268,7 +267,7 @@ const Dashboard = () => {
           <div className="p-6">
             <div className="space-y-6">
               <div className="admin-table-stat">
-                <DollarSign className="admin-table-stat-icon" />
+              <span className="h-4 w-4 text-[#a4785a] text-2xl mr-1"> ₱ </span>
                 <div className="flex-1">
                   <div className="admin-table-stat-value">₱{currentMonthRevenue.toLocaleString()}</div>
                   <div className="admin-table-stat-label">Monthly Revenue</div>

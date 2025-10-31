@@ -100,7 +100,6 @@ const AdminLayout = () => {
   const [activeTab, setActiveTab] = useState("dashboard");
   const [productOpen, setProductOpen] = useState(true);
   const [userOpen, setUserOpen] = useState(true);
-  const [orderOpen, setOrderOpen] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [stats, setStats] = useState({});
   const [sidebarLoading, setSidebarLoading] = useState(true);
@@ -199,8 +198,6 @@ const AdminLayout = () => {
         return <StoreVerification />;
       case "orders":
         return <OrdersOverview />;
-      case "orderDetails":
-        return <div>Order Details</div>;
       case "analytics":
         return <AnalyticsDashboard />;
       case "commission":
@@ -312,29 +309,15 @@ const AdminLayout = () => {
 
             </SidebarGroup>
 
-            <SidebarGroup
-              label="Orders"
+            <SidebarItem
               icon={<FileText className="h-5 w-5" />}
-              isOpen={orderOpen}
-              setIsOpen={setOrderOpen}
-              onItemClick={() => setSidebarOpen(false)}
-            >
-              <SidebarItem
-                icon={<FileText className="h-4 w-4" />}
-                label="Orders Overview"
+              label="Orders"
                 tabKey="orders"
                 activeTab={activeTab}
                 setActiveTab={setActiveTab}
                 badge={sidebarLoading ? "..." : 18}
-              />
-              <SidebarItem
-                icon={<FileText className="h-4 w-4" />}
-                label="Order Details"
-                tabKey="orderDetails"
-                activeTab={activeTab}
-                setActiveTab={setActiveTab}
-              />
-            </SidebarGroup>
+              onItemClick={() => setSidebarOpen(false)}
+            />
 
             <SidebarItem
               icon={<BarChart3 className="h-5 w-5" />}

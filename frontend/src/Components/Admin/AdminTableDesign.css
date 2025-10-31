@@ -504,3 +504,43 @@
 .admin-dashboard-card-trend.negative {
   color: #ef4444;
 }
+
+/* Analytics Dashboard Tab Styling */
+.analytics-tab-trigger {
+  background-color: white !important;
+  color: #374151 !important;
+  transition: all 0.3s ease !important;
+}
+
+.analytics-tab-trigger[data-state="active"] {
+  background-color: #a4785a !important;
+  color: white !important;
+}
+
+/* Orders Overview Cancel Button Styling */
+button[data-radix-collection-item][class*="bg-red"] {
+  background-color: #dc2626 !important;
+  color: white !important;
+}
+
+button[data-radix-collection-item]:hover[class*="bg-red"] {
+  background-color: #b91c1c !important;
+  color: white !important;
+}
+
+/* Admin Settings Tab Styling */
+.admin-settings-tab-trigger {
+  background-color: white !important;
+  color: #374151 !important;
+  transition: all 0.3s ease !important;
+}
+
+.admin-settings-tab-trigger[data-state="active"] {
+  background-color: #a4785a !important;
+  color: white !important;
+}
+
+.admin-settings-tab-trigger:hover:not([data-state="active"]) {
+  background-color: #f9fafb !important;
+  color: #374151 !important;
+}

@@ -1,4 +1,5 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
+import api from "../../api";
 import { ArrowRight } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "../ui/button";
@@ -44,25 +45,88 @@ const HeroSection = ({
       artisan: "Forest Crafts",
     },
   ],
+  autoAdvanceMs = 12000,
+  fetchEvents = true,
 }) => {
+  const [emblaApi, setEmblaApi] = useState(null);
+  const [eventSlides, setEventSlides] = useState([]);
+
+  const ensureAbsoluteUrl = (url) => {
+    if (!url) return null;
+    if (/^https?:\/\//i.test(url)) return url;
+    // If it's a storage path, prefix with backend base (without /api)
+    const backend = (import.meta.env.VITE_BACKEND_URL || '').replace(/\/?api\/?$/, '');
+    if (backend) {
+      if (url.startsWith('/storage/') || url.startsWith('storage/')) {
+        return `${backend}${url.startsWith('/') ? '' : '/'}${url}`;
+      }
+      return `${backend}${url.startsWith('/') ? '' : '/'}${url}`;
+    }
+    return url;
+  };
+
+  useEffect(() => {
+    if (!emblaApi || !autoAdvanceMs) return;
+    const id = setInterval(() => {
+      emblaApi.scrollNext();
+    }, autoAdvanceMs);
+    return () => clearInterval(id);
+  }, [emblaApi, autoAdvanceMs]);
+
+  // Fetch workshops & events for hero when enabled
+  useEffect(() => {
+    if (!fetchEvents) return;
+    const load = async () => {
+      try {
+        const res = await api.get('/work-and-events/public');
+        const payload = res?.data;
+        const list = Array.isArray(payload)
+          ? payload
+          : Array.isArray(payload?.data)
+          ? payload.data
+          : Array.isArray(payload?.work_and_events)
+          ? payload.work_and_events
+          : [];
+        const normalized = list.map((e, idx) => ({
+          id: e.id || e.works_and_events_id || `ev-${idx}`,
+          image: ensureAbsoluteUrl(e.cover_image || e.image_url || e.image) || "https://images.unsplash.com/photo-1493106641515-6b5631de4bb9?w=1200&q=80",
+          title: e.title || e.name || 'Workshop / Event',
+          subtitle: `${e.date ? new Date(e.date).toLocaleDateString() : ''}${e.location ? ` • ${e.location}` : ''}`,
+        }));
+        if (normalized.length > 0) {
+          setEventSlides(normalized);
+        } else {
+          // Debug helper for development
+          // console.warn('HeroSection: No events returned from API', payload);
+        }
+      } catch (_) {
+        // silently fallback to default slides
+      }
+    };
+    load();
+  }, [fetchEvents]);
   return (
     <section className="w-full h-[400px] sm:h-[450px] md:h-[500px] relative overflow-hidden bg-gray-50">
       {/* Hero Carousel */}
       <div className="absolute inset-0 w-full h-full">
-        <Carousel className="w-full h-full">
+        <Carousel className="w-full h-full" setApi={setEmblaApi} opts={{ loop: true }}>
           <CarouselContent className="h-full">
-            {slides.map((slide) => (
+            {(eventSlides.length ? eventSlides : slides).map((slide) => (
               <CarouselItem key={slide.id} className="h-full">
                 <div className="relative w-full h-full">
                   <img
                     src={slide.image}
                     alt={slide.title}
-                    className="w-full h-full object-contain object-center"
+                    className="w-full h-full object-cover object-center"
                   />
-                  <div className="absolute inset-0 bg-black/30"></div>
-                  <div className="absolute bottom-4 left-4 sm:bottom-8 sm:left-8 text-white">
-                    <h3 className="text-lg sm:text-xl md:text-2xl font-bold">{slide.title}</h3>
-                    <p className="text-xs sm:text-sm opacity-90">by {slide.artisan}</p>
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent"></div>
+                  <div className="absolute bottom-6 left-6 right-6 sm:bottom-10 sm:left-10 sm:right-10 text-white">
+                    <div className="bg-black/40 backdrop-blur-sm rounded-lg p-3 sm:p-4 shadow-lg inline-block max-w-[90%]">
+                      <h3 className="text-lg sm:text-2xl font-bold leading-snug">{slide.title}</h3>
+                      {slide.subtitle && (
+                        <p className="text-xs sm:text-sm opacity-90 mt-1">{slide.subtitle}</p>
+                      )}
+                    </div>
                   </div>
                 </div>
               </CarouselItem>

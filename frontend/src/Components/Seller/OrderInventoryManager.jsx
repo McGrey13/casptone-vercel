@@ -252,7 +252,16 @@ const OrdersTab = () => {
                             console.log('View button clicked for order:', order.id);
                             handleViewOrder(order);
                           }}
-                          className="px-3 py-1 text-[10px] bg-white border border-[#a4785a] text-[#a4785a] rounded hover:bg-[#a4785a] hover:text-white cursor-pointer"
+                          className="px-3 py-1 text-[10px] bg-white border border-[#a4785a] text-[#a4785a] rounded hover:!bg-[#a4785a] hover:!text-white cursor-pointer transition-all duration-200"
+                          style={{ backgroundColor: 'white', color: '#a4785a' }}
+                          onMouseEnter={(e) => {
+                            e.target.style.backgroundColor = '#a4785a';
+                            e.target.style.color = 'white';
+                          }}
+                          onMouseLeave={(e) => {
+                            e.target.style.backgroundColor = 'white';
+                            e.target.style.color = '#a4785a';
+                          }}
                         >
                           View Details
                         </button>
@@ -264,7 +273,16 @@ const OrdersTab = () => {
                               console.log('Pack button clicked for order:', order.id);
                               handleStatusChange(order);
                             }}
-                            className="px-3 py-1 text-[10px] bg-white border border-[#a4785a] text-[#a4785a] rounded hover:bg-[#a4785a] hover:text-white cursor-pointer"
+                            className="px-3 py-1 text-[10px] bg-white border border-[#a4785a] text-[#a4785a] rounded hover:!bg-[#a4785a] hover:!text-white cursor-pointer transition-all duration-200"
+                            style={{ backgroundColor: 'white', color: '#a4785a' }}
+                            onMouseEnter={(e) => {
+                              e.target.style.backgroundColor = '#a4785a';
+                              e.target.style.color = 'white';
+                            }}
+                            onMouseLeave={(e) => {
+                              e.target.style.backgroundColor = 'white';
+                              e.target.style.color = '#a4785a';
+                            }}
                           >
                             Pack
                           </button>
@@ -300,7 +318,16 @@ const OrdersTab = () => {
                                 handleViewOrder(order);
                                 setOpenActionMenu(null);
                               }}
-                              className="w-full text-left px-3 py-1.5 text-[10px] hover:bg-gray-50 text-gray-700 cursor-pointer"
+                              className="w-full text-left px-3 py-1.5 text-[10px] bg-white text-[#a4785a] hover:!bg-[#a4785a] hover:!text-white cursor-pointer transition-all duration-200"
+                              style={{ backgroundColor: 'white', color: '#a4785a' }}
+                              onMouseEnter={(e) => {
+                                e.target.style.backgroundColor = '#a4785a';
+                                e.target.style.color = 'white';
+                              }}
+                              onMouseLeave={(e) => {
+                                e.target.style.backgroundColor = 'white';
+                                e.target.style.color = '#a4785a';
+                              }}
                             >
                               View Details
                             </button>
@@ -313,7 +340,16 @@ const OrdersTab = () => {
                                   handleStatusChange(order);
                                   setOpenActionMenu(null);
                                 }}
-                                className="w-full text-left px-3 py-1.5 text-[10px] hover:bg-gray-50 text-gray-700 cursor-pointer"
+                                className="w-full text-left px-3 py-1.5 text-[10px] bg-white text-[#a4785a] hover:!bg-[#a4785a] hover:!text-white cursor-pointer transition-all duration-200"
+                                style={{ backgroundColor: 'white', color: '#a4785a' }}
+                                onMouseEnter={(e) => {
+                                  e.target.style.backgroundColor = '#a4785a';
+                                  e.target.style.color = 'white';
+                                }}
+                                onMouseLeave={(e) => {
+                                  e.target.style.backgroundColor = 'white';
+                                  e.target.style.color = '#a4785a';
+                                }}
                               >
                                 Pack Order
                               </button>
@@ -1482,7 +1518,6 @@ const InventoryTab_DEPRECATED = () => {
                     <TableCell className="text-xs sm:text-sm font-medium truncate max-w-[120px] sm:max-w-none">
                       <div>
                         <div className="font-medium">{product.productName}</div>
-                        <div className="text-[10px] text-gray-500 mt-0.5">SKU: {product.sku || 'N/A'}</div>
                       </div>
                     </TableCell>
                     <TableCell className="text-xs sm:text-sm hidden lg:table-cell">{product.category}</TableCell>
@@ -1493,51 +1528,86 @@ const InventoryTab_DEPRECATED = () => {
                         {product.status}
                       </Badge>
                     </TableCell>
-                    <TableCell className="px-2 py-2 relative">
+                    <TableCell className="px-3 py-3 relative">
                       {/* Desktop: Show all actions directly */}
-                      <div className="hidden sm:flex items-center gap-1">
-                        <Button
-                          variant="ghost"
-                          size="sm"
+                      <div className="hidden sm:flex items-center gap-2 flex-wrap">
+                        <button
                           onClick={() => handleViewProduct(product)}
-                          className="h-6 px-1 text-[8px] hover:bg-[#f8f1ec] text-[#5c3d28]"
+                          className="px-3 py-1.5 text-xs font-medium bg-white border-2 border-[#a4785a] text-[#a4785a] rounded-md hover:!bg-[#a4785a] hover:!text-white cursor-pointer transition-all duration-200 shadow-sm hover:shadow-md whitespace-nowrap"
+                          style={{ backgroundColor: 'white', color: '#a4785a' }}
+                          onMouseEnter={(e) => {
+                            e.target.style.backgroundColor = '#a4785a';
+                            e.target.style.color = 'white';
+                          }}
+                          onMouseLeave={(e) => {
+                            e.target.style.backgroundColor = 'white';
+                            e.target.style.color = '#a4785a';
+                          }}
                         >
                           View
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
+                        </button>
+                        <button
                           onClick={() => handleShareProduct(product)}
-                          className="h-6 px-1 text-[8px] hover:bg-[#f8f1ec] text-[#5c3d28]"
+                          className="px-3 py-1.5 text-xs font-medium bg-white border-2 border-[#a4785a] text-[#a4785a] rounded-md hover:!bg-[#a4785a] hover:!text-white cursor-pointer transition-all duration-200 shadow-sm hover:shadow-md whitespace-nowrap"
+                          style={{ backgroundColor: 'white', color: '#a4785a' }}
+                          onMouseEnter={(e) => {
+                            e.target.style.backgroundColor = '#a4785a';
+                            e.target.style.color = 'white';
+                          }}
+                          onMouseLeave={(e) => {
+                            e.target.style.backgroundColor = 'white';
+                            e.target.style.color = '#a4785a';
+                          }}
                         >
                           Share
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
+                        </button>
+                        <button
                           onClick={() => handleQuantityClick(product)}
-                          className="h-6 px-1 text-[8px] hover:bg-[#f8f1ec] text-[#5c3d28]"
+                          className="px-3 py-1.5 text-xs font-medium bg-white border-2 border-[#a4785a] text-[#a4785a] rounded-md hover:!bg-[#a4785a] hover:!text-white cursor-pointer transition-all duration-200 shadow-sm hover:shadow-md whitespace-nowrap"
+                          style={{ backgroundColor: 'white', color: '#a4785a' }}
+                          onMouseEnter={(e) => {
+                            e.target.style.backgroundColor = '#a4785a';
+                            e.target.style.color = 'white';
+                          }}
+                          onMouseLeave={(e) => {
+                            e.target.style.backgroundColor = 'white';
+                            e.target.style.color = '#a4785a';
+                          }}
                         >
                           Stock
-                        </Button>
+                        </button>
                         {(!product.hasOrders || product.hasOrders === 0) && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
+                          <button
                             onClick={() => handleTogglePublishStatus(product)}
-                            className="h-6 px-1 text-[8px] hover:bg-[#f8f1ec] text-[#5c3d28]"
+                            className="px-3 py-1.5 text-xs font-medium bg-white border-2 border-[#a4785a] text-[#a4785a] rounded-md hover:!bg-[#a4785a] hover:!text-white cursor-pointer transition-all duration-200 shadow-sm hover:shadow-md whitespace-nowrap"
+                            style={{ backgroundColor: 'white', color: '#a4785a' }}
+                            onMouseEnter={(e) => {
+                              e.target.style.backgroundColor = '#a4785a';
+                              e.target.style.color = 'white';
+                            }}
+                            onMouseLeave={(e) => {
+                              e.target.style.backgroundColor = 'white';
+                              e.target.style.color = '#a4785a';
+                            }}
                           >
                             {product.publish_status === 'published' ? 'Draft' : 'Publish'}
-                          </Button>
+                          </button>
                         )}
-                        <Button
-                          variant="ghost"
-                          size="sm"
+                        <button
                           onClick={() => handleEditClick(product)}
-                          className="h-6 px-1 text-[8px] hover:bg-[#f8f1ec] text-[#5c3d28]"
+                          className="px-3 py-1.5 text-xs font-medium bg-white border-2 border-[#a4785a] text-[#a4785a] rounded-md hover:!bg-[#a4785a] hover:!text-white cursor-pointer transition-all duration-200 shadow-sm hover:shadow-md whitespace-nowrap"
+                          style={{ backgroundColor: 'white', color: '#a4785a' }}
+                          onMouseEnter={(e) => {
+                            e.target.style.backgroundColor = '#a4785a';
+                            e.target.style.color = 'white';
+                          }}
+                          onMouseLeave={(e) => {
+                            e.target.style.backgroundColor = 'white';
+                            e.target.style.color = '#a4785a';
+                          }}
                         >
                           Edit
-                        </Button>
+                        </button>
                       </div>
                       
                       {/* Mobile: Show dropdown */}
@@ -1562,7 +1632,16 @@ const InventoryTab_DEPRECATED = () => {
                                 handleViewProduct(product);
                                 setOpenActionMenu(null);
                               }}
-                              className="w-full text-left px-3 py-1.5 text-[10px] hover:bg-[#f8f1ec] text-[#5c3d28] transition-colors"
+                              className="w-full text-left px-3 py-1.5 text-[10px] bg-white text-[#a4785a] hover:!bg-[#a4785a] hover:!text-white cursor-pointer transition-all duration-200"
+                              style={{ backgroundColor: 'white', color: '#a4785a' }}
+                              onMouseEnter={(e) => {
+                                e.target.style.backgroundColor = '#a4785a';
+                                e.target.style.color = 'white';
+                              }}
+                              onMouseLeave={(e) => {
+                                e.target.style.backgroundColor = 'white';
+                                e.target.style.color = '#a4785a';
+                              }}
                             >
                               View Details
                             </button>
@@ -1571,7 +1650,16 @@ const InventoryTab_DEPRECATED = () => {
                                 handleShareProduct(product);
                                 setOpenActionMenu(null);
                               }}
-                              className="w-full text-left px-3 py-1.5 text-[10px] hover:bg-[#f8f1ec] text-[#5c3d28] transition-colors"
+                              className="w-full text-left px-3 py-1.5 text-[10px] bg-white text-[#a4785a] hover:!bg-[#a4785a] hover:!text-white cursor-pointer transition-all duration-200"
+                              style={{ backgroundColor: 'white', color: '#a4785a' }}
+                              onMouseEnter={(e) => {
+                                e.target.style.backgroundColor = '#a4785a';
+                                e.target.style.color = 'white';
+                              }}
+                              onMouseLeave={(e) => {
+                                e.target.style.backgroundColor = 'white';
+                                e.target.style.color = '#a4785a';
+                              }}
                             >
                               Share Product
                             </button>
@@ -1580,7 +1668,16 @@ const InventoryTab_DEPRECATED = () => {
                                 handleQuantityClick(product);
                                 setOpenActionMenu(null);
                               }}
-                              className="w-full text-left px-3 py-1.5 text-[10px] hover:bg-[#f8f1ec] text-[#5c3d28] transition-colors"
+                              className="w-full text-left px-3 py-1.5 text-[10px] bg-white text-[#a4785a] hover:!bg-[#a4785a] hover:!text-white cursor-pointer transition-all duration-200"
+                              style={{ backgroundColor: 'white', color: '#a4785a' }}
+                              onMouseEnter={(e) => {
+                                e.target.style.backgroundColor = '#a4785a';
+                                e.target.style.color = 'white';
+                              }}
+                              onMouseLeave={(e) => {
+                                e.target.style.backgroundColor = 'white';
+                                e.target.style.color = '#a4785a';
+                              }}
                             >
                               Update Stock
                             </button>
@@ -1590,7 +1687,16 @@ const InventoryTab_DEPRECATED = () => {
                                   handleTogglePublishStatus(product);
                                   setOpenActionMenu(null);
                                 }}
-                                className="w-full text-left px-3 py-1.5 text-[10px] hover:bg-[#f8f1ec] text-[#5c3d28] transition-colors"
+                                className="w-full text-left px-3 py-1.5 text-[10px] bg-white text-[#a4785a] hover:!bg-[#a4785a] hover:!text-white cursor-pointer transition-all duration-200"
+                                style={{ backgroundColor: 'white', color: '#a4785a' }}
+                                onMouseEnter={(e) => {
+                                  e.target.style.backgroundColor = '#a4785a';
+                                  e.target.style.color = 'white';
+                                }}
+                                onMouseLeave={(e) => {
+                                  e.target.style.backgroundColor = 'white';
+                                  e.target.style.color = '#a4785a';
+                                }}
                               >
                                 {product.publish_status === 'published' ? 'Save as Draft' : 'Publish Product'}
                               </button>
@@ -1600,7 +1706,16 @@ const InventoryTab_DEPRECATED = () => {
                                 handleEditClick(product);
                                 setOpenActionMenu(null);
                               }}
-                              className="w-full text-left px-3 py-1.5 text-[10px] hover:bg-[#f8f1ec] text-[#5c3d28] transition-colors"
+                              className="w-full text-left px-3 py-1.5 text-[10px] bg-white text-[#a4785a] hover:!bg-[#a4785a] hover:!text-white cursor-pointer transition-all duration-200"
+                              style={{ backgroundColor: 'white', color: '#a4785a' }}
+                              onMouseEnter={(e) => {
+                                e.target.style.backgroundColor = '#a4785a';
+                                e.target.style.color = 'white';
+                              }}
+                              onMouseLeave={(e) => {
+                                e.target.style.backgroundColor = 'white';
+                                e.target.style.color = '#a4785a';
+                              }}
                             >
                               Edit Product
                             </button>
@@ -2017,16 +2132,16 @@ const OrderInventoryManager = () => {
 
       {/* Tabs with Craft Theme */}
       <Tabs defaultValue="orders" className="w-full">
-        <TabsList className="w-full grid grid-cols-2 bg-[#f8f1ec] border border-[#e5ded7] rounded-md">
+        <TabsList className="w-full grid grid-cols-2 bg-white border border-[#e5ded7] rounded-md p-1">
           <TabsTrigger 
             value="orders" 
-            className="rounded-sm data-[state=active]:bg-[#7b5a3b] data-[state=active]:text-white transition-all duration-200 text-[10px] py-1.5"
+            className="rounded-sm bg-white text-[#a4785a] data-[state=active]:!bg-[#a4785a] data-[state=active]:!text-white data-[state=active]:shadow-sm transition-all duration-200 text-sm font-medium py-2"
           >
             Orders
           </TabsTrigger>
           <TabsTrigger 
             value="shipping"
-            className="rounded-sm data-[state=active]:bg-[#7b5a3b] data-[state=active]:text-white transition-all duration-200 text-[10px] py-1.5"
+            className="rounded-sm bg-white text-[#a4785a] data-[state=active]:!bg-[#a4785a] data-[state=active]:!text-white data-[state=active]:shadow-sm transition-all duration-200 text-sm font-medium py-2"
           >
             Shipping
           </TabsTrigger>

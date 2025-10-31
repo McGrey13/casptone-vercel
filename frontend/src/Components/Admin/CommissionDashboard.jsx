@@ -250,7 +250,7 @@ const CommissionDashboard = () => {
                   </p>
                 </div>
                 <div className="h-12 w-12 bg-blue-100 rounded-lg flex items-center justify-center">
-                  <DollarSign className="h-6 w-6 text-blue-600" />
+                  <span className="h-4 w-4 text-[#a4785a] text-2xl mb-3"> ₱ </span>
                 </div>
               </div>
             </CardContent>

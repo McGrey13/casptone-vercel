@@ -34,6 +34,7 @@ const SellerAnalytics = ({ sellerId }) => {
   const [analytics, setAnalytics] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [timeRange, setTimeRange] = useState('monthly'); // monthly | quarterly | yearly
 
   const fetchAnalytics = useCallback(async (showLoading = true) => {
     if (!sellerId) {
@@ -106,6 +107,55 @@ const SellerAnalytics = ({ sellerId }) => {
     }).format(value);
   };
 
+  // ----- Time range helpers -----
+  const monthlyData = (analytics.monthly_trends || []).map(m => ({
+    period: m.month,
+    revenue: m.revenue,
+    orders: m.orders,
+  }));
+
+  const quarterlyData = (() => {
+    const byQuarter = {};
+    monthlyData.forEach(({ period, revenue, orders }) => {
+      // period format 'YYYY-MM'
+      const [y, m] = period.split('-').map(Number);
+      const q = Math.floor((m - 1) / 3) + 1;
+      const key = `${y}-Q${q}`;
+      if (!byQuarter[key]) byQuarter[key] = { period: key, revenue: 0, orders: 0 };
+      byQuarter[key].revenue += revenue || 0;
+      byQuarter[key].orders += orders || 0;
+    });
+    return Object.values(byQuarter).sort((a, b) => a.period.localeCompare(b.period));
+  })();
+
+  const yearlyData = (() => {
+    const byYear = {};
+    monthlyData.forEach(({ period, revenue, orders }) => {
+      const year = period.split('-')[0];
+      if (!byYear[year]) byYear[year] = { period: year, revenue: 0, orders: 0 };
+      byYear[year].revenue += revenue || 0;
+      byYear[year].orders += orders || 0;
+    });
+    return Object.values(byYear).sort((a, b) => a.period.localeCompare(b.period));
+  })();
+
+  const trendsToUse = timeRange === 'yearly' ? yearlyData : timeRange === 'quarterly' ? quarterlyData : monthlyData;
+  const rangeTotals = trendsToUse.reduce((acc, d) => {
+    acc.revenue += d.revenue || 0;
+    acc.orders += d.orders || 0;
+    return acc;
+  }, { revenue: 0, orders: 0 });
+  const baseMetrics = analytics.order_metrics || { total_orders: 0, completed: 0, pending: 0, packing: 0, shipped: 0, completion_rate: 0 };
+  const scale = baseMetrics.total_orders > 0 ? (rangeTotals.orders / baseMetrics.total_orders) : 0;
+  const rangedOrderMetrics = {
+    total_orders: Math.round(rangeTotals.orders),
+    completed: Math.round((baseMetrics.completed || 0) * scale),
+    pending: Math.round((baseMetrics.pending || 0) * scale),
+    packing: Math.round((baseMetrics.packing || 0) * scale),
+    shipped: Math.round((baseMetrics.shipped || 0) * scale),
+    completion_rate: rangeTotals.orders > 0 ? ((Math.round((baseMetrics.completed || 0) * scale) / rangeTotals.orders) * 100) : 0,
+  };
+
   return (
     <div className="space-y-4 sm:space-y-6">
       {/* Header with craft theme */}
@@ -134,10 +184,10 @@ const SellerAnalytics = ({ sellerId }) => {
           </CardHeader>
           <CardContent className="p-3 sm:p-4 md:p-6 pt-0">
             <div className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-green-600 to-green-700 bg-clip-text text-transparent">
-              {formatCurrency(analytics.total_revenue)}
+              {formatCurrency(rangeTotals.revenue || analytics.total_revenue)}
             </div>
             <p className="text-xs text-[#7b5a3b] mt-1">
-              {analytics.order_metrics.total_orders} total orders
+              {rangedOrderMetrics.total_orders} total orders ({timeRange})
             </p>
           </CardContent>
         </Card>
@@ -168,10 +218,10 @@ const SellerAnalytics = ({ sellerId }) => {
           </CardHeader>
           <CardContent className="p-3 sm:p-4 md:p-6 pt-0">
             <div className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-blue-600 to-blue-700 bg-clip-text text-transparent">
-              {analytics.order_metrics.completion_rate.toFixed(1)}%
+              {rangedOrderMetrics.completion_rate.toFixed(1)}%
             </div>
             <p className="text-xs text-[#7b5a3b] mt-1">
-              {analytics.order_metrics.completed} completed orders
+              {rangedOrderMetrics.completed} completed orders
             </p>
           </CardContent>
         </Card>
@@ -199,7 +249,7 @@ const SellerAnalytics = ({ sellerId }) => {
         <CardHeader className="border-b border-[#e5ded7] bg-gradient-to-r from-[#faf9f8] to-white p-4 sm:p-6">
           <CardTitle className="text-[#5c3d28] flex items-center text-base sm:text-lg md:text-xl">
             <Package className="h-4 w-4 sm:h-5 sm:w-5 mr-2 text-[#a4785a]" />
-            Order Status Overview
+            Order Status Overview ({timeRange})
           </CardTitle>
           <CardDescription className="text-[#7b5a3b] text-xs sm:text-sm">Current status of all orders and performance metrics</CardDescription>
         </CardHeader>
@@ -211,20 +261,20 @@ const SellerAnalytics = ({ sellerId }) => {
                 <div className="flex items-center justify-between">
                   <p className="text-xs sm:text-sm font-semibold text-blue-700">Pending</p>
                   <span className="text-xs font-medium text-blue-600">
-                    {analytics.order_metrics.total_orders > 0 
-                      ? Math.round((analytics.order_metrics.pending / analytics.order_metrics.total_orders) * 100)
+                    {rangedOrderMetrics.total_orders > 0 
+                      ? Math.round((rangedOrderMetrics.pending / rangedOrderMetrics.total_orders) * 100)
                       : 0}%
                   </span>
                 </div>
                 <p className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-blue-600 to-blue-700 bg-clip-text text-transparent">
-                  {analytics.order_metrics.pending}
+                  {rangedOrderMetrics.pending}
                 </p>
                 <div className="w-full bg-blue-200 rounded-full h-2 sm:h-2.5">
                   <div 
                     className="bg-gradient-to-r from-blue-500 to-blue-600 h-2 sm:h-2.5 rounded-full transition-all duration-300 shadow-sm"
                     style={{ 
-                      width: `${analytics.order_metrics.total_orders > 0 
-                        ? (analytics.order_metrics.pending / analytics.order_metrics.total_orders) * 100 
+                      width: `${rangedOrderMetrics.total_orders > 0 
+                        ? (rangedOrderMetrics.pending / rangedOrderMetrics.total_orders) * 100 
                         : 0}%` 
                     }}
                   ></div>
@@ -235,20 +285,20 @@ const SellerAnalytics = ({ sellerId }) => {
                 <div className="flex items-center justify-between">
                   <p className="text-xs sm:text-sm font-semibold text-yellow-700">Packing</p>
                   <span className="text-xs font-medium text-yellow-600">
-                    {analytics.order_metrics.total_orders > 0 
-                      ? Math.round((analytics.order_metrics.packing / analytics.order_metrics.total_orders) * 100)
+                    {rangedOrderMetrics.total_orders > 0 
+                      ? Math.round((rangedOrderMetrics.packing / rangedOrderMetrics.total_orders) * 100)
                       : 0}%
                   </span>
                 </div>
                 <p className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-yellow-600 to-yellow-700 bg-clip-text text-transparent">
-                  {analytics.order_metrics.packing}
+                  {rangedOrderMetrics.packing}
                 </p>
                 <div className="w-full bg-yellow-200 rounded-full h-2 sm:h-2.5">
                   <div 
                     className="bg-gradient-to-r from-yellow-500 to-yellow-600 h-2 sm:h-2.5 rounded-full transition-all duration-300 shadow-sm"
                     style={{ 
-                      width: `${analytics.order_metrics.total_orders > 0 
-                        ? (analytics.order_metrics.packing / analytics.order_metrics.total_orders) * 100 
+                      width: `${rangedOrderMetrics.total_orders > 0 
+                        ? (rangedOrderMetrics.packing / rangedOrderMetrics.total_orders) * 100 
                         : 0}%` 
                     }}
                   ></div>
@@ -259,20 +309,20 @@ const SellerAnalytics = ({ sellerId }) => {
                 <div className="flex items-center justify-between">
                   <p className="text-sm font-semibold text-purple-700">Shipped</p>
                   <span className="text-xs font-medium text-purple-600">
-                    {analytics.order_metrics.total_orders > 0 
-                      ? Math.round((analytics.order_metrics.shipped / analytics.order_metrics.total_orders) * 100)
+                    {rangedOrderMetrics.total_orders > 0 
+                      ? Math.round((rangedOrderMetrics.shipped / rangedOrderMetrics.total_orders) * 100)
                       : 0}%
                   </span>
                 </div>
                 <p className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-purple-700 bg-clip-text text-transparent">
-                  {analytics.order_metrics.shipped}
+                  {rangedOrderMetrics.shipped}
                 </p>
                 <div className="w-full bg-purple-200 rounded-full h-2.5">
                   <div 
                     className="bg-gradient-to-r from-purple-500 to-purple-600 h-2.5 rounded-full transition-all duration-300 shadow-sm"
                     style={{ 
-                      width: `${analytics.order_metrics.total_orders > 0 
-                        ? (analytics.order_metrics.shipped / analytics.order_metrics.total_orders) * 100 
+                      width: `${rangedOrderMetrics.total_orders > 0 
+                        ? (rangedOrderMetrics.shipped / rangedOrderMetrics.total_orders) * 100 
                         : 0}%` 
                     }}
                   ></div>
@@ -283,20 +333,20 @@ const SellerAnalytics = ({ sellerId }) => {
                 <div className="flex items-center justify-between">
                   <p className="text-sm font-semibold text-green-700">Completed</p>
                   <span className="text-xs font-medium text-green-600">
-                    {analytics.order_metrics.total_orders > 0 
-                      ? Math.round((analytics.order_metrics.completed / analytics.order_metrics.total_orders) * 100)
+                    {rangedOrderMetrics.total_orders > 0 
+                      ? Math.round((rangedOrderMetrics.completed / rangedOrderMetrics.total_orders) * 100)
                       : 0}%
                   </span>
                 </div>
                 <p className="text-3xl font-bold bg-gradient-to-r from-green-600 to-green-700 bg-clip-text text-transparent">
-                  {analytics.order_metrics.completed}
+                  {rangedOrderMetrics.completed}
                 </p>
                 <div className="w-full bg-green-200 rounded-full h-2.5">
                   <div 
                     className="bg-gradient-to-r from-green-500 to-green-600 h-2.5 rounded-full transition-all duration-300 shadow-sm"
                     style={{ 
-                      width: `${analytics.order_metrics.total_orders > 0 
-                        ? (analytics.order_metrics.completed / analytics.order_metrics.total_orders) * 100 
+                      width: `${rangedOrderMetrics.total_orders > 0 
+                        ? (rangedOrderMetrics.completed / rangedOrderMetrics.total_orders) * 100 
                         : 0}%` 
                     }}
                   ></div>
@@ -308,21 +358,21 @@ const SellerAnalytics = ({ sellerId }) => {
             <div className="border-t border-[#e5ded7] pt-6 mt-6">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="text-center p-5 bg-gradient-to-br from-[#faf9f8] to-white rounded-xl border-2 border-[#e5ded7] hover:border-[#a4785a] transition-all duration-200 hover:shadow-md">
-                  <p className="text-sm font-semibold text-[#7b5a3b]">Total Orders</p>
+                  <p className="text-sm font-semibold text-[#7b5a3b]">Total Orders ({timeRange})</p>
                   <p className="text-3xl font-bold bg-gradient-to-r from-[#a4785a] to-[#7b5a3b] bg-clip-text text-transparent mt-2">
-                    {analytics.order_metrics.total_orders}
+                    {rangedOrderMetrics.total_orders}
                   </p>
                 </div>
                 <div className="text-center p-5 bg-gradient-to-br from-green-50 to-green-100 rounded-xl border-2 border-green-200 hover:border-green-400 transition-all duration-200 hover:shadow-md">
                   <p className="text-sm font-semibold text-green-700">Completion Rate</p>
                   <p className="text-3xl font-bold bg-gradient-to-r from-green-600 to-green-700 bg-clip-text text-transparent mt-2">
-                    {Math.round(analytics.order_metrics.completion_rate)}%
+                    {Math.round(rangedOrderMetrics.completion_rate)}%
                   </p>
                 </div>
                 <div className="text-center p-5 bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl border-2 border-blue-200 hover:border-blue-400 transition-all duration-200 hover:shadow-md">
                   <p className="text-sm font-semibold text-blue-700">Processing Orders</p>
                   <p className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-blue-700 bg-clip-text text-transparent mt-2">
-                    {analytics.order_metrics.pending + analytics.order_metrics.packing + analytics.order_metrics.shipped}
+                    {rangedOrderMetrics.pending + rangedOrderMetrics.packing + rangedOrderMetrics.shipped}
                   </p>
                 </div>
               </div>
@@ -366,7 +416,7 @@ const SellerAnalytics = ({ sellerId }) => {
         </CardContent>
       </Card>
 
-      {/* Peak Selling Periods */}
+      {/* Peak Selling Periods (range-aware) */}
       <Card className="border-2 border-[#e5ded7] shadow-xl">
         <CardHeader className="border-b border-[#e5ded7] bg-gradient-to-r from-[#faf9f8] to-white">
           <CardTitle className="text-[#5c3d28] flex items-center">
@@ -377,7 +427,7 @@ const SellerAnalytics = ({ sellerId }) => {
         </CardHeader>
         <CardContent className="pt-6">
           <div className="space-y-4">
-            {analytics.peak_periods.map((period, index) => {
+            {[...trendsToUse].sort((a,b) => (b.revenue||0)-(a.revenue||0)).slice(0,3).map((period, index) => {
               // Get top products for this period (simulate based on best_sellers)
               const topProducts = analytics.best_sellers.slice(0, 3);
               const topCategories = Object.entries(analytics.revenue_by_category)
@@ -385,7 +435,7 @@ const SellerAnalytics = ({ sellerId }) => {
                 .slice(0, 3);
 
               return (
-                <TooltipProvider key={period.month}>
+                <TooltipProvider key={period.period}>
                   <UITooltip>
                     <TooltipTrigger asChild>
                       <div className="flex items-center justify-between p-5 rounded-xl border-2 border-[#e5ded7] hover:border-[#a4785a] bg-gradient-to-r from-white to-[#faf9f8] hover:shadow-md cursor-pointer transition-all duration-200">
@@ -394,26 +444,26 @@ const SellerAnalytics = ({ sellerId }) => {
                             #{index + 1}
                           </div>
                           <div>
-                            <p className="font-semibold text-[#5c3d28]">{period.month}</p>
-                            <p className="text-sm text-[#7b5a3b]">{period.orders} orders</p>
+                            <p className="font-semibold text-[#5c3d28]">{period.period}</p>
+                            <p className="text-sm text-[#7b5a3b]">{period.orders || 0} orders</p>
                           </div>
                         </div>
                         <p className="text-xl font-bold bg-gradient-to-r from-green-600 to-green-700 bg-clip-text text-transparent">
-                          {formatCurrency(period.revenue)}
+                          {formatCurrency(period.revenue || 0)}
                         </p>
                       </div>
                     </TooltipTrigger>
                     <TooltipContent side="top" className="max-w-md">
                       <div className="p-4">
-                        <h4 className="font-semibold text-lg mb-3">{period.month} Performance Details</h4>
+                        <h4 className="font-semibold text-lg mb-3">{period.period} Performance Details</h4>
                         
                         <div className="space-y-3">
                           <div>
                             <h5 className="font-medium text-blue-600 mb-2">📊 Key Metrics</h5>
                             <div className="grid grid-cols-2 gap-2 text-sm">
-                              <div>Revenue: <span className="font-semibold">{formatCurrency(period.revenue)}</span></div>
-                              <div>Orders: <span className="font-semibold">{period.orders}</span></div>
-                              <div>Avg Order: <span className="font-semibold">{formatCurrency(period.revenue / period.orders || 0)}</span></div>
+                              <div>Revenue: <span className="font-semibold">{formatCurrency(period.revenue || 0)}</span></div>
+                              <div>Orders: <span className="font-semibold">{period.orders || 0}</span></div>
+                              <div>Avg Order: <span className="font-semibold">{formatCurrency((period.revenue || 0) / ((period.orders || 0) || 1))}</span></div>
                               <div>Rank: <span className="font-semibold">#{index + 1}</span></div>
                             </div>
                           </div>
@@ -459,14 +509,38 @@ const SellerAnalytics = ({ sellerId }) => {
             <TrendingUp className="h-5 w-5 mr-2 text-[#a4785a]" />
             Revenue Trends
           </CardTitle>
-          <CardDescription className="text-[#7b5a3b]">Monthly revenue over the past year</CardDescription>
+          <CardDescription className="text-[#7b5a3b]">View revenue by month, quarter, or year</CardDescription>
         </CardHeader>
         <CardContent className="pt-6">
+          {/* Range toggle */}
+          <div className="flex items-center gap-2 mb-4">
+            <button
+              type="button"
+              onClick={() => setTimeRange('monthly')}
+              className={`px-3 py-1.5 rounded-lg border text-sm ${timeRange === 'monthly' ? 'bg-[#a4785a] text-white border-[#a4785a]' : 'bg-white text-[#5c3d28] border-[#e5ded7] hover:border-[#a4785a]'}`}
+            >
+              Monthly
+            </button>
+            <button
+              type="button"
+              onClick={() => setTimeRange('quarterly')}
+              className={`px-3 py-1.5 rounded-lg border text-sm ${timeRange === 'quarterly' ? 'bg-[#a4785a] text-white border-[#a4785a]' : 'bg-white text-[#5c3d28] border-[#e5ded7] hover:border-[#a4785a]'}`}
+            >
+              Quarterly
+            </button>
+            <button
+              type="button"
+              onClick={() => setTimeRange('yearly')}
+              className={`px-3 py-1.5 rounded-lg border text-sm ${timeRange === 'yearly' ? 'bg-[#a4785a] text-white border-[#a4785a]' : 'bg-white text-[#5c3d28] border-[#e5ded7] hover:border-[#a4785a]'}`}
+            >
+              Yearly
+            </button>
+          </div>
           <div className="h-[300px]">
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={analytics.monthly_trends}>
+              <LineChart data={trendsToUse}>
                 <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="month" />
+                <XAxis dataKey="period" />
                 <YAxis />
                 <Tooltip formatter={(value) => formatCurrency(value)} />
                 <Legend />

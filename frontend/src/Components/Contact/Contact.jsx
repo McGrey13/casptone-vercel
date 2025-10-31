@@ -191,10 +191,10 @@ const ContactPage = () => {
                     <div className="mr-3 mt-1"><MapPin className="h-5 w-5 text-[#a47c68]" /></div>
                     <div>
                       <h3 className="font-medium">Our Location</h3>
-                      <p className="text-gray-600 text-sm">BLK 71 Lot 52 Mabuhay City Phase 1, Barangay Baclaran, Cabuyao</p>
+                      <p className="text-gray-600 text-sm">BLK 71 Lot 52 Mabuhay subdivision Phase 1, Barangay Baclaran, Cabuyao</p>
                     </div>
                   </div>
-                  <div className="flex items-start">6
+                  <div className="flex items-start">
                     <div className="mr-3 mt-1"><Phone className="h-5 w-5 text-[#a47c68]" /></div>
                     <div>
                       <h3 className="font-medium">Phone Number</h3>
@@ -338,8 +338,60 @@ const ContactPage = () => {
 
         <div className="mb-12">
           <h2 className="text-xl font-semibold mb-4">Find Us</h2>
-          <div className="rounded-lg overflow-hidden h-[400px] bg-gray-200 flex items-center justify-center">
-            <MapPin className="h-12 w-12 text-[#a47c68] mx-auto mb-2" />
+          <div className="rounded-lg overflow-hidden h-[400px] bg-gray-200 relative">
+            <iframe
+              src={`https://maps.google.com/maps?q=14.2445,121.16675&ll=14.2445,121.16675&z=18&output=embed`}
+              width="100%"
+              height="100%"
+              style={{ border: 0 }}
+              allowFullScreen=""
+              loading="lazy"
+              referrerPolicy="no-referrer-when-downgrade"
+              title="CraftConnect Location"
+              className="absolute inset-0 w-full h-full"
+            />
+            <div className="absolute bottom-4 left-4 bg-white rounded-lg shadow-lg p-4 max-w-xs z-10">
+              <div className="flex items-start gap-3">
+                <MapPin className="h-5 w-5 text-[#a47c68] flex-shrink-0 mt-0.5" />
+                <div>
+                  <h3 className="font-semibold text-gray-800 mb-1">Our Location</h3>
+                  <p className="text-sm text-gray-600">
+                    BLK 71 Lot 52 Mabuhay subdivision Phase 1,<br />
+                    Barangay Baclaran, Cabuyao, Laguna
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div className="mt-4 flex flex-wrap gap-4">
+            <Button
+              asChild
+              variant="outline"
+              className="border-[#a47c68] text-[#a47c68] hover:bg-[#a47c68] hover:text-white transition-colors"
+            >
+              <a
+                href="https://www.google.com/maps/search/?api=1&query=14.2445,121.16675"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <MapPin className="mr-2 h-4 w-4" />
+                Open in Google Maps
+              </a>
+            </Button>
+            <Button
+              asChild
+              variant="outline"
+              className="border-[#a47c68] text-[#a47c68] hover:bg-[#a47c68] hover:text-white transition-colors"
+            >
+              <a
+                href="https://maps.apple.com/?q=14.2445,121.16675"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <MapPin className="mr-2 h-4 w-4" />
+                Open in Apple Maps
+              </a>
+            </Button>
           </div>
         </div>
 

@@ -120,51 +120,51 @@ const Settings = () => {
 
   return (
     <>
-      <div className="container mx-auto px-4 py-8 min-h-[60vh]">
-        <div className="max-w-2xl mx-auto">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <SettingsIcon className="h-5 w-5" />
-                Account Settings
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              {error && (
-                <div className="p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">
-                  {error}
-                </div>
-              )}
-              {success && (
-                <div className="p-4 bg-green-50 border border-green-200 rounded-lg text-green-700">
-                  {success}
-                </div>
-              )}
-
-              <div className="space-y-4 pt-6 border-t">
-                <h3 className="text-lg font-semibold">Account Actions</h3>
-                
-                <div className="space-y-2">
-                  <Button 
-                    variant="outline" 
-                    className="w-full justify-start"
-                    onClick={() => setShowChangePassword(true)}
-                  >
-                    <Key className="h-4 w-4 mr-2" />
-                    Change Password
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    className="w-full justify-start text-red-600 hover:text-red-700 hover:bg-red-50"
-                    onClick={() => setShowDeleteAccount(true)}
-                  >
-                    <Trash2 className="h-4 w-4 mr-2" />
-                    Delete Account
-                  </Button>
-                </div>
+    <div className="container mx-auto px-4 py-8 min-h-[60vh]">
+      <div className="max-w-2xl mx-auto">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <SettingsIcon className="h-5 w-5" />
+              Account Settings
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            {error && (
+              <div className="p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">
+                {error}
               </div>
-            </CardContent>
-          </Card>
+            )}
+            {success && (
+              <div className="p-4 bg-green-50 border border-green-200 rounded-lg text-green-700">
+                {success}
+              </div>
+            )}
+
+            <div className="space-y-4 pt-6 border-t">
+              <h3 className="text-lg font-semibold">Account Actions</h3>
+              
+              <div className="space-y-2">
+                <Button 
+                  variant="outline" 
+                  className="w-full justify-start"
+                  onClick={() => setShowChangePassword(true)}
+                >
+                  <Key className="h-4 w-4 mr-2" />
+                  Change Password
+                </Button>
+                <Button 
+                  variant="outline" 
+                  className="w-full justify-start text-red-600 hover:text-red-700 hover:bg-red-50"
+                  onClick={() => setShowDeleteAccount(true)}
+                >
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Delete Account
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
         </div>
       </div>
 

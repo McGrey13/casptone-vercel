@@ -360,7 +360,7 @@ const EditProductModal = ({ isOpen, onClose, product, onSave }) => {
             </div>
             <button
               onClick={onClose}
-              className="text-white/80 hover:text-white hover:bg-white/20 rounded-lg sm:rounded-xl p-1.5 sm:p-2 transition-all duration-200"
+              className="bg-white text-[#7b5a3b] hover:text-[#5c3d28] rounded-lg sm:rounded-xl p-1.5 sm:p-2 shadow-md hover:shadow-lg transition-all duration-200"
               type="button"
               aria-label="Close modal"
             >

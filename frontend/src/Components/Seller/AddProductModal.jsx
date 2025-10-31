@@ -21,6 +21,24 @@ export const AddProductModal = ({ isOpen, onClose, onSave }) => {
   const videoInputRef = useRef(null);
   const additionalImageRefs = useRef(Array(5).fill().map(() => React.createRef()));
 
+  const resetForm = () => {
+    setTitle('');
+    setDescription('');
+    setPrice('');
+    setStock('');
+    setMainCategory('');
+    setMainImage({ file: null, preview: null });
+    setAdditionalImages(Array(5).fill({ file: null, preview: null }));
+    setVideo({ file: null, preview: null });
+    setTags([]);
+    setTagInput('');
+    setPublishStatus('draft');
+    // Clear file inputs if any were opened
+    if (fileInputRef.current) fileInputRef.current.value = '';
+    if (videoInputRef.current) videoInputRef.current.value = '';
+    additionalImageRefs.current.forEach(ref => { if (ref.current) ref.current.value = ''; });
+  };
+
   useEffect(() => {
     const fetchCategories = async () => {
       try {
@@ -157,7 +175,12 @@ export const AddProductModal = ({ isOpen, onClose, onSave }) => {
       formData.append('productVideo', video.file);
     }
 
-    onSave(formData);
+    try {
+      await onSave(formData);
+      resetForm();
+    } catch (err) {
+      console.error('AddProductModal save failed:', err);
+    }
   };
 
   const getSubmitButtonText = () => {
@@ -216,8 +239,9 @@ export const AddProductModal = ({ isOpen, onClose, onSave }) => {
             </div>
             <button 
               onClick={onClose}
-              className="text-white/80 hover:text-white hover:bg-white/20 rounded-lg sm:rounded-xl p-1.5 sm:p-2 transition-all duration-200"
+              className="bg-white text-[#7b5a3b] hover:text-[#5c3d28] rounded-lg sm:rounded-xl p-1.5 sm:p-2 shadow-md hover:shadow-lg transition-all duration-200"
               aria-label="Close modal"
+              type="button"
             >
               <X size={24} className="sm:w-7 sm:h-7" />
             </button>
@@ -539,7 +563,7 @@ export const AddProductModal = ({ isOpen, onClose, onSave }) => {
                           {tag}
                           <button
                             type="button"
-                            className="hover:bg-white/20 rounded-full p-0.5 transition-colors duration-200"
+                            className="bg-white text-[#7b5a3b] rounded-full p-0.5 transition-colors duration-200 hover:bg-[#fff4ea] shadow"
                             onClick={() => removeTag(tag)}
                             aria-label={`Remove tag ${tag}`}
                           >
@@ -567,18 +591,22 @@ export const AddProductModal = ({ isOpen, onClose, onSave }) => {
 
 
                 {/* Submit Button */}
-                <div className="sticky bottom-0 pt-3 sm:pt-4">
-                  
-                <button type="submit">
+                <div className="sticky bottom-0 pt-3 sm:pt-4 flex flex-col gap-2">
+                  <button
+                    type="submit"
+                    onClick={() => setPublishStatus('draft')}
+                    className="w-full border-2 border-[#e5ded7] text-[#5c3d28] bg-[#faf9f8] hover:bg-white hover:border-[#a4785a] py-3 sm:py-4 px-4 sm:px-6 rounded-lg sm:rounded-xl font-semibold text-sm sm:text-base md:text-lg transition-all duration-200"
+                  >
                     Save as Draft
                   </button>
 
                   <button
                     type="submit"
+                    onClick={() => setPublishStatus('published')}
                     className="w-full bg-gradient-to-r from-[#a4785a] to-[#7b5a3b] text-white py-3 sm:py-4 px-4 sm:px-6 rounded-lg sm:rounded-xl font-bold text-sm sm:text-base md:text-lg hover:from-[#8a6b4a] hover:to-[#6b4a2f] transition-all duration-300 transform hover:scale-[1.02] hover:shadow-2xl shadow-xl flex items-center justify-center gap-2 sm:gap-3 group"
-                  > publish
+                  >
                     <Plus className="h-5 w-5 sm:h-6 sm:w-6 group-hover:rotate-90 transition-transform duration-300" />
-                    {getSubmitButtonText()}
+                    Publish
                   </button>
                 </div>
               </div>

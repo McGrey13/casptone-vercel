@@ -51,7 +51,7 @@ const ConversationList = ({ onSelectConversation, currentConversationId }) => {
 
   if (loading) {
     return (
-      <div className="w-48 sm:w-56 bg-white border-r border-gray-200 flex flex-col">
+      <div className="w-80 sm:w-96 md:w-[28rem] bg-white border-r border-gray-200 flex flex-col">
         <div className="p-4 border-b border-gray-200">
           <h3 className="font-semibold text-gray-800 text-sm">Customer Messages</h3>
         </div>
@@ -63,7 +63,7 @@ const ConversationList = ({ onSelectConversation, currentConversationId }) => {
   }
 
   return (
-    <div className="w-48 sm:w-56 bg-white border-r border-gray-200 flex flex-col">
+    <div className="w-80 sm:w-96 md:w-[28rem] bg-white border-r border-gray-200 flex flex-col">
       <div className="p-3 border-b border-gray-200">
         <h3 className="font-semibold text-gray-800 flex items-center text-sm">
           <MessageCircle className="h-3 w-3 mr-2 text-[#a4785a]" />
@@ -99,8 +99,8 @@ const ConversationList = ({ onSelectConversation, currentConversationId }) => {
               <button
                 key={conversation.conversation_id}
                 onClick={() => onSelectConversation(conversation)}
-                className={`w-full p-4 text-left border-b border-gray-100 hover:bg-gray-50 transition-colors ${
-                  isActive ? 'bg-[#f8f1ec] border-r-2 border-[#a4785a]' : ''
+                className={`w-full p-4 text-left border-b border-gray-100 hover:bg-gray-50 transition-colors border-r-2 ${
+                  isActive ? 'bg-[#f8f1ec] border-[#a4785a]' : 'border-transparent'
                 }`}
               >
                 <div className="flex items-start space-x-3">
@@ -126,7 +126,7 @@ const ConversationList = ({ onSelectConversation, currentConversationId }) => {
                     
                     {latestMessage && (
                       <>
-                        <p className={`text-xs truncate mb-1 ${
+                        <p className={`text-xs mb-1 whitespace-normal break-words ${
                           hasUnread ? 'text-gray-800 font-medium' : 'text-gray-500'
                         }`}>
                           {latestMessage.message || '📎 Attachment'}

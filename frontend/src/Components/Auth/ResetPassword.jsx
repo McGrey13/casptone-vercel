@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { Lock, CheckCircle, AlertCircle } from "lucide-react";
+import { Lock, CheckCircle, AlertCircle, Eye, EyeOff } from "lucide-react";
 import api from "../../api";
 
 const ResetPassword = () => {
@@ -13,6 +13,8 @@ const ResetPassword = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showPasswordConfirmation, setShowPasswordConfirmation] = useState(false);
 
   const token = searchParams.get("token");
   const email = searchParams.get("email");
@@ -168,15 +170,26 @@ const ResetPassword = () => {
               <Lock className="absolute top-1/2 left-3 -translate-y-1/2 text-[#a4785a] h-5 w-5" />
               <input
                 id="password"
-                type="password"
+                type={showPassword ? "text" : "password"}
                 placeholder="Enter new password"
                 value={formData.password}
                 onChange={(e) =>
                   setFormData({ ...formData, password: e.target.value })
                 }
                 required
-                className="w-full pl-10 pr-4 py-3 border border-[#d5bfae] rounded-md focus:border-[#a4785a] focus:outline-none focus:ring-2 focus:ring-[#a4785a]/20"
+                className="w-full pl-10 pr-10 py-3 border border-[#d5bfae] rounded-md focus:border-[#a4785a] focus:outline-none focus:ring-2 focus:ring-[#a4785a]/20"
               />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute top-1/2 right-3 -translate-y-1/2 text-[#a4785a] hover:text-[#8f674a] transition-colors"
+              >
+                {showPassword ? (
+                  <EyeOff className="h-5 w-5" />
+                ) : (
+                  <Eye className="h-5 w-5" />
+                )}
+              </button>
             </div>
             <p className="text-xs text-gray-500 mt-1">
               Must contain: 8+ characters, uppercase, lowercase, number, and symbol
@@ -194,7 +207,7 @@ const ResetPassword = () => {
               <Lock className="absolute top-1/2 left-3 -translate-y-1/2 text-[#a4785a] h-5 w-5" />
               <input
                 id="password_confirmation"
-                type="password"
+                type={showPasswordConfirmation ? "text" : "password"}
                 placeholder="Confirm new password"
                 value={formData.password_confirmation}
                 onChange={(e) =>
@@ -204,8 +217,19 @@ const ResetPassword = () => {
                   })
                 }
                 required
-                className="w-full pl-10 pr-4 py-3 border border-[#d5bfae] rounded-md focus:border-[#a4785a] focus:outline-none focus:ring-2 focus:ring-[#a4785a]/20"
+                className="w-full pl-10 pr-10 py-3 border border-[#d5bfae] rounded-md focus:border-[#a4785a] focus:outline-none focus:ring-2 focus:ring-[#a4785a]/20"
               />
+              <button
+                type="button"
+                onClick={() => setShowPasswordConfirmation(!showPasswordConfirmation)}
+                className="absolute top-1/2 right-3 -translate-y-1/2 text-[#a4785a] hover:text-[#8f674a] transition-colors"
+              >
+                {showPasswordConfirmation ? (
+                  <EyeOff className="h-5 w-5" />
+                ) : (
+                  <Eye className="h-5 w-5" />
+                )}
+              </button>
             </div>
           </div>
 

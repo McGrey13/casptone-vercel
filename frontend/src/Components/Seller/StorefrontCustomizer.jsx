@@ -820,21 +820,21 @@ const handleImageUpload = (type, file) => {
                             className="w-5 h-5 sm:w-6 sm:h-6 rounded shadow-sm border border-gray-300"
                             style={{ backgroundColor: theme.background }}
                             title="Background"
-                          />
-                        </div>
+                    />
+                  </div>
                         <span className="text-[10px] sm:text-xs font-semibold text-[#5c3d28] text-center">
                           {theme.name}
-                        </span>
-                      </div>
-                      
+                    </span>
+                </div>
+
                       {selectedTheme?.name === theme.name && (
                         <div className="absolute top-2 right-2">
                           <div className="bg-gradient-to-r from-[#a4785a] to-[#7b5a3b] text-white rounded-full p-1 shadow-md">
                             <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
                               <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                             </svg>
-                          </div>
-                        </div>
+                  </div>
+                </div>
                       )}
                     </button>
                   ))}
@@ -847,10 +847,10 @@ const handleImageUpload = (type, file) => {
                       <svg className="h-4 w-4 sm:h-5 sm:w-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
                       </svg>
-                    </div>
-                    <h3 className="text-base sm:text-lg font-bold text-[#5c3d28]">Font Selection</h3>
                   </div>
-                  
+                    <h3 className="text-base sm:text-lg font-bold text-[#5c3d28]">Font Selection</h3>
+                </div>
+                
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                     <div className="space-y-2">
                       <Label className="text-xs sm:text-sm font-semibold text-[#5c3d28]">Heading Font</Label>
@@ -866,8 +866,8 @@ const handleImageUpload = (type, file) => {
                         <option value="Merriweather">Merriweather</option>
                         <option value="Poppins">Poppins</option>
                       </select>
-                    </div>
-                    
+                </div>
+
                     <div className="space-y-2">
                       <Label className="text-xs sm:text-sm font-semibold text-[#5c3d28]">Body Font</Label>
                       <select
@@ -883,8 +883,8 @@ const handleImageUpload = (type, file) => {
                         <option value="Poppins">Poppins</option>
                       </select>
                     </div>
-                  </div>
-                  
+                </div>
+
                   <div className="grid grid-cols-2 gap-3 sm:gap-4">
                     <div className="space-y-2">
                       <Label className="text-xs sm:text-sm font-semibold text-[#5c3d28]">Heading Size: {customization.heading_size}px</Label>
@@ -896,14 +896,14 @@ const handleImageUpload = (type, file) => {
                         value={customization.heading_size}
                         onChange={(e) => setCustomization({ ...customization, heading_size: parseInt(e.target.value) })}
                         className="w-full h-2 bg-[#e5ded7] rounded-lg appearance-none cursor-pointer accent-[#a4785a]"
-                      />
+                    />
                       <div className="flex justify-between text-xs text-[#7b5a3b]">
                         <span>14px</span>
                         <span>21px</span>
                         <span>28px</span>
-                      </div>
-                    </div>
-                    
+                  </div>
+                </div>
+
                     <div className="space-y-2">
                       <Label className="text-xs sm:text-sm font-semibold text-[#5c3d28]">Body Size: {customization.body_size}px</Label>
                       <input
@@ -914,7 +914,7 @@ const handleImageUpload = (type, file) => {
                         value={customization.body_size}
                         onChange={(e) => setCustomization({ ...customization, body_size: parseInt(e.target.value) })}
                         className="w-full h-2 bg-[#e5ded7] rounded-lg appearance-none cursor-pointer accent-[#a4785a]"
-                      />
+                    />
                       <div className="flex justify-between text-xs text-[#7b5a3b]">
                         <span>12px</span>
                         <span>15px</span>
@@ -923,7 +923,7 @@ const handleImageUpload = (type, file) => {
                     </div>
                   </div>
                 </div>
-
+                
                 <div className="p-3 sm:p-4 bg-blue-50 border-2 border-blue-200 rounded-xl">
                   <p className="text-xs sm:text-sm text-blue-800 flex items-center gap-2">
                     <span className="text-lg">💡</span>

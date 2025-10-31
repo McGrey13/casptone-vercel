@@ -333,16 +333,16 @@ const Checkout = () => {
                 </div>
               ) : (
                 <div>
-                  <div className="flex space-x-2">
-                    <input
-                      type="text"
-                      value={couponCode}
-                      onChange={(e) => setCouponCode(e.target.value)}
+              <div className="flex space-x-2">
+                <input
+                  type="text"
+                  value={couponCode}
+                  onChange={(e) => setCouponCode(e.target.value)}
                       onKeyPress={(e) => e.key === 'Enter' && handleApplyDiscount()}
-                      placeholder="Enter coupon code"
+                  placeholder="Enter coupon code"
                       className="flex-grow border-2 border-[#d5bfae] rounded-lg p-3 focus:ring-2 focus:ring-[#a4785a] focus:border-[#a4785a] transition-all"
                       disabled={applyingDiscount}
-                    />
+                />
                     <Button 
                       variant="outline"
                       onClick={handleApplyDiscount}
@@ -354,8 +354,8 @@ const Checkout = () => {
                       ) : (
                         'Apply'
                       )}
-                    </Button>
-                  </div>
+                </Button>
+              </div>
                   {discountError && (
                     <p className="text-red-600 text-sm mt-2">{discountError}</p>
                   )}

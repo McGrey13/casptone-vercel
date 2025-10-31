@@ -1,9 +1,12 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { Button } from "../ui/button";
+import api from "../../api";
 
 const AboutPage = () => {
   const location = useLocation();
+  const [sellers, setSellers] = useState([]);
+  const [isLoadingSellers, setIsLoadingSellers] = useState(false);
 
   // Handle smooth scrolling to anchor links
   useEffect(() => {
@@ -19,6 +22,25 @@ const AboutPage = () => {
       }, 100);
     }
   }, [location]);
+
+  // Fetch sellers
+  useEffect(() => {
+    const fetchSellers = async () => {
+      setIsLoadingSellers(true);
+      try {
+        const response = await api.get("/get/sellers");
+        if (response.data && Array.isArray(response.data)) {
+          setSellers(response.data);
+        }
+      } catch (error) {
+        console.error("Error fetching sellers:", error);
+      } finally {
+        setIsLoadingSellers(false);
+      }
+    };
+
+    fetchSellers();
+  }, []);
   const teamMembers = [
     {
       name: "Gio Mc Grey O. Calugas",
@@ -152,7 +174,7 @@ const AboutPage = () => {
         {/* Team */}
         <div className="mb-12">
           <h2 className="text-2xl font-bold mb-4">Our Team</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
             {teamMembers.map((member, index) => (
               <div key={index} className="bg-white rounded-lg overflow-hidden shadow-sm">
                 <div className="h-48 bg-gradient-to-br from-[#a47c68]/20 to-[#9F2936]/20 flex items-center justify-center">
@@ -167,6 +189,76 @@ const AboutPage = () => {
                 </div>
               </div>
             ))}
+          </div>
+
+          {/* Sellers Section */}
+          <div id="artisans" className="mt-8 scroll-mt-20">
+            <h3 className="text-xl font-semibold mb-4 text-gray-800">Our Artisans & Sellers</h3>
+            {isLoadingSellers ? (
+              <div className="text-center py-8">
+                <p className="text-gray-600">Loading sellers...</p>
+              </div>
+            ) : sellers.length > 0 ? (
+              <div className="bg-white p-6 rounded-lg shadow-sm">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {sellers.map((seller) => {
+                    // Get profile image URL
+                    const getProfileImageUrl = () => {
+                      if (seller.profile_image_url) {
+                        // Fix the URL if it's a relative path
+                        const url = seller.profile_image_url;
+                        if (url.startsWith('/storage/')) {
+                          return `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'}${url}`;
+                        }
+                        if (url.startsWith('storage/')) {
+                          return `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'}/${url}`;
+                        }
+                        return url;
+                      }
+                      // Generate default avatar based on seller name
+                      const sellerName = seller.user?.userName || seller.businessName || 'seller';
+                      return `https://api.dicebear.com/7.x/avataaars/svg?seed=${sellerName}`;
+                    };
+
+                    const profileImageUrl = getProfileImageUrl();
+                    const sellerName = seller.user?.userName || seller.businessName || "Unknown Seller";
+
+                    return (
+                      <div key={seller.sellerID} className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+                        <div className="flex items-start gap-3">
+                          <div className="flex-shrink-0">
+                            <img
+                              src={profileImageUrl}
+                              alt={sellerName}
+                              className="w-16 h-16 rounded-full object-cover border-2 border-[#a47c68]/20"
+                              onError={(e) => {
+                                // Fallback to default avatar if image fails to load
+                                e.target.src = `https://api.dicebear.com/7.x/avataaars/svg?seed=${sellerName}`;
+                              }}
+                            />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <h4 className="font-semibold text-gray-800 mb-1 truncate">
+                              {sellerName}
+                            </h4>
+                            {seller.user?.userAddress && (
+                              <p className="text-sm text-gray-600 flex items-start">
+                                <span className="mr-2 flex-shrink-0">📍</span>
+                                <span className="break-words">{seller.user.userAddress}</span>
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            ) : (
+              <div className="text-center py-8">
+                <p className="text-gray-600">No sellers available at the moment.</p>
+              </div>
+            )}
           </div>
         </div>
 
@@ -273,23 +365,24 @@ const AboutPage = () => {
         </div>
 
         {/* CTA */}
-        <div className="bg-[#a47c68] text-white rounded-lg p-8 text-center mb-12">
-          <h2 className="text-2xl font-bold mb-4">Join Our Community</h2>
-          <p className="mb-6 max-w-2xl mx-auto">
+        <div className="bg-[#a47c68] rounded-lg p-8 text-center mb-12" style={{ color: 'white' }}>
+          <h2 className="text-2xl font-bold mb-4" style={{ color: 'white' }}>Join Our Community</h2>
+          <p className="mb-6 max-w-2xl mx-auto" style={{ color: 'white' }}>
             Whether you're an artisan looking to showcase your craft or a customer
             seeking unique handmade treasures, we invite you to be part of our growing
             community.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Button asChild variant="secondary">
-              <Link to="/contact">Contact Us</Link>
+              <Link to="/contact" style={{ color: 'white' }}>Contact Us</Link>
             </Button>
             <Button
               asChild
               variant="outline"
-              className="bg-transparent border-white text-white hover:bg-white/10"
+              className="bg-transparent border-white hover:bg-white/10"
+              style={{ color: 'white' }}
             >
-              <Link to="/artisans">Meet Our Artisans</Link>
+              <Link to="#artisans" style={{ color: 'white' }}>Meet Our Artisans</Link>
             </Button>
           </div>
         </div>

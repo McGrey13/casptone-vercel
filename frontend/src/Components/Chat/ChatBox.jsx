@@ -153,13 +153,13 @@ export default function ChatBox({ conversationId, user, customer }) {
               <div 
                 className={`max-w-[70%] rounded-lg p-3 ${
                   m.sender_id === user.userID 
-                    ? "bg-blue-500 text-white" 
-                    : "bg-gray-100 text-gray-800"
-                }`}
+                    ? "bg-[#a4785a] text-white" 
+                    : "bg-[#f8f1ec] text-[#5c3d28]"
+                } shadow`}
               >
                 <div className="text-xs mb-1">
                   <span className={`px-2 py-0.5 rounded ${
-                    m.sender_id === user.userID ? "bg-blue-600" : "bg-gray-200"
+                    m.sender_id === user.userID ? "bg-white/20 text-white" : "bg-white text-[#7b5a3b]"
                   }`}>
                     {m.message_type}
                   </span>
@@ -182,7 +182,7 @@ export default function ChatBox({ conversationId, user, customer }) {
                         target="_blank" 
                         rel="noopener noreferrer"
                         className={`flex items-center gap-2 ${
-                          m.sender_id === user.userID ? "text-blue-100" : "text-blue-500"
+                          m.sender_id === user.userID ? "text-white" : "text-[#a4785a]"
                         } hover:underline`}
                       >
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -214,7 +214,7 @@ export default function ChatBox({ conversationId, user, customer }) {
           <select 
             value={type} 
             onChange={e => setType(e.target.value)} 
-            className="border rounded px-2 py-1.5 bg-white text-xs focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            className="border-2 rounded px-2 py-1.5 bg-white text-xs focus:ring-2 focus:ring-[#a4785a] focus:border-[#a4785a]"
           >
             <option value="general">General</option>
             <option value="custom_request">Customization</option>
@@ -224,11 +224,12 @@ export default function ChatBox({ conversationId, user, customer }) {
           </select>
 
           {file && (
-            <div className="flex items-center gap-2 px-3 py-1 bg-gray-100 rounded">
-              <span className="text-sm truncate">{file.name}</span>
+            <div className="flex items-center gap-2 px-3 py-1 bg-[#f8f1ec] border-2 border-[#e5ded7] rounded">
+              <span className="text-sm truncate text-[#5c3d28]">{file.name}</span>
               <button 
                 onClick={() => setFile(null)}
-                className="text-red-500 hover:text-red-700"
+                className="px-2 py-0.5 rounded bg-gradient-to-r from-[#a4785a] to-[#7b5a3b] text-white"
+                title="Remove file"
               >
                 ×
               </button>
@@ -242,7 +243,7 @@ export default function ChatBox({ conversationId, user, customer }) {
             value={text}
             onChange={e => setText(e.target.value)}
             placeholder="Type a message..."
-            className="flex-1 border rounded px-2 py-1.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            className="flex-1 border-2 rounded px-2 py-1.5 text-sm focus:ring-2 focus:ring-[#a4785a] focus:border-[#a4785a]"
             onKeyPress={e => e.key === 'Enter' && !e.shiftKey && sendMessage()}
           />
 
@@ -253,7 +254,7 @@ export default function ChatBox({ conversationId, user, customer }) {
               className="hidden"
               accept="image/*,.pdf,.doc,.docx"
             />
-            <div className="w-8 h-8 flex items-center justify-center border rounded hover:bg-gray-50 text-lg">
+            <div className="w-8 h-8 flex items-center justify-center border-2 border-[#d5bfae] rounded hover:bg-[#f8f1ec] text-lg text-[#5c3d28]">
               📎
             </div>
           </label>
@@ -261,7 +262,7 @@ export default function ChatBox({ conversationId, user, customer }) {
           <button
             onClick={sendMessage}
             disabled={isLoading || (!text.trim() && !file)}
-            className="bg-blue-500 text-white px-3 py-1.5 rounded text-sm hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
+            className="bg-gradient-to-r from-[#a4785a] to-[#7b5a3b] text-white px-3 py-1.5 rounded text-sm hover:from-[#8f674a] hover:to-[#6a4c34] disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
           >
             {isLoading ? (
               <>

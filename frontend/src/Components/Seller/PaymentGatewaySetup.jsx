@@ -128,8 +128,9 @@ const PaymentGatewaySetup = ({ isOpen, onClose, gatewayType }) => {
               </div>
             </div>
             <button
+              aria-label="Close"
               onClick={() => onClose(false)}
-              className="text-white hover:bg-white/20 rounded-full p-1.5 sm:p-2 transition-all"
+              className={`rounded-full p-1.5 sm:p-2 transition-all bg-white shadow-md hover:shadow-lg ${config.color === 'green' ? 'text-green-600 hover:text-green-700' : 'text-blue-600 hover:text-blue-700'}`}
             >
               <X className="h-5 w-5 sm:h-6 sm:w-6" />
             </button>

@@ -1,5 +1,5 @@
 // SellerDashboard.jsx
-import React from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import {
   ArrowUpRight,
   ArrowDownRight,
@@ -23,12 +23,12 @@ import {
   CardHeader,
   CardTitle,
 } from "../ui/card";
-import { useDashboardData } from "../../hooks/useDashboardData";
-import LoadingSpinner from "../ui/LoadingSpinner";
-import ErrorState from "../ui/ErrorState";
+// import { useDashboardData } from "../../hooks/useDashboardData";
 import EmptyState from "../ui/EmptyState";
-import { Button } from "../ui/button";
-import { setupTestSellerAuth } from "../../utils/sellerAuthHelper";
+import { useUser } from '../Context/UserContext';
+import api from "../../api";
+
+// Backend returns seller-specific data at GET /seller/{sellerId}/dashboard
 
 // Reusable stat card component with craft-themed design
 const StatCard = ({ title, value, description, icon, trend, trendValue }) => (
@@ -80,54 +80,123 @@ const getStatusStyle = (status) => {
       return "bg-gray-100 text-gray-800";
   }
 };
-
 const SellerDashboard = () => {
-  const { dashboardData, loading, error, refetch } = useDashboardData();
-  const now = new Date();
+  const { user } = useUser ? useUser() : { user: undefined };
+  const [sellerId, setSellerId] = useState(null);
+  const [dashboardData, setDashboardData] = useState(null);
+  const [ordersFallback, setOrdersFallback] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  const handleSetupAuth = () => {
-    setupTestSellerAuth();
-    setTimeout(() => {
-      refetch();
-    }, 1000);
-  };
+  const resolveSellerId = useCallback(async () => {
+    // Prefer sellerId from context if present
+    const idFromContext = user?.sellerId || user?.sellerID;
+    if (idFromContext) return idFromContext;
+    // Fallback to profile API
+    try {
+      const res = await api.get('/sellers/profile');
+      return res?.data?.sellerID || null;
+    } catch (_) {
+      return null;
+    }
+  }, [user]);
 
-  if (loading) {
-    return (
-      <div className="w-full pt-4">
-        <LoadingSpinner message="Loading dashboard data..." />
-      </div>
-    );
-  }
+  const fetchDashboard = useCallback(async (id) => {
+    if (!id) return;
+    try {
+      setLoading(true);
+      setError(null);
+      const response = await api.get(`/seller/${id}/dashboard`);
+      if (response?.data?.success) {
+        setDashboardData(response.data.data);
+      } else {
+        setError('Failed to load dashboard');
+      }
+    } catch (e) {
+      setError(e.response?.data?.message || 'Failed to load dashboard');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
-  if (error) {
-    return (
-      <div className="w-full pt-4">
-        <div className="text-center">
-          <AlertCircle className="h-16 w-16 text-red-500 mx-auto mb-4" />
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">Authentication Required</h2>
-          <p className="text-gray-600 mb-6">
-            You need to be authenticated to view the seller dashboard.
-          </p>
-          <div className="space-y-4">
-            <Button 
-              onClick={handleSetupAuth}
-              className="bg-[#a4785a] hover:bg-[#8a6a5a] text-white px-6 py-3"
-            >
-              <Key className="h-5 w-5 mr-2" />
-              Setup Test Authentication
-            </Button>
-            <p className="text-sm text-gray-500">
-              This will set up a test authentication token for development purposes.
-            </p>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  // Fallback: fetch seller orders and compute simple summary
+  const fetchOrdersFallback = useCallback(async (id) => {
+    try {
+      const res = await api.get('/orders/seller');
+      const orders = Array.isArray(res?.data) ? res.data : [];
+      // Keep only this seller's orders if API returns more
+      const normalized = orders.map((o) => ({
+        id: o.orderID || o.order_id || o.id,
+        date: o.orderDate || o.date,
+        amount: typeof o.totalAmount === 'number' ? o.totalAmount : parseFloat((o.totalAmount || '0').toString().replace(/[^0-9.]/g, '')) || 0,
+        status: (o.status || '').charAt(0).toUpperCase() + (o.status || '').slice(1),
+      }));
+      setOrdersFallback(normalized);
 
+      // If backend summary is empty, compute minimal one
+      setDashboardData((prev) => {
+        if (prev?.transaction_summary && prev.transaction_summary.total_transactions) {
+          return prev;
+        }
+        const totalGross = normalized.reduce((s, o) => s + (o.amount || 0), 0);
+        return {
+          ...(prev || {}),
+          transaction_summary: {
+            total_transactions: normalized.length,
+            successful_transactions: normalized.length,
+            total_gross_amount: Math.round(totalGross * 100) / 100,
+            total_admin_fee: Math.round(totalGross * 0.02 * 100) / 100,
+            total_seller_amount: Math.round(totalGross * 0.98 * 100) / 100,
+            average_transaction: normalized.length ? Math.round((totalGross / normalized.length) * 100) / 100 : 0,
+            commission_rate: '2%',
+            payment_methods: [],
+            pending_payments: { count: 0, total_amount: 0 },
+            online_payment_count: 0,
+          },
+          recentOrders: (prev?.recentOrders && prev.recentOrders.length > 0)
+            ? prev.recentOrders
+            : normalized.slice(0, 5).map((o) => ({
+                id: `ORD-${o.id}`,
+                date: (o.date || '').slice(0, 10),
+                amount: `₱${Number(o.amount || 0).toLocaleString()}`,
+                status: o.status || 'Processing',
+              })),
+        };
+      });
+    } catch (_) {
+      // ignore fallback errors
+    }
+  }, []);
+
+  useEffect(() => {
+    (async () => {
+      const id = await resolveSellerId();
+      setSellerId(id);
+      if (id) {
+        fetchDashboard(id);
+        fetchOrdersFallback(id);
+      } else {
+        setLoading(false);
+        setError('Unable to determine seller');
+      }
+    })();
+  }, [resolveSellerId, fetchDashboard, fetchOrdersFallback]);
+
+  const sellerOrders = dashboardData?.recentOrders || ordersFallback.slice(0, 5).map((o) => ({
+    id: `ORD-${o.id}`,
+    amount: `₱${Number(o.amount || 0).toLocaleString()}`,
+    date: (o.date || '').slice(0, 10),
+    status: o.status || 'Processing',
+  }));
+  const sellerProducts = dashboardData?.topRatedProducts || [];
   return (
     <div className="w-full pt-4">
+      {loading && (
+        <div className="mb-4 text-[#7b5a3b]">Loading your dashboard…</div>
+      )}
+      {error && (
+        <div className="mb-4 text-red-600">{error}</div>
+      )}
       {/* Page Header with craft-themed design */}
       <div className="bg-gradient-to-r from-[#a4785a] to-[#7b5a3b] rounded-2xl shadow-xl p-8 mb-6">
         <div className="flex items-center justify-between flex-wrap gap-4">
@@ -136,22 +205,7 @@ const SellerDashboard = () => {
               <LayoutDashboard className="h-8 w-8 mr-3" />
               Seller Dashboard
             </h1>
-            <p className="text-white/90 mt-2 text-lg">
-              Welcome back! Here's what's happening with your store today.
-            </p>
-          </div>
-          <div className="flex items-center gap-3 bg-white/20 backdrop-blur-sm rounded-lg px-4 py-3">
-            <button
-              onClick={refetch}
-              className="p-2 text-white hover:bg-white/20 rounded-lg transition-all duration-200 hover:scale-110"
-              title="Refresh data"
-            >
-              <RefreshCw className="h-5 w-5" />
-            </button>
-            <div className="text-sm text-white/90">
-              <div className="font-medium">Last updated</div>
-              <div className="text-xs">{now.toLocaleDateString()} {now.toLocaleTimeString()}</div>
-            </div>
+            <p className="text-white/90 mt-2 text-lg">Welcome back! Here's what's happening with your store today.</p>
           </div>
         </div>
       </div>
@@ -160,17 +214,15 @@ const SellerDashboard = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mt-4">
         <StatCard
           title="Total Revenue"
-          value={dashboardData?.stats?.totalRevenue?.value || "₱0.00"}
-          description={dashboardData?.stats?.totalRevenue?.description || "Total revenue this month"}
-          icon={  
-            <span className="h-8 w-8 text-2xl">₱</span>
-          }
-          trend={dashboardData?.stats?.totalRevenue?.trend || "neutral"}
-          trendValue={dashboardData?.stats?.totalRevenue?.trendValue || "No data available"}
+          value={`₱${(dashboardData?.transaction_summary?.total_gross_amount || 0).toLocaleString()}`}
+          description={"Revenue (selected period)"}
+          icon={<span className="h-8 w-8 text-2xl">₱</span>}
+          trend={undefined}
+          trendValue={''}
         />
         <StatCard
           title="Commission Rate"
-          value={dashboardData?.transaction_summary?.commission_rate || "2%"}
+          value={dashboardData?.transaction_summary?.commission_rate || "-"}
           description="Platform commission rate"
           icon={<Percent className="h-4 w-4 text-primary" />}
         />
@@ -183,7 +235,7 @@ const SellerDashboard = () => {
         <StatCard
           title="Pending Payments"
           value={dashboardData?.transaction_summary?.pending_payments?.count || "0"}
-          description={`₱${dashboardData?.transaction_summary?.pending_payments?.total_amount || "0.00"} pending`}
+          description={`₱${dashboardData?.transaction_summary?.pending_payments?.total_amount || 0} pending`}
           icon={<Clock className="h-4 w-4 text-primary" />}
         />
       </div>
@@ -302,33 +354,24 @@ const SellerDashboard = () => {
               <ShoppingBag className="h-5 w-5 mr-2 text-[#a4785a]" />
               Recent Orders
             </CardTitle>
-            <CardDescription className="text-[#7b5a3b]">
-              Latest 5 orders from customers
-            </CardDescription>
+            <CardDescription className="text-[#7b5a3b]">Latest 5 orders from your customers only</CardDescription>
           </CardHeader>
           <CardContent className="pt-6">
             <div className="space-y-3">
-              {dashboardData?.recentOrders && dashboardData.recentOrders.length > 0 ? (
-                dashboardData.recentOrders.map((order) => (
+              {sellerOrders.length > 0 ? (
+                sellerOrders.map((order) => (
                   <div
                     key={order.id}
                     className="flex items-center justify-between p-4 border-2 border-[#e5ded7] rounded-xl hover:border-[#a4785a] hover:shadow-md transition-all duration-200 bg-gradient-to-r from-white to-[#faf9f8]"
                   >
                     <div>
                       <div className="font-semibold text-[#5c3d28]">{order.id}</div>
-                      <div className="text-sm text-[#7b5a3b]">
-                        {order.customer}
-                      </div>
                     </div>
                     <div className="text-right">
                       <div className="font-bold text-[#a4785a]">{order.amount}</div>
                       <div className="text-xs text-[#7b5a3b]">{order.date}</div>
                     </div>
-                    <span
-                      className={`px-3 py-1.5 rounded-full text-xs font-medium shadow-sm ${getStatusStyle(
-                        order.status
-                      )}`}
-                    >
+                    <span className={`px-3 py-1.5 rounded-full text-xs font-medium shadow-sm ${getStatusStyle(order.status)}`}>
                       {order.status}
                     </span>
                   </div>
@@ -337,7 +380,7 @@ const SellerDashboard = () => {
                 <EmptyState
                   icon="🛍️"
                   title="No Recent Orders"
-                  description="Orders will appear here once customers start purchasing your products"
+                  description="Your recent orders will appear here once your store receives purchases."
                 />
               )}
             </div>
@@ -351,23 +394,19 @@ const SellerDashboard = () => {
               <Star className="h-5 w-5 mr-2 text-[#a4785a]" />
               Top Rated Products
             </CardTitle>
-            <CardDescription className="text-[#7b5a3b]">
-              Top 5 products with highest customer ratings
-            </CardDescription>
+            <CardDescription className="text-[#7b5a3b]">Top 5 highest rated products from your store</CardDescription>
           </CardHeader>
           <CardContent className="pt-6">
             <div className="space-y-3">
-              {dashboardData?.topRatedProducts && dashboardData.topRatedProducts.length > 0 ? (
-                dashboardData.topRatedProducts.map((product, i) => (
+              {sellerProducts.length > 0 ? (
+                sellerProducts.map((product, i) => (
                   <div
                     key={i}
                     className="flex justify-between items-center p-4 border-2 border-[#e5ded7] rounded-xl hover:border-[#a4785a] hover:shadow-md transition-all duration-200 bg-gradient-to-r from-white to-[#faf9f8]"
                   >
                     <div className="flex-1">
                       <div className="font-semibold text-[#5c3d28]">{product.name}</div>
-                      <div className="text-sm text-[#7b5a3b]">
-                        {product.reviews} reviews
-                      </div>
+                      <div className="text-sm text-[#7b5a3b]">{product.reviews} reviews</div>
                     </div>
                     <div className="flex items-center gap-2 px-3 py-2 bg-gradient-to-r from-yellow-50 to-orange-50 rounded-full border border-yellow-200">
                       <Star className="h-4 w-4 fill-yellow-500 text-yellow-500" />
@@ -379,7 +418,7 @@ const SellerDashboard = () => {
                 <EmptyState
                   icon="⭐"
                   title="No Rated Products"
-                  description="Product ratings will appear here once customers start reviewing your products"
+                  description="Product ratings will show here once your customers review your products."
                 />
               )}
             </div>

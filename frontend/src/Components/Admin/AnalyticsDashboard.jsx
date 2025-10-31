@@ -80,37 +80,6 @@ const AnalyticsDashboard = () => {
     end_date: new Date().toISOString().split('T')[0]
   });
   
-  // Recommended views based on selected period
-  const getRecommendedView = (period) => {
-    const recommendations = {
-      daily: {
-        title: "Daily View Recommended",
-        description: "Best for tracking daily performance, identifying trends, and monitoring short-term changes",
-        suggestedRange: "Last 30-90 days",
-        charts: ["Revenue trends", "Order volume", "Daily sales patterns"]
-      },
-      monthly: {
-        title: "Monthly View Recommended", 
-        description: "Ideal for business planning, seasonal analysis, and long-term trend identification",
-        suggestedRange: "Last 6-12 months",
-        charts: ["Monthly revenue", "Growth patterns", "Seasonal trends"]
-      },
-      quarterly: {
-        title: "Quarterly View Recommended",
-        description: "Excellent for quarterly reporting, business reviews, and performance tracking",
-        suggestedRange: "Last 4-8 quarters",
-        charts: ["Quarterly revenue", "Quarter-over-quarter growth", "Seasonal patterns"]
-      },
-      yearly: {
-        title: "Yearly View Recommended",
-        description: "Perfect for annual planning, year-over-year comparisons, and strategic analysis",
-        suggestedRange: "Last 2-3 years",
-        charts: ["Annual growth", "Yearly performance", "Strategic insights"]
-      }
-    };
-    return recommendations[period] || recommendations.monthly;
-  };
-  
   // New state for micro analytics
   const [mostSellingProducts, setMostSellingProducts] = useState(null);
   const [highestSalesSellers, setHighestSalesSellers] = useState(null);
@@ -399,83 +368,7 @@ const AnalyticsDashboard = () => {
                   </SelectContent>
                 </Select>
               </div>
-              <div className="flex items-center gap-2">
-                <label className="text-sm font-medium text-gray-700">From:</label>
-                <input
-                  type="date"
-                  value={dateRange.start_date}
-                  onChange={(e) => setDateRange(prev => ({ ...prev, start_date: e.target.value }))}
-                  className="px-3 py-2 border-2 border-gray-200 rounded-lg text-sm focus:border-[#a4785a] focus:ring-[#a4785a]/20 transition-all duration-300"
-                />
               </div>
-              <div className="flex items-center gap-2">
-                <label className="text-sm font-medium text-gray-700">To:</label>
-                <input
-                  type="date"
-                  value={dateRange.end_date}
-                  onChange={(e) => setDateRange(prev => ({ ...prev, end_date: e.target.value }))}
-                  className="px-3 py-2 border-2 border-gray-200 rounded-lg text-sm focus:border-[#a4785a] focus:ring-[#a4785a]/20 transition-all duration-300"
-                />
-              </div>
-            </div>
-            <div className="admin-table-filters">
-              <button 
-                onClick={() => { fetchAnalyticsData(); fetchMicroAnalyticsData(); }} 
-                className="admin-table-filter-btn"
-              >
-                <RefreshCw className="h-4 w-4 mr-2" />
-                Refresh
-              </button>
-              <Button onClick={generateAnalyticsData} disabled={generating} className="admin-table-filter-btn">
-                <BarChart3 className={`h-4 w-4 mr-2 ${generating ? 'animate-pulse' : ''}`} />
-                {generating ? 'Generating...' : 'Generate Data'}
-              </Button>
-              <Button 
-                onClick={generateAnalyticsData}
-                className="admin-table-filter-btn"
-                disabled={generating}
-              >
-                <Activity className="h-4 w-4 mr-2" />
-                Generate Data
-              </Button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Enhanced Recommended View Banner */}
-      <div className="admin-table-container">
-        <div className="admin-table-header">
-          <div className="flex items-start gap-4">
-            <div className="admin-table-stat-icon bg-blue-100 text-blue-600">
-              💡
-            </div>
-            <div className="flex-1">
-              <h3 className="admin-table-title text-blue-900">
-                {getRecommendedView(selectedPeriod).title}
-              </h3>
-              <p className="admin-table-description text-blue-700 mb-4">
-                {getRecommendedView(selectedPeriod).description}
-              </p>
-              <div className="flex flex-wrap gap-3">
-                <div className="admin-table-stat">
-                  <Calendar className="admin-table-stat-icon text-blue-600" />
-                  <div>
-                    <div className="admin-table-stat-label text-blue-800">Suggested Range</div>
-                    <div className="text-xs text-blue-600">{getRecommendedView(selectedPeriod).suggestedRange}</div>
-                  </div>
-                </div>
-                {getRecommendedView(selectedPeriod).charts.map((chart, index) => (
-                  <div key={`chart-${index}-${chart}`} className="admin-table-stat">
-                    <BarChart3 className="admin-table-stat-icon text-blue-600" />
-                    <div>
-                      <div className="admin-table-stat-label text-blue-800">Chart Type</div>
-                      <div className="text-xs text-blue-600">{chart}</div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
           </div>
         </div>
       </div>
@@ -562,37 +455,37 @@ const AnalyticsDashboard = () => {
             <TabsList className="grid w-full grid-cols-6 bg-gray-50 p-1 rounded-lg">
               <TabsTrigger 
                 value="revenue" 
-                className="data-[state=active]:bg-[#a4785a] data-[state=active]:text-white transition-all duration-300"
+                className="analytics-tab-trigger"
               >
                 Revenue
               </TabsTrigger>
               <TabsTrigger 
                 value="orders"
-                className="data-[state=active]:bg-[#a4785a] data-[state=active]:text-white transition-all duration-300"
+                className="analytics-tab-trigger"
               >
                 Orders
               </TabsTrigger>
               <TabsTrigger 
                 value="reviews"
-                className="data-[state=active]:bg-[#a4785a] data-[state=active]:text-white transition-all duration-300"
+                className="analytics-tab-trigger"
               >
                 Reviews
               </TabsTrigger>
               <TabsTrigger 
                 value="products"
-                className="data-[state=active]:bg-[#a4785a] data-[state=active]:text-white transition-all duration-300"
+                className="analytics-tab-trigger"
               >
                 Products
               </TabsTrigger>
               <TabsTrigger 
                 value="sellers"
-                className="data-[state=active]:bg-[#a4785a] data-[state=active]:text-white transition-all duration-300"
+                className="analytics-tab-trigger"
               >
                 Sellers
               </TabsTrigger>
               <TabsTrigger 
                 value="moderation"
-                className="data-[state=active]:bg-[#a4785a] data-[state=active]:text-white transition-all duration-300"
+                className="analytics-tab-trigger"
               >
                 Moderation
               </TabsTrigger>

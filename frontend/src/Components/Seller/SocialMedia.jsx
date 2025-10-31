@@ -354,16 +354,16 @@ import SuccessNotificationModal from "../ui/SuccessNotificationModal";
                   onClose={() => setShowSuccessModal(false)}
                 />
                 
-                <div className="space-y-3 sm:space-y-4 bg-white p-3 sm:p-4 max-w-[405px] mx-auto sm:max-w-none px-3 sm:px-4 rounded-lg">
+                <div className="space-y-4 sm:space-y-5 bg-white border-2 border-[#e5ded7] rounded-xl sm:rounded-2xl shadow-xl p-4 sm:p-6">
                 <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-0">
-                  <h1 className="text-xl sm:text-2xl font-bold tracking-tight">Social Media</h1>
+                  <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-[#5c3d28]">Social Media</h1>
                 </div>
 
                 {/* Connection Status Banner */}
-                <div className={`border rounded-lg p-3 ${
+                <div className={`border-2 rounded-xl p-3 sm:p-4 ${
                   fbStatus.connected && fbStatus.page 
                     ? 'bg-green-50 border-green-200' 
-                    : 'bg-yellow-50 border-yellow-200'
+                    : 'bg-[#f8f1ec] border-[#e5ded7]'
                 }`}>
                   <div className="flex items-center gap-2 mb-2">
                     {fbStatus.connected && fbStatus.page ? (
@@ -378,7 +378,7 @@ import SuccessNotificationModal from "../ui/SuccessNotificationModal";
                         <svg className="w-5 h-5 text-yellow-600" fill="currentColor" viewBox="0 0 20 20">
                           <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
                         </svg>
-                        <span className="font-bold text-yellow-800">
+                        <span className="font-bold text-[#7b5a3b]">
                           Facebook Status: {fbStatus.connected ? 'Connected - No Page Selected' : 'Not Connected'}
                         </span>
                       </>
@@ -386,7 +386,7 @@ import SuccessNotificationModal from "../ui/SuccessNotificationModal";
                   </div>
                   <div className="space-y-2">
                     <p className={`font-medium ${
-                      fbStatus.connected && fbStatus.page ? 'text-green-700' : 'text-yellow-700'
+                      fbStatus.connected && fbStatus.page ? 'text-green-700' : 'text-[#5c3d28]'
                     }`}>
                       {fbStatus.connected && fbStatus.page 
                         ? `Ready to post to: ${fbStatus.page.name || 'Your Page'}`
@@ -398,8 +398,8 @@ import SuccessNotificationModal from "../ui/SuccessNotificationModal";
                         <Button 
                           variant="outline" 
                           size="sm"
-                          onClick={fetchPages}
-                          className="text-xs"
+                          onClick={loadPages}
+                          className="text-xs border-2 border-[#a4785a] text-[#5c3d28] hover:bg-[#a4785a] hover:text-white"
                         >
                           Load Pages
                         </Button>
@@ -421,18 +421,18 @@ import SuccessNotificationModal from "../ui/SuccessNotificationModal";
                 )}
 
                 {/* Information Box */}
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 sm:p-4">
+                <div className="bg-[#f8f1ec] border-2 border-[#e5ded7] rounded-xl p-3 sm:p-4">
                   <div className="flex items-start gap-2 sm:gap-3">
                     <div className="flex-shrink-0">
-                      <svg className="h-4 w-4 sm:h-5 sm:w-5 text-blue-400" viewBox="0 0 20 20" fill="currentColor">
+                      <svg className="h-4 w-4 sm:h-5 sm:w-5 text-[#a4785a]" viewBox="0 0 20 20" fill="currentColor">
                         <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
                       </svg>
                     </div>
                     <div className="ml-0 sm:ml-3">
-                      <h3 className="text-xs sm:text-sm font-medium text-blue-800">
+                      <h3 className="text-xs sm:text-sm font-medium text-[#5c3d28]">
                         How Social Media Linking Works
                       </h3>
-                      <div className="mt-2 text-sm text-blue-700">
+                      <div className="mt-2 text-sm text-[#7b5a3b]">
                         <p>
                           When you connect your social media accounts, you're linking them to your existing CraftConnect account. 
                           This allows you to post content directly from CraftConnect to your social media platforms without creating new accounts.
@@ -443,16 +443,26 @@ import SuccessNotificationModal from "../ui/SuccessNotificationModal";
                 </div>
 
                 <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                  <TabsList className="grid w-full grid-cols-2">
-                    <TabsTrigger value="accounts">Connected Accounts</TabsTrigger>
-                    <TabsTrigger value="posts">Create Posts</TabsTrigger>
+                  <TabsList className="grid w-full grid-cols-2 bg-[#f8f1ec] border border-[#e5ded7] rounded-md">
+                    <TabsTrigger 
+                      value="accounts" 
+                      className="rounded-lg text-[#7b5a3b] data-[state=active]:bg-gradient-to-r data-[state=active]:from-[#a4785a] data-[state=active]:to-[#7b5a3b] data-[state=active]:text-white data-[state=active]:shadow-lg px-0.5 py-3 text-base font-semibold transition-all"
+                    >
+                      Connected Accounts
+                    </TabsTrigger>
+                    <TabsTrigger 
+                      value="posts" 
+                      className="rounded-lg text-[#7b5a3b] data-[state=active]:bg-gradient-to-r data-[state=active]:from-[#a4785a] data-[state=active]:to-[#7b5a3b] data-[state=active]:text-white data-[state=active]:shadow-lg px-0.5 py-3 text-base font-semibold transition-all"
+                    >
+                      Create Posts
+                    </TabsTrigger>
                   </TabsList>
 
                   {/* Connected Accounts */}
                   <TabsContent value="accounts" className="space-y-4 pt-4">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       {/* Instagram */}
-                      <Card className="rounded-lg sm:rounded-xl overflow-hidden">
+                      <Card className="rounded-lg sm:rounded-xl overflow-hidden border-2 border-[#e5ded7] shadow-sm">
                         <CardHeader className="pb-2">
                           <CardTitle className="flex items-center text-sm sm:text-base">
                             <Instagram className="h-4 w-4 sm:h-5 sm:w-5 mr-2 text-pink-500" />
@@ -490,7 +500,7 @@ import SuccessNotificationModal from "../ui/SuccessNotificationModal";
                       </Card>
 
                       {/* Facebook */}
-                      <Card className="rounded-lg sm:rounded-xl overflow-hidden">
+                      <Card className="rounded-lg sm:rounded-xl overflow-hidden border-2 border-[#e5ded7] shadow-sm">
                         <CardHeader className="pb-2">
                           <CardTitle className="flex items-center text-sm sm:text-base">
                             <Facebook className="h-4 w-4 sm:h-5 sm:w-5 mr-2 text-blue-600" />
@@ -526,7 +536,7 @@ import SuccessNotificationModal from "../ui/SuccessNotificationModal";
                               )}
                             </div>
                             {!fbStatus.connected ? (
-                              <Button size="sm" onClick={handleConnectFacebook} disabled={loading}>
+                              <Button size="sm" onClick={handleConnectFacebook} disabled={loading} className="border-2 border-[#a4785a] text-[#5c3d28] hover:bg-[#a4785a] hover:text-white">
                                 {loading ? "Linking Account..." : "Link Account"}
                               </Button>
                             ) : (
@@ -550,16 +560,16 @@ import SuccessNotificationModal from "../ui/SuccessNotificationModal";
                                       <span className="text-sm font-medium text-yellow-800">No Page Selected</span>
                                     </div>
                                     <p className="text-sm text-yellow-700 mb-2">You need to select a Facebook page to post content.</p>
-                                    <Button variant="outline" size="sm" onClick={loadPages} disabled={loading}>
+                                    <Button variant="outline" size="sm" onClick={loadPages} disabled={loading} className="border-2 border-[#a4785a] text-[#5c3d28] hover:bg-[#a4785a] hover:text-white">
                                       {loading ? "Loading..." : "Load Pages"}
                                     </Button>
                                   </div>
                                 )}
                                 <div className="flex items-center gap-2">
-                                  <Button variant="outline" size="sm" onClick={loadPages} disabled={loading}>
+                                  <Button variant="outline" size="sm" onClick={loadPages} disabled={loading} className="border-2 border-[#a4785a] text-[#5c3d28] hover:bg-[#a4785a] hover:text-white">
                                     {loading ? "Loading..." : "Manage Pages"}
                                   </Button>
-                                  <Button variant="destructive" size="sm" onClick={disconnectFacebook} disabled={loading}>
+                                  <Button variant="destructive" size="sm" onClick={disconnectFacebook} disabled={loading} className="bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700">
                                     Disconnect
                                   </Button>
                                 </div>
@@ -602,7 +612,7 @@ import SuccessNotificationModal from "../ui/SuccessNotificationModal";
                                   rel="noopener noreferrer"
                                   className="inline-block"
                                 >
-                                  <Button size="sm" variant="outline">
+                                  <Button size="sm" variant="outline" className="border-2 border-[#a4785a] text-[#5c3d28] hover:bg-[#a4785a] hover:text-white">
                                     Create Facebook Page
                                   </Button>
                                 </a>
@@ -618,12 +628,10 @@ import SuccessNotificationModal from "../ui/SuccessNotificationModal";
 
                   {/* Create Post */}
                   <TabsContent value="posts" className="space-y-4 pt-4">
-                    <Card>
+                    <Card className="border-2 border-[#e5ded7] shadow-sm">
                       <CardHeader>
-                        <CardTitle>Create Social Media Post</CardTitle>
-                        <CardDescription>
-                          Create and schedule posts across your social platforms
-                        </CardDescription>
+                        <CardTitle className="text-[#5c3d28]">Create Social Media Post</CardTitle>
+                        <CardDescription className="text-[#7b5a3b]">Create and schedule posts across your social platforms</CardDescription>
                       </CardHeader>
                       <CardContent className="space-y-4">
                         <div className="space-y-2">
@@ -634,6 +642,7 @@ import SuccessNotificationModal from "../ui/SuccessNotificationModal";
                             rows={4}
                             value={message}
                             onChange={(e) => setMessage(e.target.value)}
+                            className="border-2 border-[#d5bfae] focus:ring-2 focus:ring-[#a4785a] focus:border-[#a4785a]"
                           />
                         </div>
 
@@ -644,7 +653,7 @@ import SuccessNotificationModal from "../ui/SuccessNotificationModal";
                             placeholder="https://example.com/your-product"
                             value={link}
                             onChange={(e) => setLink(e.target.value)}
-                            className="w-full"
+                            className="w-full border-2 border-[#d5bfae] focus:ring-2 focus:ring-[#a4785a] focus:border-[#a4785a]"
                           />
                           <p className="text-xs text-gray-500">Add a link to your product or website that will be included in the post</p>
                         </div>
@@ -660,7 +669,7 @@ import SuccessNotificationModal from "../ui/SuccessNotificationModal";
                             />
                             <Button 
                               variant="outline" 
-                              className="flex items-center"
+                              className="flex items-center border-2 border-[#a4785a] text-[#5c3d28] hover:bg-[#a4785a] hover:text-white"
                               onClick={() => document.getElementById('image-upload').click()}
                             >
                               <Upload className="h-4 w-4 mr-2" />
@@ -679,7 +688,7 @@ import SuccessNotificationModal from "../ui/SuccessNotificationModal";
                             />
                             <button
                               onClick={removeImage}
-                              className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
+                              className="absolute -top-2 -right-2 bg-gradient-to-r from-[#a4785a] to-[#7b5a3b] text-white rounded-full p-1 hover:opacity-90"
                             >
                               <X className="h-4 w-4" />
                             </button>
@@ -692,7 +701,7 @@ import SuccessNotificationModal from "../ui/SuccessNotificationModal";
                             <Button 
                               variant={postToInstagram ? "default" : "outline"} 
                               size="sm" 
-                              className="flex items-center"
+                              className="flex items-center border-2 border-[#a4785a] text-[#5c3d28] data-[state=on]:bg-[#a4785a] data-[state=on]:text-white"
                               onClick={() => setPostToInstagram(!postToInstagram)}
                               disabled={!fbStatus.connected || !fbStatus.page}
                             >
@@ -702,7 +711,7 @@ import SuccessNotificationModal from "../ui/SuccessNotificationModal";
                             <Button 
                               variant={!postToInstagram ? "default" : "outline"} 
                               size="sm" 
-                              className="flex items-center"
+                              className="flex items-center border-2 border-[#a4785a] text-[#5c3d28] data-[state=on]:bg-[#a4785a] data-[state=on]:text-white"
                               onClick={() => setPostToInstagram(false)}
                               disabled={!fbStatus.connected || !fbStatus.page}
                             >
@@ -724,7 +733,7 @@ import SuccessNotificationModal from "../ui/SuccessNotificationModal";
                           <Button 
                             onClick={createPost} 
                             disabled={posting || (postToInstagram && !selectedImage)}
-                            className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-semibold py-3 disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="w-full bg-gradient-to-r from-[#a4785a] to-[#7b5a3b] hover:from-[#8f674a] hover:to-[#6a4c34] text-white font-semibold py-3 disabled:opacity-50 disabled:cursor-not-allowed"
                           >
                             {posting ? "Posting..." : 
                              postToInstagram && !selectedImage ? "Select Image for Instagram" :

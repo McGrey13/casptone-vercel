@@ -78,9 +78,23 @@ const SellerSettings = () => {
 
   // Check if there are unsaved changes
   const hasUnsavedChanges = () => {
-    return profileImageFile !== null || 
-           story !== (seller?.story || "") ||
-           (profileImagePreview && profileImagePreview !== (seller?.profileImage || ""));
+    const hasImageChange = profileImageFile !== null;
+    const hasStoryChange = story.trim() !== (seller?.story || "").trim();
+    const hasPreviewChange = profileImagePreview && 
+                            profileImagePreview.startsWith('blob:') && 
+                            profileImagePreview !== (seller?.profileImage || "");
+    
+    const result = hasImageChange || hasStoryChange || hasPreviewChange;
+    console.log("hasUnsavedChanges check:", {
+      hasImageChange,
+      hasStoryChange,
+      hasPreviewChange,
+      profileImageFile: profileImageFile !== null,
+      story,
+      sellerStory: seller?.story || "",
+      result
+    });
+    return result;
   };
 
   // Fetch seller data
@@ -193,34 +207,45 @@ const SellerSettings = () => {
 
   // Handle Save
 const handleSave = async () => {
+    console.log("handleSave called", {
+      sellerID,
+      profileImageFile: profileImageFile !== null,
+      story,
+      isSaving,
+      hasUnsavedChanges: hasUnsavedChanges()
+    });
+
   if (!sellerID) {
-    console.log("Seller data:", seller);
-    alert("Seller ID not found.");
+      console.error("Seller ID not found. Seller data:", seller);
+      setError("Seller ID not found. Please refresh the page.");
+      setTimeout(() => setError(""), 5000);
     return;
   }
 
   if (isSaving) {
-    return; // Prevent multiple submissions
+      console.log("Already saving, ignoring call");
+      return;
   }
 
   setIsSaving(true);
+    setError(null);
+    
+    try {
   const formData = new FormData();
+      
   if (profileImageFile) {
     formData.append("profileImage", profileImageFile);
     console.log("Adding profile image to form data:", profileImageFile.name);
   }
-  formData.append("story", story);
 
-  // Debug: Log FormData contents
+      formData.append("story", story || "");
+
+      console.log("Sending update request for seller ID:", sellerID);
   console.log("FormData contents:");
   for (let [key, value] of formData.entries()) {
-    console.log(key, value);
+        console.log(key, value instanceof File ? `File: ${value.name}` : value);
   }
 
-  try {
-    console.log("Sending update request for seller ID:", sellerID);
-    
-    // Use sellerID instead of the whole object
     const res = await api.post(`/sellers/${sellerID}/profile`, formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
@@ -232,7 +257,7 @@ const handleSave = async () => {
       console.log("Profile update response:", updatedProfile);
 
       setSuccessMessage("Profile updated successfully!");
-      setTimeout(() => setSuccessMessage(""), 5000); // Clear after 5 seconds
+        setTimeout(() => setSuccessMessage(""), 5000);
 
       // Update the state with the new profile data from the response
       setSeller(prevSeller => ({
@@ -253,25 +278,25 @@ const handleSave = async () => {
       }
       
       setStory(updatedProfile.story || "");
-    }
 
     // Clear the selected file only after successful update
     setProfileImageFile(null);
     
-    // Force a re-render by updating the seller state
-    console.log("Updating seller state with new data");
-    
     // Refresh the seller data to ensure everything is in sync
     console.log("Refreshing seller data...");
     await fetchSellerData();
+      } else {
+        throw new Error("No data received from server");
+      }
   } catch (err) {
     console.error("Error updating profile:", err);
-    alert("Error updating profile: " + err.message);
+      const errorMessage = err.response?.data?.message || err.message || "Failed to update profile";
+      setError(errorMessage);
+      setTimeout(() => setError(""), 5000);
     
     // If there was an error and we had an image file, keep the preview
-    if (profileImageFile) {
+      if (profileImageFile && profileImagePreview && profileImagePreview.startsWith('blob:')) {
       console.log("Keeping image preview after error");
-      setProfileImagePreview(URL.createObjectURL(profileImageFile));
     }
   } finally {
     setIsSaving(false);
@@ -725,8 +750,9 @@ const handleSave = async () => {
               Cancel Changes
             </Button>
             <Button 
+              type="button"
               onClick={handleSave} 
-              disabled={isSaving || !hasUnsavedChanges()}
+              disabled={isSaving}
               className="min-w-[120px] bg-white text-[#5c3d28] hover:bg-[#faf9f8] shadow-lg hover:shadow-xl transition-all duration-200 disabled:opacity-50"
             >
               {isSaving ? "Saving..." : "Save Changes"}
@@ -1135,19 +1161,24 @@ const handleSave = async () => {
                         <span className="text-sm font-medium">Connected</span>
                       </div>
                     )}
-                    <Button
+                    <button
+                      type="button"
                       onClick={() => connectedGateways.gcash 
                         ? handleDisconnectGateway('gcash') 
                         : handleConnectGateway('gcash')
                       }
-                      className={`${
+                      className={`px-4 py-2 rounded-md font-medium transition-all duration-200 shadow-md hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-offset-2 ${
                         connectedGateways.gcash
-                          ? 'bg-red-500 hover:bg-red-600 text-white'
-                          : 'bg-blue-500 hover:bg-blue-600 text-white'
-                      } transition-all duration-200`}
+                          ? 'bg-red-500 hover:bg-red-600 text-white focus:ring-red-300'
+                          : 'bg-blue-500 hover:bg-blue-600 text-white focus:ring-blue-300'
+                      }`}
+                      style={{
+                        backgroundColor: connectedGateways.gcash ? '#ef4444' : '#3b82f6',
+                        color: '#ffffff'
+                      }}
                     >
                       {connectedGateways.gcash ? 'Disconnect' : 'Connect'}
-                    </Button>
+                    </button>
                   </div>
                 </div>
               </div>
@@ -1176,19 +1207,24 @@ const handleSave = async () => {
                         <span className="text-sm font-medium">Connected</span>
                       </div>
                     )}
-                    <Button
+                    <button
+                      type="button"
                       onClick={() => connectedGateways.paymaya 
                         ? handleDisconnectGateway('paymaya') 
                         : handleConnectGateway('paymaya')
                       }
-                      className={`${
+                      className={`px-4 py-2 rounded-md font-medium transition-all duration-200 shadow-md hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-offset-2 ${
                         connectedGateways.paymaya
-                          ? 'bg-red-500 hover:bg-red-600 text-white'
-                          : 'bg-green-500 hover:bg-green-600 text-white'
-                      } transition-all duration-200`}
+                          ? 'bg-red-500 hover:bg-red-600 text-white focus:ring-red-300'
+                          : 'bg-green-500 hover:bg-green-600 text-white focus:ring-green-300'
+                      }`}
+                      style={{
+                        backgroundColor: connectedGateways.paymaya ? '#ef4444' : '#22c55e',
+                        color: '#ffffff'
+                      }}
                     >
                       {connectedGateways.paymaya ? 'Disconnect' : 'Connect'}
-                    </Button>
+                    </button>
                   </div>
                 </div>
               </div>
