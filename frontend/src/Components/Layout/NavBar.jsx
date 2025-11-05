@@ -4,6 +4,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { FaShoppingCart, FaUser, FaHeart, FaBars, FaTimes } from 'react-icons/fa';
 import { useUser } from '../Context/UserContext';
 import { useCart } from '../Cart/CartContext';
+import NotificationDropdown from '../ui/NotificationDropdown';
 
 const Navbar = () => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -17,7 +18,7 @@ const Navbar = () => {
 
   const handleLogout = async () => {
     await logout();
-    setIsDropdownOpen(false);
+  setIsDropdownOpen(false);
     navigate('/login');
   };
 
@@ -33,7 +34,7 @@ const Navbar = () => {
 
         {/* Desktop Center Links */}
         <div className="navbar-section center desktop-links">
-          <Link to="/Categories" className="nav-link">Categories</Link>
+          <Link to="/Categories" className="nav-link">Stores</Link>
           <Link to="/Artisan" className="nav-link">Artisans</Link>
           <Link to="/About" className="nav-link">About</Link>
           <Link to="/Contact" className="nav-link">Contact Us</Link>
@@ -44,6 +45,13 @@ const Navbar = () => {
           <Link to="/favorites" className="icon-link favorites-link" style={{ marginRight: "10px" }}>
             <FaHeart size={20} color="white" />
           </Link>
+
+          {/* Notification Icon - Only show when user is logged in */}
+          {user && (
+            <div className="icon-link" style={{ marginRight: "10px" }}>
+              <NotificationDropdown />
+            </div>
+          )}
 
           <Link to="/cart" className="icon-link cart-link">
             <FaShoppingCart size={22} color="white" />

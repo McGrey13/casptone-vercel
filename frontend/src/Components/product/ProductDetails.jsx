@@ -7,7 +7,11 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "../ui/tabs";
 import { Badge } from "../ui/badge";
 import { useCart } from "../Cart/CartContext";
 import { useFavorites } from "../favorites/FavoritesContext";
+import { useProductViewTracker } from "../../hooks/useProductViewTracker";
+import Recommendations from "./Recommendations";
+import MessengerPopup from "../Messenger/MessengerPopup";
 import api from "../../api";
+import "./ProductDetails.css";
 
 const ProductDetails = () => {
   const { id } = useParams();
@@ -29,12 +33,13 @@ const ProductDetails = () => {
   const [currentMediaIndex, setCurrentMediaIndex] = useState(0);
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [showFavoriteModal, setShowFavoriteModal] = useState(false);
+  const [showMessageSeller, setShowMessageSeller] = useState(false);
 
   // Helper function to convert image URLs to use correct backend
   const fixImageUrl = (url) => {
     if (!url) return url;
     // If it's already a full URL with localhost, convert to relative path
-    if (url.includes('localhost:8000')) {
+    if (url.includes('localhost:8000') || url.includes('craftconnect-laravel-backend-1.onrender.com')) {
       // Extract the path from the URL
       const path = new URL(url).pathname;
       return path;
@@ -117,6 +122,40 @@ const ProductDetails = () => {
   useEffect(() => {
     if (id) fetchProductAndReviews();
   }, [id]);
+
+  // Inject styles to ensure button hover text is visible
+  useEffect(() => {
+    const styleId = 'product-action-button-hover-styles';
+    if (!document.getElementById(styleId)) {
+      const style = document.createElement('style');
+      style.id = styleId;
+      style.textContent = `
+        button.product-action-button:hover,
+        button.product-action-button:hover *,
+        button.product-action-button:hover > *,
+        button.product-action-button:hover span,
+        button.product-action-button:hover > span {
+          color: #ffffff !important;
+        }
+        button.product-action-button:hover svg,
+        button.product-action-button:hover > svg {
+          color: #ffffff !important;
+          stroke: #ffffff !important;
+          fill: #ffffff !important;
+        }
+      `;
+      document.head.appendChild(style);
+    }
+    return () => {
+      const existingStyle = document.getElementById(styleId);
+      if (existingStyle) {
+        existingStyle.remove();
+      }
+    };
+  }, []);
+
+  // Track product view for AI recommendations
+  useProductViewTracker(id);
 
   if (loading) return (
     <div className="min-h-screen bg-gradient-to-br from-[#f5f0eb] to-[#ede5dc] flex items-center justify-center">
@@ -442,23 +481,32 @@ const ProductDetails = () => {
                 <Button 
                   variant="outline" 
                   onClick={handleFavoriteClick}
-                  className="flex-1 border-2 border-[#d5bfae] hover:border-[#a4785a] hover:bg-[#a4785a] hover:text-white transition-all duration-200 py-2 text-sm"
+                  className="flex-1 border-2 border-[#d5bfae] bg-white text-[#5c3d28] hover:border-[#a4785a] hover:bg-[#f5f0eb] hover:shadow-md transition-all duration-200 py-2 text-sm"
                 >
                   <Heart
-                    className={`w-4 h-4 mr-2 ${
-                      isFavorited ? "text-red-500 fill-current" : ""
+                    className={`w-4 h-4 mr-2 transition-colors duration-200 ${
+                      isFavorited 
+                        ? "text-red-500 fill-current" 
+                        : "text-[#5c3d28]"
                     }`}
                   />
-                  {isFavorited ? "Favorited" : "Add to Favorites"}
+                  <span className="text-[#5c3d28]">{isFavorited ? "Favorited" : "Add to Favorites"}</span>
                 </Button>
                 
                 <Button
                   variant="outline"
-                  onClick={() => navigate("/messages")}
-                  className="flex-1 border-2 border-[#d5bfae] hover:border-[#a4785a] hover:bg-[#a4785a] hover:text-white transition-all duration-200 py-2 text-sm"
+                  onClick={() => {
+                    const token = sessionStorage.getItem("auth_token");
+                    if (!token) {
+                      setShowLoginModal(true);
+                      return;
+                    }
+                    setShowMessageSeller(true);
+                  }}
+                  className="flex-1 border-2 border-[#d5bfae] bg-white text-[#5c3d28] hover:border-[#a4785a] hover:bg-[#f5f0eb] hover:shadow-md transition-all duration-200 py-2 text-sm"
                 >
-                  <MessageCircle className="w-4 h-4 mr-2" />
-                  Message Seller
+                  <MessageCircle className="w-4 h-4 mr-2 text-[#5c3d28] transition-colors duration-200" />
+                  <span className="text-[#5c3d28]">Message Seller</span>
                 </Button>
               </div>
 
@@ -674,6 +722,35 @@ const ProductDetails = () => {
             </div>
           </div>
         </div>
+      )}
+
+      {/* AI-Powered Recommendations */}
+      <div className="mt-12">
+        <Recommendations 
+          title="You May Also Like"
+          subtitle="Products based on your browsing behavior"
+          limit={6}
+        />
+      </div>
+
+      {/* Message Seller Popup */}
+      {showMessageSeller && product && (
+        <MessengerPopup
+          isOpen={showMessageSeller}
+          onClose={() => setShowMessageSeller(false)}
+          sellerId={product.seller?.sellerID || product.seller?.id || product.seller_id}
+          sellerUserId={product.seller?.user_id || product.seller?.user?.userID}
+          sellerName={product.seller?.store?.store_name || product.seller?.businessName || product.seller?.user?.userName || 'Seller'}
+          sellerAvatar={product.seller?.store?.logo_url || product.seller?.logo_url}
+          productInfo={{
+            productName: product.productName,
+            productPrice: product.productPrice,
+            productImage: fixImageUrl(product.productImage),
+            productId: product.id
+          }}
+          initialMessage={product ? `Hello! I'm interested in customizing the product "${product.productName}, ${product.productImages[1]}". Could you please provide more details about customization options?` : null}
+          defaultMessageType="product_customize"
+        />
       )}
     </div>
   );

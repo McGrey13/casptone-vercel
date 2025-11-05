@@ -29,6 +29,7 @@ class Product extends Model
         'tags',
         'seller_id',
         'approval_status',
+        'rejection_reason',
         'average_rating',
         'review_count',
         'publish_status',

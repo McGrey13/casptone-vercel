@@ -16,7 +16,7 @@ const OrderHistory = () => {
       }
 
       try {
-        const response = await fetch('http://localhost:8080/api/orders', {
+        const response = await fetch('https://craftconnect-laravel-backend-1.onrender.com/api/orders', {
           headers: {
             Authorization: `Bearer ${token}`,
             Accept: 'application/json',

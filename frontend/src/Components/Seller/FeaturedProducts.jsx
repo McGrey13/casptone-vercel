@@ -15,7 +15,7 @@ export default function FeaturedProducts() {
     try {
       setIsLoading(true);
       const token = localStorage.getItem('auth_token');
-      const response = await fetch('http://localhost:8080/api/products', {
+      const response = await fetch('https://craftconnect-laravel-backend-1.onrender.com/api/products', {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
@@ -40,7 +40,7 @@ export default function FeaturedProducts() {
     try {
       const token = localStorage.getItem('auth_token');
       const response = await fetch(
-        `http://localhost:8080/api/products/${productId}/toggle-featured`,
+        `https://craftconnect-laravel-backend-1.onrender.com/api/products/${productId}/toggle-featured`,
         {
           method: 'POST',
           headers: {

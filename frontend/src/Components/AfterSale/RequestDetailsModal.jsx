@@ -128,10 +128,10 @@ const RequestDetailsModal = ({ request, onClose, onRefresh }) => {
                 {request.images.map((image, index) => (
                   <img
                     key={index}
-                    src={`http://localhost:8080/storage/${image}`}
+                    src={`https://craftconnect-laravel-backend-1.onrender.com/storage/${image}`}
                     alt={`Attachment ${index + 1}`}
                     className="w-full h-32 object-cover rounded-lg border cursor-pointer hover:opacity-80"
-                    onClick={() => window.open(`http://localhost:8080/storage/${image}`, '_blank')}
+                    onClick={() => window.open(`https://craftconnect-laravel-backend-1.onrender.com/storage/${image}`, '_blank')}
                   />
                 ))}
               </div>
@@ -181,7 +181,7 @@ const RequestDetailsModal = ({ request, onClose, onRefresh }) => {
               <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg">
                 {request.product.productImage && (
                   <img
-                    src={`http://localhost:8080/storage/${request.product.productImage}`}
+                    src={`https://craftconnect-laravel-backend-1.onrender.com/storage/${request.product.productImage}`}
                     alt={request.product.productName}
                     className="w-20 h-20 object-cover rounded-lg"
                   />

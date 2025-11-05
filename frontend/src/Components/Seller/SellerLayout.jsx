@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import "./SellerLayout.css";
 import api from "../../api";
 import {
@@ -44,9 +45,10 @@ import SellerSettings from "./SellerSettings";
 // import ProfilePage from "./ProfilePage";
 import InventoryManager from "./InventoryManager";
 import { Wallet, Package } from "lucide-react";
+import NotificationDropdown from "../ui/NotificationDropdown";
 
 const sidebarItems = [
-  { key: "storefront", label: "Storefront Customizer", icon: <Palette className="h-5 w-5" /> },
+  { key: "storefront", label: "Store Customizer", icon: <Palette className="h-5 w-5" /> },
   { key: "dashboard", label: "Dashboard", icon: <LayoutDashboard className="h-5 w-5" /> },
   // { key: "profile", label: "My Profile", icon: <UserCircle className="h-5 w-5" /> },
   { key: "payments", label: "Payments", icon: <Wallet className="h-5 w-5" /> },
@@ -59,9 +61,10 @@ const sidebarItems = [
 ];
 
 const SellerLayout = () => {
+  const location = useLocation();
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("storefront");
   const userName = "Seller User";
-  const notificationCount = 3;
 
   // Mobile navigation states
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -74,6 +77,49 @@ const SellerLayout = () => {
   const [isVerifying, setIsVerifying] = useState(true);
 
   const { logout, isAuthenticated } = useUser();
+
+  // Check URL hash/query to set active tab (for notifications and deep links)
+  useEffect(() => {
+    const checkHash = () => {
+      const hash = window.location.hash || location.hash;
+      const searchParams = new URLSearchParams(location.search);
+      const tabParam = searchParams.get('tab');
+
+      if (hash) {
+        // Handle hash-based navigation (e.g., #orders, #payments)
+        const tabFromHash = hash.replace('#', '');
+        
+        // Special cases: returns, return-refund, returnrefund should activate orders tab
+        if (tabFromHash === 'returns' || tabFromHash === 'return-refund' || tabFromHash === 'returnrefund') {
+          setActiveTab('orders');
+          return; // Don't continue, let OrderInventoryManager handle the sub-tab
+        }
+        
+        if (['storefront', 'dashboard', 'payments', 'orders', 'inventory', 'marketing', 'workshops', 'social', 'settings'].includes(tabFromHash)) {
+          setActiveTab(tabFromHash);
+        }
+      } else if (tabParam) {
+        // Handle query parameter (e.g., ?tab=payments)
+        if (['storefront', 'dashboard', 'payments', 'orders', 'inventory', 'marketing', 'workshops', 'social', 'settings'].includes(tabParam)) {
+          setActiveTab(tabParam);
+        }
+      }
+    };
+    
+    // Check immediately
+    checkHash();
+    
+    // Also listen for hash changes
+    const handleHashChange = () => {
+      checkHash();
+    };
+    
+    window.addEventListener('hashchange', handleHashChange);
+    
+    return () => {
+      window.removeEventListener('hashchange', handleHashChange);
+    };
+  }, [location.hash, location.search]);
   
   // Close sidebar on mobile when navigating
   const handleTabChange = (tab) => {
@@ -268,24 +314,11 @@ const SellerLayout = () => {
         </div>
 
         {/* Right: Profile, Settings, and Notifications */}
-        <div className="flex items-center space-x-1">
+        <div className="flex items-center space-x-1 sm:space-x-2">
           {/* Notification Button - Always Visible */}
-          <button 
-            className="relative p-1.5 sm:p-2 rounded-lg hover:bg-[#a4785a]/10 transition-all duration-200"
-            title="Notifications"
-          >
-            <div className="p-1.5 sm:p-2 bg-gradient-to-r from-[#a4785a] to-[#7b5a3b] rounded-lg">
-              <Bell className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-white" />
-            </div>
-            {notificationCount > 0 && (
-              <Badge
-                variant="destructive"
-                className="absolute -top-0.5 -right-0.5 h-4 w-4 sm:h-5 sm:w-5 flex items-center justify-center p-0 text-[10px] sm:text-xs bg-gradient-to-r from-red-500 to-red-600 border-2 border-white shadow-md"
-              >
-                {notificationCount}
-              </Badge>
-            )}
-          </button>
+          <div className="relative">
+            <NotificationDropdown />
+          </div>
 
           {/* Settings Button - Always Visible */}
           <button

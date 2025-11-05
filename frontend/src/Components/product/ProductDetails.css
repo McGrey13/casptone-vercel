@@ -1,0 +1,35 @@
+/* Force hover styles for Favorited and Message Seller buttons - override everything */
+button.product-action-button:hover,
+button.product-action-button:hover *,
+button.product-action-button:hover > *,
+button.product-action-button:hover span,
+button.product-action-button:hover > span,
+button.product-action-button[class*="hover:bg"]:hover,
+button.product-action-button[class*="hover:bg"]:hover *,
+button.product-action-button[class*="hover:bg"]:hover span,
+button.product-action-button[class*="hover:bg"]:hover svg {
+  color: #ffffff !important;
+}
+
+button.product-action-button:hover svg,
+button.product-action-button:hover > svg,
+button.product-action-button[class*="hover:bg"]:hover svg {
+  color: #ffffff !important;
+  stroke: #ffffff !important;
+}
+
+button.product-action-button:hover svg[class*="fill"],
+button.product-action-button:hover svg[fill],
+button.product-action-button.favorited-button:hover svg {
+  fill: #ffffff !important;
+  color: #ffffff !important;
+  stroke: #ffffff !important;
+}
+
+/* Override any Tailwind text color classes on hover */
+button.product-action-button[class*="text-"]:hover,
+button.product-action-button[class*="text-"]:hover span,
+button.product-action-button[class*="text-"]:hover * {
+  color: #ffffff !important;
+}
+

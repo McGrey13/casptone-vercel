@@ -31,7 +31,7 @@ const CategoryGrid = () => {
   const fixImageUrl = (url) => {
     if (!url) return url;
     // If it's already a full URL with localhost, convert to relative path
-    if (url.includes('localhost:8000') || url.includes('localhost:8080')) {
+    if (url.includes('localhost:8000') || url.includes('localhost:8080') || url.includes('craftconnect-laravel-backend-1.onrender.com')) {
       const path = new URL(url).pathname;
       return path;
     }
@@ -140,6 +140,13 @@ const CategoryGrid = () => {
 
   return (
     <div className="w-full bg-[#fefefe] py-8">
+      <div className="max-w-7xl mx-auto px-4 text-center mb-8">
+        <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-3">Explore Local Craft Stores</h2>
+        <p className="text-sm md:text-base text-gray-600 max-w-2xl mx-auto mb-4">
+          Discover talented artisans and their unique craft stores
+        </p>
+      </div>
+
       {/* Category Filter Bar */}
       <div className="mb-8 bg-white sticky top-[65px] z-40">
         <div className="max-w-7xl mx-auto px-4">
@@ -182,11 +189,7 @@ const CategoryGrid = () => {
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 text-center">
-        <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-3">Explore Local Craft Stores</h2>
-        <p className="text-sm md:text-base text-gray-600 max-w-2xl mx-auto mb-8 md:mb-10">
-          Discover talented artisans and their unique craft stores
-        </p>
+      <div className="max-w-7xl mx-auto px-4">
 
         {loading ? (
           <div className="flex justify-center items-center h-40">

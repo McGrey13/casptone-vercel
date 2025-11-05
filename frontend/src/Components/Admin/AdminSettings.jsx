@@ -639,9 +639,8 @@ const AdminSettings = () => {
                     <p className="text-sm text-red-600">This will deactivate your admin account permanently.</p>
                   </div>
                   <Button 
-                    variant="destructive" 
                     onClick={() => setShowDeactivateDialog(true)}
-                    className="bg-red-600 hover:bg-red-700 transition-all duration-300"
+                    className="!bg-red-600 hover:!bg-red-700 !text-white font-semibold px-6 py-2 transition-all duration-300 shadow-sm"
                   >
                     Deactivate Account
                   </Button>

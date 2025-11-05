@@ -34,7 +34,8 @@ const SellerAnalytics = ({ sellerId }) => {
   const [analytics, setAnalytics] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [timeRange, setTimeRange] = useState('monthly'); // monthly | quarterly | yearly
+  const [timeRange, setTimeRange] = useState('monthly'); // monthly | quarterly | yearly (for Revenue Trends)
+  const [productTimeRange, setProductTimeRange] = useState('monthly'); // monthly | quarterly | yearly (for Product Performance)
 
   const fetchAnalytics = useCallback(async (showLoading = true) => {
     if (!sellerId) {
@@ -47,7 +48,12 @@ const SellerAnalytics = ({ sellerId }) => {
       setLoading(true);
     }
     try {
-      const response = await api.get(`/analytics/seller/${sellerId}`);
+      // Pass product_period parameter to filter Product Performance data
+      const response = await api.get(`/analytics/seller/${sellerId}`, {
+        params: {
+          product_period: productTimeRange
+        }
+      });
       
       if (response.data) {
         setAnalytics(response.data);
@@ -63,13 +69,13 @@ const SellerAnalytics = ({ sellerId }) => {
         setLoading(false);
       }
     }
-  }, [sellerId]);
+  }, [sellerId, productTimeRange]);
 
   useEffect(() => {
     if (sellerId) {
       fetchAnalytics(true); // Show loading on initial fetch
     }
-  }, [sellerId]);
+  }, [sellerId, productTimeRange, fetchAnalytics]); // Include fetchAnalytics in dependencies
 
   // Auto-refresh functionality (silent background refresh)
   useEffect(() => {
@@ -517,21 +523,66 @@ const SellerAnalytics = ({ sellerId }) => {
             <button
               type="button"
               onClick={() => setTimeRange('monthly')}
-              className={`px-3 py-1.5 rounded-lg border text-sm ${timeRange === 'monthly' ? 'bg-[#a4785a] text-white border-[#a4785a]' : 'bg-white text-[#5c3d28] border-[#e5ded7] hover:border-[#a4785a]'}`}
+              className="px-4 py-2 rounded-lg border-2 text-sm font-semibold transition-all duration-200"
+              style={{
+                backgroundColor: timeRange === 'monthly' ? '#a4785a' : '#ffffff',
+                color: timeRange === 'monthly' ? '#ffffff' : '#a4785a',
+                borderColor: '#a4785a'
+              }}
+              onMouseEnter={(e) => {
+                if (timeRange !== 'monthly') {
+                  e.target.style.backgroundColor = '#faf9f8';
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (timeRange !== 'monthly') {
+                  e.target.style.backgroundColor = '#ffffff';
+                }
+              }}
             >
               Monthly
             </button>
             <button
               type="button"
               onClick={() => setTimeRange('quarterly')}
-              className={`px-3 py-1.5 rounded-lg border text-sm ${timeRange === 'quarterly' ? 'bg-[#a4785a] text-white border-[#a4785a]' : 'bg-white text-[#5c3d28] border-[#e5ded7] hover:border-[#a4785a]'}`}
+              className="px-4 py-2 rounded-lg border-2 text-sm font-semibold transition-all duration-200"
+              style={{
+                backgroundColor: timeRange === 'quarterly' ? '#a4785a' : '#ffffff',
+                color: timeRange === 'quarterly' ? '#ffffff' : '#a4785a',
+                borderColor: '#a4785a'
+              }}
+              onMouseEnter={(e) => {
+                if (timeRange !== 'quarterly') {
+                  e.target.style.backgroundColor = '#faf9f8';
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (timeRange !== 'quarterly') {
+                  e.target.style.backgroundColor = '#ffffff';
+                }
+              }}
             >
               Quarterly
             </button>
             <button
               type="button"
               onClick={() => setTimeRange('yearly')}
-              className={`px-3 py-1.5 rounded-lg border text-sm ${timeRange === 'yearly' ? 'bg-[#a4785a] text-white border-[#a4785a]' : 'bg-white text-[#5c3d28] border-[#e5ded7] hover:border-[#a4785a]'}`}
+              className="px-4 py-2 rounded-lg border-2 text-sm font-semibold transition-all duration-200"
+              style={{
+                backgroundColor: timeRange === 'yearly' ? '#a4785a' : '#ffffff',
+                color: timeRange === 'yearly' ? '#ffffff' : '#a4785a',
+                borderColor: '#a4785a'
+              }}
+              onMouseEnter={(e) => {
+                if (timeRange !== 'yearly') {
+                  e.target.style.backgroundColor = '#faf9f8';
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (timeRange !== 'yearly') {
+                  e.target.style.backgroundColor = '#ffffff';
+                }
+              }}
             >
               Yearly
             </button>
@@ -569,6 +620,75 @@ const SellerAnalytics = ({ sellerId }) => {
           <CardDescription className="text-[#7b5a3b]">Combined view of best selling products and revenue by category</CardDescription>
         </CardHeader>
         <CardContent className="pt-6">
+          {/* Range toggle */}
+          <div className="flex items-center gap-2 mb-4">
+            <button
+              type="button"
+              onClick={() => setProductTimeRange('monthly')}
+              className="px-4 py-2 rounded-lg border-2 text-sm font-semibold transition-all duration-200"
+              style={{
+                backgroundColor: productTimeRange === 'monthly' ? '#a4785a' : '#ffffff',
+                color: productTimeRange === 'monthly' ? '#ffffff' : '#a4785a',
+                borderColor: '#a4785a'
+              }}
+              onMouseEnter={(e) => {
+                if (productTimeRange !== 'monthly') {
+                  e.target.style.backgroundColor = '#faf9f8';
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (productTimeRange !== 'monthly') {
+                  e.target.style.backgroundColor = '#ffffff';
+                }
+              }}
+            >
+              Monthly
+            </button>
+            <button
+              type="button"
+              onClick={() => setProductTimeRange('quarterly')}
+              className="px-4 py-2 rounded-lg border-2 text-sm font-semibold transition-all duration-200"
+              style={{
+                backgroundColor: productTimeRange === 'quarterly' ? '#a4785a' : '#ffffff',
+                color: productTimeRange === 'quarterly' ? '#ffffff' : '#a4785a',
+                borderColor: '#a4785a'
+              }}
+              onMouseEnter={(e) => {
+                if (productTimeRange !== 'quarterly') {
+                  e.target.style.backgroundColor = '#faf9f8';
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (productTimeRange !== 'quarterly') {
+                  e.target.style.backgroundColor = '#ffffff';
+                }
+              }}
+            >
+              Quarterly
+            </button>
+            <button
+              type="button"
+              onClick={() => setProductTimeRange('yearly')}
+              className="px-4 py-2 rounded-lg border-2 text-sm font-semibold transition-all duration-200"
+              style={{
+                backgroundColor: productTimeRange === 'yearly' ? '#a4785a' : '#ffffff',
+                color: productTimeRange === 'yearly' ? '#ffffff' : '#a4785a',
+                borderColor: '#a4785a'
+              }}
+              onMouseEnter={(e) => {
+                if (productTimeRange !== 'yearly') {
+                  e.target.style.backgroundColor = '#faf9f8';
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (productTimeRange !== 'yearly') {
+                  e.target.style.backgroundColor = '#ffffff';
+                }
+              }}
+            >
+              Yearly
+            </button>
+          </div>
           <div className="h-[400px]">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart

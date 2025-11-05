@@ -4,6 +4,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { FaShoppingCart, FaUser, FaBars, FaTimes, FaSearch } from 'react-icons/fa';
 import { useUser } from '../Components/Context/UserContext';
 import { useCart } from '../Components/Cart/CartContext';
+import NotificationDropdown from '../Components/ui/NotificationDropdown';
 
 const Navbar = () => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -51,6 +52,9 @@ const Navbar = () => {
 
       {/* Right Side Icons */}
       <div className="navbar-right">
+        {/* Notifications - Only show if user is logged in */}
+        {user && <NotificationDropdown />}
+
         {/* Cart Icon */}
         <div className="navbar-cart">
           <Link to="/cart" className="cart-link">

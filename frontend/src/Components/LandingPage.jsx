@@ -28,24 +28,28 @@ const LandingPage = () => (
         <Link
           to="/artisan"
           className="text-[#3b2a1f] hover:text-[#a4785a] visited:text-[#3b2a1f] focus:text-[#3b2a1f] active:text-[#3b2a1f] transition-colors"
+          style={{ color: '#a4785a' }}
         >
           Artisans
         </Link>
         <Link
           to="/about"
           className="text-[#3b2a1f] hover:text-[#a4785a] visited:text-[#3b2a1f] focus:text-[#3b2a1f] active:text-[#3b2a1f] transition-colors"
+          style={{ color: '#a4785a' }}
         >
           About
         </Link>
         <Link
           to="/login"
           className="text-[#3b2a1f] hover:text-[#a4785a] visited:text-[#3b2a1f] focus:text-[#3b2a1f] active:text-[#3b2a1f] transition-colors"
+          style={{ color: '#a4785a' }}
         >
           Sign In
         </Link>
         <Link
           to="/register"
-          className="ml-2 px-5 py-2 bg-[#a4785a] text-white rounded-lg font-semibold hover:bg-[#8b5f46] hover:scale-105 transition-all duration-200 shadow-sm"
+          className="ml-2 px-5 py-2 bg-[#d4a574] text-[#a4785a] rounded-lg font-semibold hover:bg-[#c99563] hover:scale-105 transition-all duration-200 shadow-sm"
+          style={{ color: '#a4785a' }}
         >
           Join as Artisan
         </Link>
@@ -67,7 +71,8 @@ const LandingPage = () => (
         <div className="flex flex-col md:flex-row gap-5 justify-center">
           <Link
             to="/home"
-            className="px-8 py-3 bg-[#a4785a] text-white font-semibold rounded-lg shadow-md hover:bg-[#8b5f46] hover:scale-105 transition-transform duration-200"
+            className="px-8 py-3 bg-[#d4a574] text-[#a4785a] font-semibold rounded-lg shadow-md hover:bg-[#c99563] hover:scale-105 transition-transform duration-200"
+            style={{ color: '#a4785a' }}
           >
             Explore Collections
           </Link>

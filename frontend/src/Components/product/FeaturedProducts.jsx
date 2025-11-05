@@ -53,7 +53,7 @@ const FeaturedProducts = ({
     }
     
     // Try the most common Laravel pattern
-    const testUrl = `http://localhost:8000/${cleanPath}`;
+    const testUrl = `https://craftconnect-laravel-backend-1.onrender.com/${cleanPath}`;
     console.log('🔄 Trying URL:', testUrl);
     return testUrl;
   };
@@ -65,15 +65,47 @@ const FeaturedProducts = ({
   const fetchProducts = async () => {
     try {
       setLoading(true);
-      const response = await axios.get('/products/approved', { baseURL: import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000/api' });
+      
+      // First, try to get personalized recommendations
+      let recommendedProductIds = [];
+      try {
+        const recResponse = await axios.get('/recommendations', { 
+          baseURL: import.meta.env.VITE_BACKEND_URL || 'https://craftconnect-laravel-backend-1.onrender.com/api',
+          params: { limit: 50 } // Get more to filter from
+        });
+        
+        if (recResponse.data.success && recResponse.data.recommendations) {
+          recommendedProductIds = recResponse.data.recommendations.map(p => p.id || p.product_id);
+        }
+      } catch (err) {
+        console.log('No recommendations available, using default products');
+      }
+      
+      // Fetch all approved products
+      const response = await axios.get('/products/approved', { baseURL: import.meta.env.VITE_BACKEND_URL || 'https://craftconnect-laravel-backend-1.onrender.com/api' });
       const data = Array.isArray(response.data) ? response.data : 
                   response.data.data ? response.data.data : [];
       
-      console.log('📦 Featured Products Data:', data);
-      console.log('📦 First product image:', data[0]?.productImage);
+      // Sort: Recommended products first, then others
+      const sortedData = [...data].sort((a, b) => {
+        const aIsRecommended = recommendedProductIds.includes(a.id || a.product_id);
+        const bIsRecommended = recommendedProductIds.includes(b.id || b.product_id);
+        
+        if (aIsRecommended && !bIsRecommended) return -1;
+        if (!aIsRecommended && bIsRecommended) return 1;
+        
+        // If both recommended or both not, sort by rating/reviews
+        const aRating = (a.average_rating || 0) * (a.reviews_count || 1);
+        const bRating = (b.average_rating || 0) * (b.reviews_count || 1);
+        return bRating - aRating;
+      });
+      
+      console.log('📦 Featured Products Data:', sortedData);
+      console.log('📦 First product image:', sortedData[0]?.productImage);
       
       // Transform the API data to match our component's structure
-      const transformedProducts = data.map(product => {
+      const transformedProducts = sortedData.map(product => {
+        const isRecommended = recommendedProductIds.includes(product.id || product.product_id);
         // Calculate if product is new (created within last 7 days)
         const isNew = product.created_at 
           ? (new Date() - new Date(product.created_at)) / (1000 * 60 * 60 * 24) < 7
@@ -106,7 +138,8 @@ const FeaturedProducts = ({
           rating: product.average_rating || 0, // Now guaranteed from backend
           reviewsCount: product.reviews_count || 0,
           isNew: isNew,
-          isFeatured: true,
+          isFeatured: product.is_featured || isRecommended,
+          isRecommended: isRecommended, // Mark recommended products
           category: product.category
         };
       });
@@ -363,13 +396,13 @@ const FeaturedProducts = ({
                   if (originalImage.startsWith('http')) {
                     // If it's a full URL, try switching port
                     if (originalImage.includes('localhost:8000')) {
-                      retryUrl = originalImage.replace('localhost:8000', 'localhost:8080');
-                    } else {
-                      retryUrl = originalImage.replace('localhost:8080', 'localhost:8000');
+                      retryUrl = originalImage.replace('localhost:8000', 'craftconnect-laravel-backend-1.onrender.com');
+                    } else if (originalImage.includes('localhost:8080')) {
+                      retryUrl = originalImage.replace('localhost:8080', 'craftconnect-laravel-backend-1.onrender.com');
                     }
                   } else {
                     // Try with /storage/ prefix for relative paths
-                    retryUrl = `http://localhost:8000/storage/${originalImage.replace(/^\/+/, '')}`;
+                    retryUrl = `https://craftconnect-laravel-backend-1.onrender.com/storage/${originalImage.replace(/^\/+/, '')}`;
                   }
                   console.log('🔄 Retry 1 - Trying URL:', retryUrl);
                   e.target.src = retryUrl;
@@ -397,12 +430,17 @@ const FeaturedProducts = ({
               {/* Top Section - Badges */}
               <div className="flex justify-between items-start">
                 <div className="flex gap-2">
+                  {product.isRecommended && (
+                    <span className="bg-gradient-to-r from-purple-500 to-pink-500 text-white px-2 py-1 rounded-md text-xs font-medium shadow-md">
+                      ✨ Recommended
+                    </span>
+                  )}
                   {product.isNew && (
                     <span className="bg-blue-500 text-white px-2 py-1 rounded-md text-xs font-medium">
                       New
                     </span>
                   )}
-                  {product.isFeatured && (
+                  {product.isFeatured && !product.isRecommended && (
                     <span className="bg-amber-500 text-white px-2 py-1 rounded-md text-xs font-medium">
                       Featured
                     </span>

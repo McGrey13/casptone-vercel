@@ -162,7 +162,7 @@ class DatabaseSeeder extends Seeder
                 'role' => 'seller',
                 'userContactNumber' => '09789012345',
                 'userAddress' => '456 Rizal Avenue, Barangay Labuin',
-                'userCity' => 'Pila',
+                'userCity' => 'Binan',
                 'userProvince' => 'Laguna',
             ],
 

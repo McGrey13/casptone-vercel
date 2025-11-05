@@ -31,7 +31,7 @@ export const testAuthentication = async () => {
   }
 
   try {
-    const response = await fetch('http://localhost:8080/api/admin/reports/system-commission?from_date=2025-09-01&to_date=2025-10-06', {
+    const response = await fetch('https://craftconnect-laravel-backend-1.onrender.com/api/admin/reports/system-commission?from_date=2025-09-01&to_date=2025-10-06', {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${token}`,

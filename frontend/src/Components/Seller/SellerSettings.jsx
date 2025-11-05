@@ -124,6 +124,9 @@ const SellerSettings = () => {
         
         setSeller(data);
         console.log("Seller Data:", data.sellerID);
+        console.log("User Address:", data.userAddress);
+        console.log("User City:", data.userCity);
+        console.log("User Province:", data.userProvince);
         setSellerID(data.sellerID);
         
         // Set the profile image preview from the fetched data
@@ -900,25 +903,20 @@ const handleSave = async () => {
                     />
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="location" className="text-[#5c3d28] font-medium">Location</Label>
-                      <Input 
-                        id="location" 
-                        defaultValue={seller.userAddress || ""} 
-                        readOnly 
-                        className="border-[#e5ded7] focus:border-[#a4785a] bg-[#faf9f8] text-[#5c3d28]"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="website" className="text-[#5c3d28] font-medium">Website</Label>
-                      <Input 
-                        id="website" 
-                        defaultValue={seller.website || ""} 
-                        readOnly 
-                        className="border-[#e5ded7] focus:border-[#a4785a] bg-[#faf9f8] text-[#5c3d28]"
-                      />
-                    </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="location" className="text-[#5c3d28] font-medium">Location</Label>
+                    <Input 
+                      id="location" 
+                      value={
+                        [
+                          seller?.userAddress,
+                          seller?.userCity,
+                          seller?.userProvince
+                        ].filter(Boolean).join(", ") || ""
+                      }
+                      readOnly 
+                      className="border-[#e5ded7] focus:border-[#a4785a] bg-[#faf9f8] text-[#5c3d28]"
+                    />
                   </div>
                 </div>
               </div>

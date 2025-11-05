@@ -1,6 +1,6 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { User, Bell, Settings, LogOut } from "lucide-react";
+import { User, Settings, LogOut, CheckCircle, AlertCircle } from "lucide-react";
 import { useUser } from "../Context/UserContext";
 import { Button } from "../ui/button";
 import {
@@ -11,14 +11,26 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "../ui/dropdown-menu";
-import { Badge } from "../ui/badge";
+import NotificationDropdown from "../ui/NotificationDropdown";
+import { useToast } from "../Context/ToastContext";
 import "./AdminNavbar.css";
 
 const AdminNavbar = ({
   userName = "Admin",
-  notificationCount = 0,
 }) => {
   const { logout, user } = useUser();
+  const { toast } = useToast();
+  const [isVisible, setIsVisible] = useState(false);
+  
+  useEffect(() => {
+    if (toast.show) {
+      setIsVisible(true);
+    } else {
+      // Delay hiding for smooth animation
+      const timer = setTimeout(() => setIsVisible(false), 300);
+      return () => clearTimeout(timer);
+    }
+  }, [toast.show]);
   
   const handleLogout = async () => {
     try {
@@ -32,8 +44,8 @@ const AdminNavbar = ({
   };
 
   return (
-    <nav className="w-full h-16 px-4 fixed top-0 left-0 right-0 z-[9999] shadow-sm admin-navbar">
-      <div className="h-full flex items-center justify-between max-w-full">
+    <nav className="w-full h-16 px-4 fixed top-0 left-0 right-0 z-[9999] shadow-sm admin-navbar mb-2">
+      <div className="h-full flex items-center justify-between max-w-full gap-4">
         {/* Logo */}
         <Link to="/admin" className="flex items-center flex-shrink-0 group admin-navbar-logo">
           <div className="font-bold text-xl flex items-center transition-all duration-200 group-hover:scale-105">
@@ -65,23 +77,7 @@ const AdminNavbar = ({
         {/* Right Side */}
         <div className="flex items-center space-x-1 flex-shrink-0 navbar-right">
           {/* Notifications */}
-          <Link to="/admin/notifications" className="relative group">
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              className="h-9 w-9 rounded-full hover:bg-[#9F2936]/10 transition-all duration-200 hover:scale-105 admin-navbar-button"
-            >
-              <Bell className="h-4 w-4 text-gray-600 group-hover:text-[#9F2936] transition-colors duration-200" />
-              {notificationCount > 0 && (
-                <Badge
-                  variant="destructive"
-                  className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs bg-[#9F2936] hover:bg-[#7D1E2A] transition-colors duration-200 admin-navbar-notification-badge"
-                >
-                  {notificationCount}
-                </Badge>
-              )}
-            </Button>
-          </Link>
+          <NotificationDropdown />
 
           {/* Settings */}
           <Link to="/admin/settings" className="group">
@@ -132,6 +128,32 @@ const AdminNavbar = ({
           </DropdownMenu>
         </div>
       </div>
+      
+      {/* Toast Notification at bottom of navbar */}
+      {isVisible && (
+        <div
+          className={`fixed top-24 left-1/2 transform -translate-x-1/2 z-[10000] transition-all duration-300 ${
+            toast.show ? 'translate-y-0 opacity-100' : '-translate-y-full opacity-0'
+          }`}
+        >
+          <div className={`${
+            toast.type === 'success' 
+              ? 'bg-gradient-to-r from-green-500 to-green-600 border-green-600' 
+              : toast.type === 'error'
+              ? 'bg-gradient-to-r from-red-500 to-red-600 border-red-600'
+              : 'bg-gradient-to-r from-blue-500 to-blue-600 border-blue-600'
+          } text-white px-6 py-4 rounded-lg shadow-2xl border-2 flex items-center gap-4 min-w-[400px] max-w-[600px]`}>
+            {toast.type === 'success' ? (
+              <CheckCircle className="h-6 w-6 flex-shrink-0" />
+            ) : toast.type === 'error' ? (
+              <AlertCircle className="h-6 w-6 flex-shrink-0" />
+            ) : (
+              <CheckCircle className="h-6 w-6 flex-shrink-0" />
+            )}
+            <span className="flex-1 font-semibold text-base">{toast.message}</span>
+          </div>
+        </div>
+      )}
     </nav>
   );
 };

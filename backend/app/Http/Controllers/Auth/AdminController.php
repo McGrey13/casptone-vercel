@@ -10,6 +10,7 @@ use App\Models\Seller;
 use App\Models\Customer;
 use App\Models\Administrator;
 use App\Models\Store;
+use App\Services\NotificationService;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
 
@@ -254,6 +255,11 @@ class AdminController extends AuthController
         $seller = $store->seller;
         if ($seller) {
             $seller->update(['is_verified' => true]);
+            
+            // Notify seller about store approval
+            if ($seller->user_id) {
+                NotificationService::notifyStoreVerification($seller->user_id, true);
+            }
         }
 
         // Clear verification stats cache
@@ -283,6 +289,12 @@ class AdminController extends AuthController
             'status' => 'rejected',
             'rejection_reason' => $request->reason
         ]);
+
+        // Notify seller about store rejection
+        $seller = $store->seller;
+        if ($seller && $seller->user_id) {
+            NotificationService::notifyStoreVerification($seller->user_id, false, $request->reason);
+        }
 
         // Clear verification stats cache
         Cache::forget('verification_stats');
@@ -463,6 +475,9 @@ class AdminController extends AuthController
             
             $user->status = 'deactivated';
             $user->save();
+
+            // Notify customer about account deactivation
+            NotificationService::notifyAccountAction($user->userID, 'deactivated');
             
             return response()->json([
                 'message' => 'Customer account deactivated successfully',
@@ -489,6 +504,9 @@ class AdminController extends AuthController
             
             $user->status = 'active';
             $user->save();
+
+            // Notify customer about account reactivation
+            NotificationService::notifyAccountAction($user->userID, 'reactivated');
             
             return response()->json([
                 'message' => 'Customer account reactivated successfully',
@@ -512,6 +530,9 @@ class AdminController extends AuthController
             
             $user->status = 'deactivated';
             $user->save();
+
+            // Notify seller about account deactivation
+            NotificationService::notifyAccountAction($user->userID, 'deactivated');
             
             return response()->json([
                 'message' => 'Seller account deactivated successfully',
@@ -535,6 +556,9 @@ class AdminController extends AuthController
             
             $user->status = 'active';
             $user->save();
+
+            // Notify seller about account reactivation
+            NotificationService::notifyAccountAction($user->userID, 'reactivated');
             
             return response()->json([
                 'message' => 'Seller account reactivated successfully',

@@ -5,8 +5,11 @@ namespace App\Http\Controllers;
 use App\Models\Order;
 use App\Models\Shipping;
 use App\Models\ShippingHistory;
+use App\Models\Rider;
+use App\Services\NotificationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
 
 class ShippingController extends Controller
@@ -84,6 +87,11 @@ class ShippingController extends Controller
                 'tracking_number' => $request->tracking_number
             ]);
 
+            // Notify customer about order being shipped
+            if ($request->status === 'shipped' && $order->customer && $order->customer->user_id) {
+                NotificationService::notifyOrderStatusChange($order, $order->customer->user_id, 'shipped');
+            }
+
             // Create initial shipping history
             ShippingHistory::create([
                 'shipping_id' => $shipping->id,
@@ -92,6 +100,42 @@ class ShippingController extends Controller
                 'location' => 'Warehouse',
                 'timestamp' => now()
             ]);
+
+            // Save rider information for future use
+            // Get seller ID from the order
+            $sellerId = $order->sellerID;
+            if ($sellerId) {
+                // Check if rider already exists for this seller (by phone number)
+                $existingRider = Rider::where('seller_id', $sellerId)
+                    ->where('rider_phone', $request->rider_info['rider_phone'])
+                    ->first();
+
+                if ($existingRider) {
+                    // Update existing rider and increment delivery count
+                    $existingRider->update([
+                        'rider_name' => $request->rider_info['rider_name'],
+                        'rider_email' => $request->rider_info['rider_email'] ?? $existingRider->rider_email,
+                        'rider_company' => $request->rider_info['rider_company'] ?? $existingRider->rider_company,
+                        'vehicle_type' => $request->rider_info['vehicle_type'],
+                        'vehicle_number' => $request->rider_info['vehicle_number'],
+                        'is_active' => true,
+                    ]);
+                    $existingRider->incrementDeliveryCount();
+                } else {
+                    // Create new rider record
+                    Rider::create([
+                        'seller_id' => $sellerId,
+                        'rider_name' => $request->rider_info['rider_name'],
+                        'rider_phone' => $request->rider_info['rider_phone'],
+                        'rider_email' => $request->rider_info['rider_email'] ?? null,
+                        'rider_company' => $request->rider_info['rider_company'] ?? null,
+                        'vehicle_type' => $request->rider_info['vehicle_type'],
+                        'vehicle_number' => $request->rider_info['vehicle_number'],
+                        'delivery_count' => 1,
+                        'is_active' => true,
+                    ]);
+                }
+            }
 
             return response()->json([
                 'success' => true,
@@ -130,7 +174,13 @@ class ShippingController extends Controller
             ]);
 
             // Update order status
-            $shipping->order->update(['status' => $request->status]);
+            $order = $shipping->order;
+            $order->update(['status' => $request->status]);
+
+            // Notify customer about status change (shipped or delivered)
+            if (in_array($request->status, ['shipped', 'delivered']) && $order->customer && $order->customer->user_id) {
+                NotificationService::notifyOrderStatusChange($order, $order->customer->user_id, $request->status);
+            }
 
             // Create shipping history entry
             ShippingHistory::create([
@@ -243,6 +293,86 @@ class ShippingController extends Controller
             'success' => true,
             'tracking_number' => $trackingNumber
         ]);
+    }
+
+    /**
+     * Get all saved riders for the authenticated seller
+     */
+    public function getSavedRiders(Request $request)
+    {
+        try {
+            $seller = $request->user()->seller;
+            
+            if (!$seller) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Seller not found'
+                ], 404);
+            }
+
+            $riders = Rider::where('seller_id', $seller->sellerID)
+                ->where('is_active', true)
+                ->orderBy('delivery_count', 'desc')
+                ->orderBy('created_at', 'desc')
+                ->get();
+
+            return response()->json([
+                'success' => true,
+                'data' => $riders
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Error fetching saved riders: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to fetch saved riders',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Delete a saved rider
+     */
+    public function deleteRider(Request $request, $riderId)
+    {
+        try {
+            $seller = $request->user()->seller;
+            
+            if (!$seller) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Seller not found'
+                ], 404);
+            }
+
+            $rider = Rider::where('id', $riderId)
+                ->where('seller_id', $seller->sellerID)
+                ->first();
+
+            if (!$rider) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Rider not found'
+                ], 404);
+            }
+
+            // Soft delete by marking as inactive
+            $rider->update(['is_active' => false]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Rider deleted successfully'
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Error deleting rider: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to delete rider',
+                'error' => $e->getMessage()
+            ], 500);
+        }
     }
 
     /**

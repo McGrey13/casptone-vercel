@@ -96,4 +96,14 @@ class Order extends Model
     {
         return $this->hasMany(Transaction::class, 'order_id', 'orderID');
     }
+
+    public function afterSaleRequests()
+    {
+        return $this->hasMany(AfterSaleRequest::class, 'order_id', 'orderID');
+    }
+
+    public function payment()
+    {
+        return $this->hasOne(Payment::class, 'orderID', 'orderID');
+    }
 }

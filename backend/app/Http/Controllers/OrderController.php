@@ -6,6 +6,7 @@ use App\Models\Order;
 use App\Models\Seller;
 use App\Models\Store;
 use App\Models\ShippingHistory;
+use App\Services\NotificationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -24,14 +25,38 @@ class OrderController extends Controller
             return response()->json(['error' => 'Customer record not found'], 404);
         }
 
-        $orders = Order::with(['orderProducts.product' => function($query) {
-                $query->select('product_id', 'productName', 'productPrice', 'productImage', 'seller_id', 'sku');
-            }, 'orderProducts.product.seller.user'])
+        $orders = Order::with([
+                'orderProducts.product' => function($query) {
+                    $query->select('product_id', 'productName', 'productPrice', 'productImage', 'seller_id', 'sku');
+                },
+                'orderProducts.product.seller.user',
+                'payment',
+                'customer.user',
+                'shipping',
+                'afterSaleRequests' => function($query) {
+                    // Include pending, approved, and processing statuses (exclude only cancelled, rejected, completed)
+                    $query->whereNotIn('status', ['cancelled', 'rejected', 'completed'])
+                          ->orderBy('created_at', 'desc');
+                }
+            ])
             ->where('customer_id', $customer->customerID)
             ->whereIn('status', ['pending', 'processing', 'packing', 'shipped', 'delivered', 'cancelled', 'payment_failed', 'failed', 'returned']) // Show all order statuses
             ->orderBy('created_at', 'desc')
             ->get()
             ->map(function($order) {
+                $activeAfterSaleRequest = $order->afterSaleRequests->first();
+                
+                // Get payment date - use payment's updated_at when paid, or order's updated_at if paymentStatus is paid
+                $paymentDate = null;
+                if ($order->paymentStatus === 'paid' && $order->payment_method !== 'cod') {
+                    if ($order->payment && $order->payment->updated_at) {
+                        $paymentDate = $order->payment->updated_at->format('Y-m-d H:i:s');
+                    } else if ($order->updated_at && $order->paymentStatus === 'paid') {
+                        // Fallback to order updated_at if payment was just marked as paid
+                        $paymentDate = $order->updated_at->format('Y-m-d H:i:s');
+                    }
+                }
+                
                 return [
                     'orderID' => $order->orderID,
                     'order_number' => $order->order_number,
@@ -40,15 +65,36 @@ class OrderController extends Controller
                     'status' => $order->status,
                     'paymentStatus' => $order->paymentStatus ?? 'pending',
                     'payment_method' => $order->payment_method ?? 'cod', // Add payment method
+                    'payment_date' => $paymentDate, // Add payment date for non-COD payments
                     'totalAmount' => $order->totalAmount,
+                    'customer' => $order->customer ? [
+                        'userName' => $order->customer->user->userName ?? null,
+                        'userAddress' => $order->customer->user->userAddress ?? null,
+                        'userCity' => $order->customer->user->userCity ?? null,
+                        'userProvince' => $order->customer->user->userProvince ?? null,
+                    ] : null,
+                    'hasActiveAfterSaleRequest' => $activeAfterSaleRequest ? true : false,
+                    'afterSaleRequest' => $activeAfterSaleRequest ? [
+                        'request_id' => $activeAfterSaleRequest->request_id,
+                        'request_type' => $activeAfterSaleRequest->request_type,
+                        'status' => $activeAfterSaleRequest->status,
+                        'created_at' => $activeAfterSaleRequest->created_at->format('Y-m-d H:i:s'),
+                    ] : null,
                     'items' => $order->orderProducts->map(function($item) {
+                        // Get seller name with fallbacks
+                        $sellerName = 'Unknown Seller';
+                        if ($item->product && $item->product->seller) {
+                            $sellerName = $item->product->seller->businessName ?? 
+                                        ($item->product->seller->user->userName ?? 'Unknown Seller');
+                        }
+                        
                         return [
                             'order_product_id' => $item->orderProducts_id,
                             'product_id' => $item->product_id,
                             'product_name' => $item->product->productName ?? 'Product Unavailable',
                             'product_image' => $item->product->productImage ?? null,
                             'sku' => $item->product->sku ?? 'N/A',
-                            'seller_name' => $item->product->seller->businessName ?? 'Unknown Seller',
+                            'seller_name' => $sellerName,
                             'price' => $item->price,
                             'quantity' => $item->quantity,
                             'total_amount' => $item->price * $item->quantity
@@ -181,7 +227,43 @@ class OrderController extends Controller
             }
 
             // Update order status to delivered
-            $order->update(['status' => 'delivered']);
+            // For COD orders, payment is collected on delivery, so update payment status
+            $updateData = ['status' => 'delivered'];
+            if ($order->payment_method === 'cod' && $order->paymentStatus === 'pending') {
+                $updateData['paymentStatus'] = 'paid';
+            }
+            $oldStatus = $order->status;
+            $order->update($updateData);
+
+            // Notify seller about order delivery
+            if ($order->sellerID) {
+                $seller = Seller::find($order->sellerID);
+                if ($seller && $seller->user_id) {
+                    // Use seller-specific notification with seller link
+                    NotificationService::create(
+                        $seller->user_id,
+                        'order',
+                        'Order Delivered',
+                        "Order #{$order->order_number} has been delivered.",
+                        "/seller/order-inventory-manager",
+                        [
+                            'order_id' => $order->orderID,
+                            'order_number' => $order->order_number ?? null,
+                            'status' => 'delivered',
+                        ]
+                    );
+
+                    // For COD orders, also notify seller about payment received
+                    if ($order->payment_method === 'cod' && isset($updateData['paymentStatus'])) {
+                        NotificationService::notifyPaymentReceived(
+                            $seller->user_id,
+                            $order,
+                            $order->totalAmount,
+                            'Cash on Delivery'
+                        );
+                    }
+                }
+            }
 
             // Update shipping status if exists
             if ($order->shipping) {
@@ -234,7 +316,21 @@ class OrderController extends Controller
                 'new_status' => $request->status
             ]);
 
+            $oldStatus = $order->status;
             $order->update(['status' => $request->status]);
+
+            // Notify customer about status change
+            if ($order->customer && $order->customer->user_id) {
+                NotificationService::notifyOrderStatusChange($order, $order->customer->user_id, $request->status);
+            }
+
+            // If order is cancelled, notify seller
+            if ($request->status === 'cancelled' && $order->sellerID) {
+                $seller = Seller::find($order->sellerID);
+                if ($seller && $seller->user_id) {
+                    NotificationService::notifyOrderCancellation($order, $seller->user_id);
+                }
+            }
 
             return response()->json([
                 'success' => true,

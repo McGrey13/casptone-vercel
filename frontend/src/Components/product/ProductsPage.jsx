@@ -14,6 +14,34 @@ import { Badge } from "../ui/badge";
 import { useNavigate } from "react-router-dom";
 import api from "../../api";
 
+// Wrapper component to track product views on hover
+const ProductCardWrapper = ({ productId, children }) => {
+  const [viewStartTime, setViewStartTime] = React.useState(null);
+
+  const handleMouseEnter = () => {
+    setViewStartTime(Date.now());
+  };
+
+  const handleMouseLeave = () => {
+    if (viewStartTime) {
+      const duration = Math.floor((Date.now() - viewStartTime) / 1000);
+      // Track view if user spent significant time (more than 2 seconds)
+      if (duration > 2 && productId) {
+        api.post(`/products/${productId}/track-view`, { duration }).catch(() => {
+          // Silently fail
+        });
+      }
+      setViewStartTime(null);
+    }
+  };
+
+  return (
+    <div onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave}>
+      {children}
+    </div>
+  );
+};
+
 // --- ProductsPage Component ---
 const ProductsPage = () => {
   const navigate = useNavigate();
@@ -29,7 +57,7 @@ const ProductsPage = () => {
   const fixImageUrl = (url) => {
     if (!url) return url;
     // If it's already a full URL with localhost, convert to relative path
-    if (url.includes('localhost:8000') || url.includes('localhost:8080')) {
+    if (url.includes('localhost:8000') || url.includes('localhost:8080') || url.includes('craftconnect-laravel-backend-1.onrender.com')) {
       const path = new URL(url).pathname;
       return path;
     }
@@ -48,6 +76,36 @@ const ProductsPage = () => {
         setError(null);
         
         const token = sessionStorage.getItem('auth_token');
+        
+        // Get AI-powered recommendations first
+        let recommendedProductIds = [];
+        let recommendedProductsMap = new Map();
+        try {
+          const recResponse = await api.get("/recommendations", {
+            params: { limit: 200 }, // Get more recommendations
+            headers: {
+              ...(token && { "Authorization": `Bearer ${token}` }),
+            },
+          });
+          
+          if (recResponse.data.success && recResponse.data.recommendations) {
+            // Store full recommendation data with scores for better sorting
+            recResponse.data.recommendations.forEach((rec) => {
+              const productId = rec.id || rec.product_id;
+              recommendedProductIds.push(productId);
+              recommendedProductsMap.set(productId, {
+                ...rec,
+                isRecommended: true,
+                recommendationScore: rec.score || 0
+              });
+            });
+            
+            console.log('✅ AI Recommendations loaded:', recommendedProductIds.length, 'products');
+          }
+        } catch (err) {
+          console.log('⚠️ No recommendations available:', err.message);
+          console.log('Using default product sorting');
+        }
         
         // Fetch followed sellers' products first (if authenticated)
         let followedProducts = [];
@@ -81,43 +139,80 @@ const ProductsPage = () => {
         const followedIds = new Set(followedProducts.map(p => p.id || p.product_id));
         setFollowedProductIds(followedIds);
         
-        // Separate products into followed and non-followed
-        const nonFollowedProducts = allProducts.filter(p => 
-          !followedIds.has(p.id || p.product_id)
+        // Merge recommended products data with all products
+        const allProductsWithRecommendations = allProducts.map(product => {
+          const productId = product.id || product.product_id;
+          const recommendedData = recommendedProductsMap.get(productId);
+          
+          if (recommendedData) {
+            // Merge recommended product data (may have better fields)
+            return {
+              ...product,
+              ...recommendedData,
+              // Keep original product fields as fallback
+              average_rating: recommendedData.average_rating || product.average_rating || 0,
+              reviews_count: recommendedData.reviews_count || product.reviews_count || 0,
+            };
+          }
+          return product;
+        });
+        
+        // Separate products into: Recommended + Followed, Recommended, Followed, Others
+        const recommendedAndFollowed = allProductsWithRecommendations.filter(p => 
+          recommendedProductIds.includes(p.id || p.product_id) && followedIds.has(p.id || p.product_id)
         );
         
-        // Sort followed products by rating and sold count (highest first)
-        const sortedFollowedProducts = [...followedProducts].sort((a, b) => {
-          const ratingA = a.average_rating || 0;
-          const ratingB = b.average_rating || 0;
-          const soldA = a.sold_count || 0;
-          const soldB = b.sold_count || 0;
-          
-          // First sort by rating (highest first)
-          if (ratingB !== ratingA) {
-            return ratingB - ratingA;
-          }
-          // If ratings are equal, sort by sold count (highest first)
-          return soldB - soldA;
-        });
+        const recommendedOnly = allProductsWithRecommendations.filter(p => 
+          recommendedProductIds.includes(p.id || p.product_id) && !followedIds.has(p.id || p.product_id)
+        );
         
-        // Sort non-followed products by rating and sold count (highest first)
-        const sortedNonFollowedProducts = [...nonFollowedProducts].sort((a, b) => {
-          const ratingA = a.average_rating || 0;
-          const ratingB = b.average_rating || 0;
-          const soldA = a.sold_count || 0;
-          const soldB = b.sold_count || 0;
-          
-          // First sort by rating (highest first)
-          if (ratingB !== ratingA) {
-            return ratingB - ratingA;
-          }
-          // If ratings are equal, sort by sold count (highest first)
-          return soldB - soldA;
-        });
+        const followedOnly = followedProducts.filter(p => 
+          !recommendedProductIds.includes(p.id || p.product_id)
+        );
         
-        // Combine: followed products first, then other products (both sorted by rating and sold count)
-        const sortedProducts = [...sortedFollowedProducts, ...sortedNonFollowedProducts];
+        const otherProducts = allProductsWithRecommendations.filter(p => 
+          !recommendedProductIds.includes(p.id || p.product_id) && !followedIds.has(p.id || p.product_id)
+        );
+        
+        // Sort each group by recommendation score (if available), then rating and sold count
+        const sortProducts = (products) => {
+          return [...products].sort((a, b) => {
+            // First priority: recommendation score (if available)
+            if (a.recommendationScore !== undefined && b.recommendationScore !== undefined) {
+              if (b.recommendationScore !== a.recommendationScore) {
+                return b.recommendationScore - a.recommendationScore;
+              }
+            }
+            
+            // Second priority: rating
+            const ratingA = a.average_rating || 0;
+            const ratingB = b.average_rating || 0;
+            if (ratingB !== ratingA) {
+              return ratingB - ratingA;
+            }
+            
+            // Third priority: sold count
+            const soldA = a.sold_count || 0;
+            const soldB = b.sold_count || 0;
+            return soldB - soldA;
+          });
+        };
+        
+        // Combine in priority order: Recommended+Followed > Recommended > Followed > Others
+        const sortedProducts = [
+          ...sortProducts(recommendedAndFollowed),
+          ...sortProducts(recommendedOnly),
+          ...sortProducts(followedOnly),
+          ...sortProducts(otherProducts)
+        ];
+        
+        console.log('📊 Product sorting:', {
+          recommendedAndFollowed: recommendedAndFollowed.length,
+          recommendedOnly: recommendedOnly.length,
+          followedOnly: followedOnly.length,
+          otherProducts: otherProducts.length,
+          total: sortedProducts.length
+        });
         
         // Add sample ratings and sold counts for products that don't have data yet (for testing)
         const productsWithSampleData = sortedProducts.map((product, index) => {
@@ -127,13 +222,17 @@ const ProductsPage = () => {
           
           const dataIndex = index % sampleRatings.length;
           
+          const isRecommended = recommendedProductIds.includes(product.id || product.product_id);
+          
           return {
             ...product,
             // Add sample ratings if no rating data exists
             average_rating: product.average_rating || sampleRatings[dataIndex],
             reviews_count: product.reviews_count || sampleReviewCounts[dataIndex],
             // Add sample sold counts if no sold data exists
-            sold_count: product.sold_count || sampleSoldCounts[dataIndex]
+            sold_count: product.sold_count || sampleSoldCounts[dataIndex],
+            // Mark if recommended by AI
+            isRecommended: isRecommended
           };
         });
         
@@ -324,8 +423,8 @@ const ProductsPage = () => {
             const isFromFollowedSeller = followedProductIds.has(productId);
             
             return (
+              <ProductCardWrapper productId={product.id || product.product_id} key={product.id}>
               <div
-                key={product.id}
                 onClick={() => navigate(`/product/${product.id}`)}
                 className="cursor-pointer bg-white p-6 rounded-xl shadow-md hover:shadow-xl transition-all duration-300 hover:-translate-y-1 relative"
               >
@@ -352,6 +451,13 @@ const ProductsPage = () => {
                     </svg>
                   </div>
 
+                  {/* Recommended Badge */}
+                  {product.isRecommended && (
+                    <div className="absolute top-2 right-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white text-xs px-2 py-1 rounded-full font-semibold shadow-lg z-20">
+                      ✨ Recommended
+                    </div>
+                  )}
+                  
                   {/* Navigation buttons - show when multiple images exist */}
                   {allImages.length > 1 && (
                     <>
@@ -471,6 +577,7 @@ const ProductsPage = () => {
                   </div>
                 </div>
               </div>
+              </ProductCardWrapper>
             );
           })}
         </div>

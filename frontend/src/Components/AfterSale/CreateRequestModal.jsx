@@ -11,7 +11,7 @@ const CreateRequestModal = ({ onClose, onSuccess }) => {
     order_id: '',
     product_id: '',
     request_type: 'support',
-    subject: '',
+    subject: 'After-sale request',
     description: '',
     reason: '',
   });
@@ -30,10 +30,12 @@ const CreateRequestModal = ({ onClose, onSuccess }) => {
     try {
       setLoadingOrders(true);
       const response = await api.get('/orders');
+      console.log('Orders API response:', response.data);
       // Filter to only show delivered/completed orders
-      const completedOrders = response.data.filter(order => 
-        ['delivered', 'completed'].includes(order.status)
+      const completedOrders = (Array.isArray(response.data) ? response.data : []).filter(order => 
+        order && ['delivered', 'completed'].includes(order.status)
       );
+      console.log('Completed orders:', completedOrders);
       setOrders(completedOrders);
     } catch (error) {
       console.error('Error fetching orders:', error);
@@ -76,13 +78,19 @@ const CreateRequestModal = ({ onClose, onSuccess }) => {
     e.preventDefault();
     setError('');
 
-    if (!formData.order_id) {
+    if (!formData.order_id || !String(formData.order_id).trim()) {
       setError('Please select an order');
       return;
     }
 
-    if (formData.description.trim().split(/\s+/).length < 10) {
-      setError('Description must be at least 10 words');
+    const descriptionText = formData.description.trim();
+    if (!descriptionText || descriptionText.length < 20) {
+      setError(`Description must be at least 20 characters. Current: ${descriptionText.length} characters`);
+      return;
+    }
+    
+    if (!formData.subject || !formData.subject.trim()) {
+      setError('Subject is required');
       return;
     }
 
@@ -90,26 +98,86 @@ const CreateRequestModal = ({ onClose, onSuccess }) => {
       setLoading(true);
       const submitData = new FormData();
       
-      Object.keys(formData).forEach(key => {
-        if (formData[key]) {
-          submitData.append(key, formData[key]);
-        }
+      // Ensure all required fields are present and valid
+      const orderId = String(formData.order_id).trim();
+      if (!orderId) {
+        setError('Order ID is required');
+        setLoading(false);
+        return;
+      }
+      
+      const description = formData.description.trim();
+      if (!description || description.length < 20) {
+        setError('Description must be at least 20 characters. Current length: ' + (description.length || 0));
+        setLoading(false);
+        return;
+      }
+      
+      const subject = (formData.subject || 'After-sale request').trim();
+      if (!subject || subject.length === 0) {
+        setError('Subject is required');
+        setLoading(false);
+        return;
+      }
+      
+      // Append all form fields - ensure required fields are always present
+      submitData.append('order_id', orderId);
+      submitData.append('request_type', formData.request_type || 'support');
+      submitData.append('subject', subject);
+      submitData.append('description', description);
+      
+      if (formData.product_id) {
+        submitData.append('product_id', String(formData.product_id));
+      }
+      if (formData.reason) {
+        submitData.append('reason', formData.reason.trim());
+      }
+
+      // Append images with proper array format
+      images.forEach((image) => {
+        submitData.append('images[]', image);
       });
 
-      images.forEach((image, index) => {
-        submitData.append(`images[${index}]`, image);
+      // Debug: Log FormData contents
+      console.log('Submitting after-sale request with:', {
+        order_id: formData.order_id,
+        request_type: formData.request_type,
+        subject: formData.subject || 'After-sale request',
+        description_length: description.length,
+        description_preview: description.substring(0, 50) + '...',
+        images_count: images.length,
+        has_reason: !!formData.reason
       });
 
-      await api.post('/after-sale/requests', submitData, {
+      // Log FormData entries for debugging
+      for (let pair of submitData.entries()) {
+        console.log('FormData:', pair[0], '=', pair[1]);
+      }
+
+      const response = await api.post('/after-sale/requests', submitData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
       });
 
+      console.log('Success response:', response.data);
       onSuccess();
     } catch (error) {
       console.error('Error creating request:', error);
-      setError(error.response?.data?.message || 'Failed to create request');
+      console.error('Error response:', error.response?.data);
+      console.error('Error status:', error.response?.status);
+      
+      if (error.response?.status === 422) {
+        const errors = error.response.data?.errors || {};
+        const errorMessages = Object.values(errors).flat();
+        const errorText = errorMessages.length > 0 
+          ? errorMessages.join(', ') 
+          : error.response.data?.message || 'Validation failed. Please check your input.';
+        setError(errorText);
+        console.error('Validation errors:', errors);
+      } else {
+        setError(error.response?.data?.message || error.response?.data?.error || 'Failed to create request');
+      }
     } finally {
       setLoading(false);
     }
@@ -159,11 +227,15 @@ const CreateRequestModal = ({ onClose, onSuccess }) => {
                 className="w-full p-2 border rounded-md"
               >
                 <option value="">Choose an order...</option>
-                {orders.map(order => (
-                  <option key={order.id} value={order.id}>
-                    Order #{order.orderID} - {new Date(order.created_at).toLocaleDateString()} - ₱{order.totalAmount}
-                  </option>
-                ))}
+                {orders.map(order => {
+                  // Handle both orderID and id field names
+                  const orderId = order.orderID || order.id || order.order_id;
+                  return (
+                    <option key={orderId} value={orderId}>
+                      Order #{orderId} - {new Date(order.created_at || order.orderDate || order.date).toLocaleDateString()} - ₱{order.totalAmount || order.total || 0}
+                    </option>
+                  );
+                })}
               </select>
             )}
           </div>
@@ -218,7 +290,7 @@ const CreateRequestModal = ({ onClose, onSuccess }) => {
             <Label htmlFor="description">
               Description *
               <span className="ml-2 text-sm font-normal text-gray-500">
-                (Minimum 10 words)
+                (Minimum 20 characters)
               </span>
             </Label>
             <Textarea
@@ -231,7 +303,7 @@ const CreateRequestModal = ({ onClose, onSuccess }) => {
               required
             />
             <p className="text-xs text-gray-500">
-              Word count: {formData.description.trim().split(/\s+/).filter(w => w).length} / 10 minimum
+              Character count: {formData.description.trim().length} / 20 minimum
             </p>
           </div>
 

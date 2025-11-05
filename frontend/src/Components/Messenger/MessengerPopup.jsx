@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { X, MessageCircle, Clock, User } from 'lucide-react';
+import { X, MessageCircle, Clock, User, Package } from 'lucide-react';
 import api from '../../api';
 import { useUser } from '../Context/UserContext';
 
@@ -9,13 +9,16 @@ const MessengerPopup = ({
   sellerId, 
   sellerUserId,
   sellerName, 
-  sellerAvatar 
+  sellerAvatar,
+  productInfo = null,
+  initialMessage = null,
+  defaultMessageType = 'general'
 }) => {
   const { user } = useUser();
   const [messages, setMessages] = useState([]);
   const [conversations, setConversations] = useState([]);
-  const [newMessage, setNewMessage] = useState('');
-  const [messageType, setMessageType] = useState('general');
+  const [newMessage, setNewMessage] = useState(initialMessage || '');
+  const [messageType, setMessageType] = useState(defaultMessageType);
   const [file, setFile] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [conversationId, setConversationId] = useState(null);
@@ -61,12 +64,39 @@ const MessengerPopup = ({
     if (isOpen) {
       getCurrentUserId();
       fetchAllConversations();
+      // Set initial message and message type if provided
+      if (initialMessage) {
+        setNewMessage(initialMessage);
+      } else {
+        setNewMessage('');
+      }
+      if (defaultMessageType) {
+        setMessageType(defaultMessageType);
+      } else {
+        setMessageType('general');
+      }
       if (sellerId) {
         initializeConversation();
       }
+    } else {
+      // Reset when popup closes
+      setNewMessage('');
+      setMessageType('general');
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, sellerId, user]);
+  
+  // Update message and type when props change while open
+  useEffect(() => {
+    if (isOpen) {
+      if (initialMessage) {
+        setNewMessage(initialMessage);
+      }
+      if (defaultMessageType) {
+        setMessageType(defaultMessageType);
+      }
+    }
+  }, [isOpen, initialMessage, defaultMessageType]);
 
   const fetchAllConversations = async () => {
     try {
@@ -102,9 +132,16 @@ const MessengerPopup = ({
       try {
         const response = await api.get(`/conversations/with-seller/${sellerId}`);
         const data = response.data;
-        setConversationId(data.conversation_id || data.id);
+        const convId = data.conversation_id || data.id;
+        setConversationId(convId);
         if (data.messages) {
           setMessages(data.messages);
+        }
+        
+        // Check if product image should be sent (only if conversation exists but is empty)
+        if (productInfo?.productImage && (!data.messages || data.messages.length === 0)) {
+          // Send product image with message text if conversation is new/empty
+          await sendProductImage(convId, true);
         }
       } catch (err) {
         if (err.response?.status === 404) {
@@ -141,15 +178,196 @@ const MessengerPopup = ({
     return () => clearInterval(interval);
   }, [conversationId]);
 
+  const sendProductImage = async (convId, includeMessageText = false) => {
+    if (!productInfo?.productImage || !convId || !sellerUserId) {
+      console.log('Missing required data:', { productImage: productInfo?.productImage, convId, sellerUserId });
+      return;
+    }
+    
+    try {
+      // Always fetch and upload the product image to ensure proper access
+      // This ensures the image is in the chat-attachments folder and accessible
+      let imagePath = productInfo.productImage;
+      let imageUrl = imagePath;
+      
+      // Convert to full URL if it's a relative path
+      if (!imageUrl.startsWith('http')) {
+        // If it starts with /storage/, use it as is
+        if (imageUrl.startsWith('/storage/')) {
+          imageUrl = `${window.location.origin}${imageUrl}`;
+        } else if (!imageUrl.startsWith('/')) {
+          imageUrl = `${window.location.origin}/storage/${imageUrl}`;
+        } else {
+          imageUrl = `${window.location.origin}${imageUrl}`;
+        }
+      }
+      
+      // Fetch image - try multiple approaches
+      let blob;
+      let fetchSuccess = false;
+      
+      // Try 1: Use fetch with credentials (for same-origin or CORS-enabled requests)
+      try {
+        const response = await fetch(imageUrl, {
+          credentials: 'include',
+          mode: 'cors'
+        });
+        if (response.ok) {
+          blob = await response.blob();
+          fetchSuccess = true;
+        }
+      } catch (e) {
+        console.log('Fetch with credentials failed, trying alternative...');
+      }
+      
+      // Try 2: If fetch failed, try using the API instance
+      if (!fetchSuccess) {
+        try {
+          // Extract the path from the URL
+          const urlPath = new URL(imageUrl).pathname;
+          const imageResponse = await api.get(urlPath, {
+            responseType: 'blob',
+            baseURL: window.location.origin // Use the same origin for static files
+          });
+          blob = imageResponse.data;
+          fetchSuccess = true;
+        } catch (apiError) {
+          console.log('API fetch failed, trying direct backend URL...');
+        }
+      }
+      
+      // Try 3: Use backend URL directly (if different from frontend)
+      if (!fetchSuccess) {
+        try {
+          const backendUrl = import.meta.env.VITE_BACKEND_URL || 'https://craftconnect-laravel-backend-1.onrender.com';
+          const backendImageUrl = imageUrl.replace(window.location.origin, backendUrl);
+          const response = await fetch(backendImageUrl, {
+            credentials: 'include',
+            mode: 'cors'
+          });
+          if (response.ok) {
+            blob = await response.blob();
+            fetchSuccess = true;
+          }
+        } catch (backendError) {
+          console.error('All image fetch methods failed:', backendError);
+        }
+      }
+      
+      // If all methods failed, send message without image
+      if (!fetchSuccess) {
+        console.warn('Could not fetch product image, sending message without image');
+        if (includeMessageText) {
+          // Send message without image
+          const formData = new FormData();
+          const msgText = initialMessage || (productInfo 
+            ? `Hello! I'm interested in customizing the product "${productInfo.productName}". Could you please provide more details about customization options?`
+            : 'Hello! I\'m interested in your products.');
+          
+          formData.append('message_text', msgText);
+          formData.append('message_type', mapMessageType(defaultMessageType || 'product_customize'));
+          formData.append('receiver_id', sellerUserId);
+          
+          await api.post(`/chat/${convId}/send`, formData, {
+            headers: { 'Content-Type': 'multipart/form-data' }
+          });
+          
+          const response2 = await api.get(`/chat/${convId}/messages`);
+          const updatedMessages = Array.isArray(response2.data) ? response2.data : response2.data.messages || [];
+          setMessages(updatedMessages);
+        }
+        return;
+      }
+      
+      // Upload the fetched image
+      const file = new File([blob], 'product-image.jpg', { type: blob.type || 'image/jpeg' });
+      const fileFormData = new FormData();
+      fileFormData.append('file', file);
+      
+      const uploadResponse = await api.post('/upload', fileFormData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+      
+      if (!uploadResponse.data || !uploadResponse.data.path) {
+        throw new Error('Upload response missing path');
+      }
+      
+      imagePath = uploadResponse.data.path; // This is the relative path like 'chat-attachments/...'
+      
+      // Send message with product image
+      const formData = new FormData();
+      let msgText = '';
+      
+      if (includeMessageText) {
+        msgText = initialMessage || (productInfo 
+          ? `Hello! I'm interested in customizing the product "${productInfo.productName}". Could you please provide more details about customization options?`
+          : 'Hello! I\'m interested in your products.');
+      }
+      
+      formData.append('message_text', msgText);
+      formData.append('message_type', mapMessageType(defaultMessageType || 'product_customize'));
+      formData.append('receiver_id', sellerUserId);
+      formData.append('attachments[0][file_url]', imagePath);
+      formData.append('attachments[0][file_type]', 'image');
+      
+      try {
+        await api.post(`/chat/${convId}/send`, formData, {
+          headers: { 'Content-Type': 'multipart/form-data' }
+        });
+        
+        // Refresh messages
+        const response2 = await api.get(`/chat/${convId}/messages`);
+        const updatedMessages = Array.isArray(response2.data) ? response2.data : response2.data.messages || [];
+        setMessages(updatedMessages);
+      } catch (sendError) {
+        console.error('Error sending message with image:', sendError);
+        if (sendError.response) {
+          console.error('Response data:', sendError.response.data);
+          console.error('Response status:', sendError.response.status);
+        }
+        throw sendError;
+      }
+    } catch (error) {
+      console.error('Error sending product image:', error);
+      if (error.response) {
+        console.error('Error response:', error.response.data);
+      }
+      // If image send fails, still continue - don't block the conversation
+    }
+  };
+
   const createNewConversation = async () => {
     try {
-      const response = await api.post('/conversations', {
-        seller_id: sellerId,
-        initial_message: 'Hello! I\'m interested in your products.'
-      });
-      const data = response.data;
-      setConversationId(data.conversation_id || data.id);
-      setMessages(data.messages || []);
+      const initialMsg = initialMessage || (productInfo 
+        ? `Hello! I'm interested in customizing the product "${productInfo.productName}". Could you please provide more details about customization options?`
+        : 'Hello! I\'m interested in your products.');
+      
+      // If we have product image, send it with the initial message instead of creating empty conversation
+      if (productInfo?.productImage) {
+        // Create conversation without initial message, then send message with image
+        const response = await api.post('/conversations', {
+          seller_id: sellerId,
+          initial_message: '', // Empty initial message
+          message_type: defaultMessageType || 'product_customize'
+        });
+        const data = response.data;
+        const convId = data.conversation_id || data.id;
+        setConversationId(convId);
+        
+        // Send message with product image and text
+        await sendProductImage(convId, true);
+      } else {
+        // No product image, create conversation normally
+        const response = await api.post('/conversations', {
+          seller_id: sellerId,
+          initial_message: initialMsg,
+          message_type: defaultMessageType || 'general'
+        });
+        const data = response.data;
+        const convId = data.conversation_id || data.id;
+        setConversationId(convId);
+        setMessages(data.messages || []);
+      }
     } catch (error) {
       console.error('Error creating conversation:', error);
     }
@@ -160,6 +378,17 @@ const MessengerPopup = ({
     if (type.startsWith("image/")) return "image";
     if (type === "application/pdf" || type.includes("document")) return "document";
     return "other";
+  };
+
+  // Map frontend message types to backend valid types
+  const mapMessageType = (type) => {
+    const validTypes = ['custom_request', 'order_update', 'damage_report', 'after_sale', 'general'];
+    // Map 'product_customize' to 'custom_request' for backend
+    if (type === 'product_customize') {
+      return 'custom_request';
+    }
+    // Return the type if it's valid, otherwise default to 'general'
+    return validTypes.includes(type) ? type : 'general';
   };
 
   const getTimeAgo = (dateString) => {
@@ -191,6 +420,11 @@ const MessengerPopup = ({
   const sendMessage = async () => {
     if (!newMessage.trim() && !file) return;
     if (!conversationId || isLoading) return;
+    
+    if (!sellerUserId) {
+      console.error('sellerUserId is missing, cannot send message');
+      return;
+    }
 
     const messageText = newMessage.trim();
     setNewMessage('');
@@ -198,7 +432,7 @@ const MessengerPopup = ({
 
     const formData = new FormData();
     formData.append("message_text", messageText);
-    formData.append("message_type", messageType);
+    formData.append("message_type", mapMessageType(messageType));
     formData.append("receiver_id", sellerUserId);
 
     if (file) {
@@ -210,10 +444,17 @@ const MessengerPopup = ({
           headers: { 'Content-Type': 'multipart/form-data' }
         });
 
+        if (!uploadResponse.data || !uploadResponse.data.path) {
+          throw new Error('Upload response missing path');
+        }
+
         formData.append("attachments[0][file_url]", uploadResponse.data.path);
         formData.append("attachments[0][file_type]", getFileType(file));
       } catch (error) {
         console.error("File upload failed:", error);
+        if (error.response) {
+          console.error("Upload error response:", error.response.data);
+        }
         setIsLoading(false);
         setFile(null);
         return;
@@ -221,6 +462,15 @@ const MessengerPopup = ({
     }
 
     try {
+      // Log what we're sending for debugging
+      console.log('Sending message:', {
+        conversationId,
+        messageText,
+        messageType: mapMessageType(messageType),
+        receiverId: sellerUserId,
+        hasFile: !!file
+      });
+      
       await api.post(`/chat/${conversationId}/send`, formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
@@ -231,6 +481,10 @@ const MessengerPopup = ({
       setFile(null);
     } catch (error) {
       console.error('Error sending message:', error);
+      if (error.response) {
+        console.error('Error response status:', error.response.status);
+        console.error('Error response data:', error.response.data);
+      }
       setNewMessage(messageText);
     } finally {
       setIsLoading(false);
@@ -338,6 +592,34 @@ const MessengerPopup = ({
             </button>
           </div>
 
+          {/* Product Info Card - Show when productInfo is provided */}
+          {productInfo && (
+            <div className="bg-gradient-to-r from-[#f5f0eb] to-[#ede5dc] border-b border-[#d5bfae] p-4">
+              <div className="flex items-center gap-3 bg-white rounded-lg p-3 border border-[#d5bfae] shadow-sm">
+                {productInfo.productImage && (
+                  <img 
+                    src={productInfo.productImage.startsWith('http') ? productInfo.productImage : `/storage/${productInfo.productImage}`}
+                    alt={productInfo.productName}
+                    className="w-16 h-16 object-cover rounded-lg border border-[#d5bfae]"
+                    onError={(e) => {
+                      e.target.style.display = 'none';
+                    }}
+                  />
+                )}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-1">
+                    <Package className="h-4 w-4 text-[#a4785a]" />
+                    <p className="text-xs font-semibold text-[#5c3d28]">Product of Interest</p>
+                  </div>
+                  <p className="text-sm font-bold text-[#5c3d28] truncate">{productInfo.productName}</p>
+                  {productInfo.productPrice && (
+                    <p className="text-xs text-[#7b5a3b]">₱{Number(productInfo.productPrice).toFixed(2)}</p>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Messages Area */}
           <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-gradient-to-br from-[#faf9f8] to-white">
             {isLoading && messages.length === 0 ? (
@@ -390,14 +672,14 @@ const MessengerPopup = ({
                           <div key={i} className="mt-2">
                             {a.file_type === "image" ? (
                               <img 
-                                src={`http://localhost:8000/storage/${a.messageAttachment}`} 
+                                src={`https://craftconnect-laravel-backend-1.onrender.com/storage/${a.messageAttachment}`} 
                                 alt="attachment" 
                                 className="max-w-full rounded-lg shadow max-h-64 object-contain"
                                 loading="lazy"
                               />
                             ) : (
                               <a 
-                                href={`http://localhost:8000/storage/${a.messageAttachment}`}
+                                href={`https://craftconnect-laravel-backend-1.onrender.com/storage/${a.messageAttachment}`}
                                 target="_blank" 
                                 rel="noopener noreferrer"
                                 className="flex items-center gap-2 text-blue-400 hover:underline"

@@ -145,9 +145,10 @@ class SellerDashboardController extends Controller
     public function getDashboardSummary(Request $request, $sellerId)
     {
         try {
-            // Use provided date range or default to last 30 days
-            $fromDate = $request->get('from') ? \Carbon\Carbon::parse($request->get('from')) : now()->subDays(30);
-            $toDate = $request->get('to') ? \Carbon\Carbon::parse($request->get('to')) : now();
+            // Use provided date range or default to ALL TIME (no filter)
+            // Changed to null to fetch ALL payments, not just last 30 days
+            $fromDate = $request->get('from') ? \Carbon\Carbon::parse($request->get('from')) : null;
+            $toDate = $request->get('to') ? \Carbon\Carbon::parse($request->get('to')) : null;
 
             // Get transaction summary
             $transactionSummary = $this->getTransactionSummary($sellerId, $fromDate, $toDate);
@@ -399,30 +400,75 @@ class SellerDashboardController extends Controller
 
     /**
      * Get online payment count for seller
+     * Counts ALL payments that are NOT COD (i.e., all online payments)
      */
     private function getSellerOnlinePaymentCount($sellerId, $fromDate = null, $toDate = null)
     {
         try {
-            $query = Payment::query()
-                ->join('transactions', 'payments.orderID', '=', 'transactions.order_id')
-                ->where('transactions.seller_id', $sellerId)
-                ->where('payments.payment_type', 'online')
-                ->where('payments.paymentStatus', 'paid');
+            // SIMPLEST APPROACH: Get all payments, filter out COD
+            // Join payments -> orders -> filter by sellerID
+            $allPayments = Payment::query()
+                ->join('orders', 'payments.orderID', '=', 'orders.orderID')
+                ->where('orders.sellerID', $sellerId)
+                ->select('payments.*')
+                ->get();
+            
+            // Filter in PHP to be 100% sure we get the right ones
+            $onlinePayments = $allPayments->filter(function($payment) use ($fromDate, $toDate) {
+                // Must be paid/succeeded/completed
+                $isPaid = in_array(strtolower($payment->paymentStatus ?? ''), ['paid', 'succeeded', 'completed']);
+                if (!$isPaid) return false;
+                
+                // Must NOT be COD
+                $paymentMethod = strtolower($payment->paymentMethod ?? '');
+                $paymentType = strtolower($payment->payment_type ?? '');
+                $isCod = (stripos($paymentMethod, 'cod') !== false) || ($paymentType === 'cod');
+                if ($isCod) return false;
+                
+                // Date filter (if provided)
+                if ($fromDate && $payment->created_at && $payment->created_at->lt($fromDate)) {
+                    return false;
+                }
+                if ($toDate && $payment->created_at && $payment->created_at->gt($toDate)) {
+                    return false;
+                }
+                
+                return true;
+            });
+            
+            $count = $onlinePayments->count();
+            
+            Log::info('Online payment count - PHP FILTER', [
+                'seller_id' => $sellerId,
+                'online_payment_count' => $count,
+                'total_payments' => $allPayments->count(),
+                'payment_details' => $allPayments->map(function($p) {
+                    $method = strtolower($p->paymentMethod ?? '');
+                    $type = strtolower($p->payment_type ?? '');
+                    $isCod = (stripos($method, 'cod') !== false) || ($type === 'cod');
+                    $isPaid = in_array(strtolower($p->paymentStatus ?? ''), ['paid', 'succeeded', 'completed']);
+                    return [
+                        'id' => $p->payment_id,
+                        'orderID' => $p->orderID,
+                        'method' => $p->paymentMethod,
+                        'type' => $p->payment_type,
+                        'status' => $p->paymentStatus,
+                        'is_cod' => $isCod,
+                        'is_paid' => $isPaid,
+                        'should_count' => $isPaid && !$isCod,
+                    ];
+                }),
+            ]);
 
-            if ($fromDate) {
-                $query->whereDate('payments.created_at', '>=', $fromDate);
-            }
-
-            if ($toDate) {
-                $query->whereDate('payments.created_at', '<=', $toDate);
-            }
-
-            return $query->count();
+            return $count;
 
         } catch (\Exception $e) {
             Log::error('Seller online payment count failed', [
                 'error' => $e->getMessage(),
-                'seller_id' => $sellerId
+                'seller_id' => $sellerId,
+                'trace' => $e->getTraceAsString(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine()
             ]);
 
             return 0;

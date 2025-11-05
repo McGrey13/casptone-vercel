@@ -262,3 +262,30 @@ body {
     margin-right: 0;
   }
 }
+
+/* ✅ FIX: Remove white background from notification icon completely */
+.icon-link,
+.icon-link * {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+/* Target dropdown container and buttons */
+.notification-dropdown,
+.notification-container,
+.notification-button,
+.notification-wrapper,
+button:has(svg) {
+  background-color: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  outline: none !important;
+}
+
+/* Optional: Consistent hover highlight */
+.notification-dropdown:hover,
+.notification-container:hover,
+.notification-button:hover {
+  background-color: rgba(255, 255, 255, 0.1) !important;
+}

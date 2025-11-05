@@ -11,6 +11,7 @@ export const AddProductModal = ({ isOpen, onClose, onSave }) => {
   const [apiCategories, setApiCategories] = useState([]);
   const [mainImage, setMainImage] = useState({ file: null, preview: null });
   const [additionalImages, setAdditionalImages] = useState(Array(5).fill({ file: null, preview: null }));
+  const [mainImageIndex, setMainImageIndex] = useState(0); // Track which image is main (0 = main image, -1 = none set)
   const [video, setVideo] = useState({ file: null, preview: null });
   const [tags, setTags] = useState([]);
   const [tagInput, setTagInput] = useState('');
@@ -33,6 +34,7 @@ export const AddProductModal = ({ isOpen, onClose, onSave }) => {
     setTags([]);
     setTagInput('');
     setPublishStatus('draft');
+    setMainImageIndex(0);
     // Clear file inputs if any were opened
     if (fileInputRef.current) fileInputRef.current.value = '';
     if (videoInputRef.current) videoInputRef.current.value = '';
@@ -110,7 +112,16 @@ export const AddProductModal = ({ isOpen, onClose, onSave }) => {
       const newImages = [...additionalImages];
       newImages[index] = { file: file, preview: URL.createObjectURL(file) };
       setAdditionalImages(newImages);
+      // If main image is not set, set this as main
+      if (mainImageIndex === -1 && !mainImage.file) {
+        setMainImageIndex(index + 1); // index + 1 because 0 is reserved for mainImage
+      }
     }
+  };
+
+  const setAsMainImage = (index) => {
+    // index: -1 means mainImage, 0-4 means additionalImages index
+    setMainImageIndex(index);
   };
 
   const handleVideoChange = (e) => {
@@ -158,17 +169,46 @@ export const AddProductModal = ({ isOpen, onClose, onSave }) => {
     formData.append('status', 'in stock'); // Stock status
     formData.append('publish_status', publishStatus); // Publish status
 
-    // Add main image if exists
-    if (mainImage.file) {
-      formData.append('productImage', mainImage.file);
-    }
+    // Determine which image is main based on mainImageIndex
+    // -1 = no main set, 0 = mainImage is main, 1-5 = additionalImages[index] is main
     
-    // Add additional images if they exist
-    additionalImages.forEach((image, index) => {
-      if (image.file) {
-        formData.append(`productImages[${index}]`, image.file);
+    if (mainImageIndex === 0 && mainImage.file) {
+      // Main image is the main product image
+      formData.append('productImage', mainImage.file);
+      // Add additional images
+      additionalImages.forEach((image, index) => {
+        if (image.file) {
+          formData.append(`productImages[${index}]`, image.file);
+        }
+      });
+    } else if (mainImageIndex > 0 && mainImageIndex <= 5) {
+      // One of the additional images is main
+      const mainIdx = mainImageIndex - 1;
+      if (additionalImages[mainIdx]?.file) {
+        formData.append('productImage', additionalImages[mainIdx].file);
       }
-    });
+      // Add main image as additional if it exists
+      if (mainImage.file) {
+        formData.append(`productImages[0]`, mainImage.file);
+      }
+      // Add other additional images
+      additionalImages.forEach((image, index) => {
+        if (image.file && index !== mainIdx) {
+          formData.append(`productImages[${index}]`, image.file);
+        }
+      });
+    } else {
+      // Fallback: use mainImage if it exists
+      if (mainImage.file) {
+        formData.append('productImage', mainImage.file);
+      }
+      // Add additional images if they exist
+      additionalImages.forEach((image, index) => {
+        if (image.file) {
+          formData.append(`productImages[${index}]`, image.file);
+        }
+      });
+    }
     
     // Add video if exists
     if (video.file) {
@@ -183,11 +223,6 @@ export const AddProductModal = ({ isOpen, onClose, onSave }) => {
     }
   };
 
-  const getSubmitButtonText = () => {
-    if (publishStatus === 'published') return 'Publish Product';
-    if (publishStatus === 'draft') return 'Save as Draft';
-    return 'Add Product';
-  };
 
   // Merge API categories with required static categories for reliability
   const staticCategoryNames = [
@@ -200,7 +235,7 @@ export const AddProductModal = ({ isOpen, onClose, onSave }) => {
     "Shoe & Sandals Making",
     "Leather Crafts",
     "Candle Making",
-    "Wood Carving",
+    "Wood Carving & WoodCraft Artisans",
     "House Garments",
     "Beadwork",
     "Crochet",
@@ -385,9 +420,26 @@ export const AddProductModal = ({ isOpen, onClose, onSave }) => {
                             alt="Main product display" 
                             className="mx-auto mb-3 sm:mb-4 rounded-lg sm:rounded-xl max-h-48 sm:max-h-56 md:max-h-64 object-cover shadow-lg border-4 border-[#e5ded7]"
                           />
-                          <div className="absolute top-2 right-2 bg-gradient-to-r from-[#a4785a] to-[#7b5a3b] text-white px-2 sm:px-3 py-1 rounded-full text-xs font-bold shadow-lg">
-                            MAIN IMAGE
-                          </div>
+                          {mainImageIndex === 0 && (
+                            <div className="absolute top-2 left-2 bg-gradient-to-r from-[#a4785a] to-[#7b5a3b] text-white px-2 sm:px-3 py-1 rounded-full text-xs font-bold shadow-lg z-10">
+                              MAIN IMAGE
+                            </div>
+                          )}
+                          {mainImageIndex !== 0 && (
+                            <div className="absolute top-2 right-2 z-10">
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setAsMainImage(0);
+                                }}
+                                className="rounded-full p-1.5 sm:p-2 text-base sm:text-lg font-bold shadow-xl transition-all duration-200 hover:scale-110 bg-white/95 text-[#a4785a] opacity-100 hover:bg-white hover:text-[#7b5a3b] border-2 border-[#a4785a]"
+                                title="Set as main image"
+                              >
+                                ☆
+                              </button>
+                            </div>
+                          )}
                         </div>
                       ) : (
                         <>
@@ -427,18 +479,45 @@ export const AddProductModal = ({ isOpen, onClose, onSave }) => {
                                 alt={`Additional view ${index + 1}`}
                                 className="w-full h-full object-cover rounded-md sm:rounded-lg shadow-md"
                               />
-                              <button
-                                type="button"
-                                className="absolute -top-1 -right-1 sm:-top-2 sm:-right-2 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-full w-5 h-5 sm:w-6 sm:h-6 flex items-center justify-center text-xs sm:text-sm shadow-lg hover:scale-110 transition-transform duration-200"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  const newImages = [...additionalImages];
-                                  newImages[index] = { file: null, preview: null };
-                                  setAdditionalImages(newImages);
-                                }}
-                              >
-                                ×
-                              </button>
+                              {mainImageIndex === index + 1 && (
+                                <div className="absolute top-1 left-1 sm:top-2 sm:left-2 bg-gradient-to-r from-[#a4785a] to-[#7b5a3b] text-white text-xs px-2 sm:px-3 py-0.5 sm:py-1 rounded-full font-bold shadow-lg z-10">
+                                  MAIN
+                                </div>
+                              )}
+                              <div className="absolute top-1 right-1 sm:top-2 sm:right-2 flex gap-1 z-10">
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setAsMainImage(index + 1);
+                                  }}
+                                  className={`rounded-full p-1.5 sm:p-2 text-base sm:text-lg font-bold shadow-xl transition-all duration-200 hover:scale-110 ${
+                                    mainImageIndex === index + 1
+                                      ? 'bg-gradient-to-r from-[#a4785a] to-[#7b5a3b] text-white opacity-100 scale-110' 
+                                      : 'bg-white/95 text-[#a4785a] opacity-100 hover:bg-white hover:text-[#7b5a3b] border-2 border-[#a4785a]'
+                                  }`}
+                                  title="Set as main image"
+                                >
+                                  {mainImageIndex === index + 1 ? '★' : '☆'}
+                                </button>
+                                <button
+                                  type="button"
+                                  className="bg-gradient-to-r from-red-500 to-red-600 text-white rounded-full p-1 sm:p-1.5 hover:scale-110 opacity-100 transition-all duration-200 shadow-xl"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    const newImages = [...additionalImages];
+                                    newImages[index] = { file: null, preview: null };
+                                    setAdditionalImages(newImages);
+                                    // If this was the main image, reset main image index
+                                    if (mainImageIndex === index + 1) {
+                                      setMainImageIndex(-1);
+                                    }
+                                  }}
+                                  title="Remove image"
+                                >
+                                  <X className="h-3 w-3 sm:h-4 sm:w-4" />
+                                </button>
+                              </div>
                             </>
                           ) : (
                             <div className="text-[#a4785a] group-hover:scale-110 transition-transform duration-300">
@@ -456,7 +535,7 @@ export const AddProductModal = ({ isOpen, onClose, onSave }) => {
                         </div>
                       ))}
                     </div>
-                    <p className="text-xs text-[#7b5a3b] mt-2 sm:mt-3">📸 Show your product from different angles</p>
+                    <p className="text-xs text-[#7b5a3b] mt-2 sm:mt-3">📸 Click ★ to set main image • Click × to remove</p>
                   </div>
                 </div>
 
@@ -563,11 +642,11 @@ export const AddProductModal = ({ isOpen, onClose, onSave }) => {
                           {tag}
                           <button
                             type="button"
-                            className="bg-white text-[#7b5a3b] rounded-full p-0.5 transition-colors duration-200 hover:bg-[#fff4ea] shadow"
+                            className="bg-white/30 hover:bg-white/50 rounded-full p-0.5 sm:p-1 transition-colors duration-200 ml-0.5 flex items-center justify-center"
                             onClick={() => removeTag(tag)}
                             aria-label={`Remove tag ${tag}`}
                           >
-                            <X size={12} className="sm:w-3.5 sm:h-3.5" />
+                            <X size={14} className="sm:w-4 sm:h-4 text-white" />
                           </button>
                         </span>
                       )) : (

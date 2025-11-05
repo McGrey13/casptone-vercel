@@ -106,7 +106,7 @@ useEffect(() => {
         
         // Construct full profile picture URL if it exists
         if (userData.profilePicture && !userData.profilePicture.startsWith('http')) {
-          const backendUrl = import.meta.env.VITE_BACKEND_URL?.replace('/api', '') || 'http://localhost:8000';
+          const backendUrl = import.meta.env.VITE_BACKEND_URL?.replace('/api', '') || 'https://craftconnect-laravel-backend-1.onrender.com';
           userData.profilePicture = `${backendUrl}/storage/${userData.profilePicture}`;
         }
 
@@ -153,7 +153,7 @@ useEffect(() => {
       return;
     }
     
-    const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000/api';
+    const backendUrl = import.meta.env.VITE_BACKEND_URL || 'https://craftconnect-laravel-backend-1.onrender.com/api';
     const authUrl = oauthProvider === 'google' 
       ? `${backendUrl}/auth/google/redirect?role=${oauthRole}`
       : `${backendUrl}/auth/facebook/redirect?role=${oauthRole}`;

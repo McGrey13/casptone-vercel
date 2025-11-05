@@ -4,6 +4,7 @@ import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Badge } from '../ui/badge';
 import api from '../../api';
+import { useToast } from '../Context/ToastContext';
 import { 
   Search, 
   Eye, 
@@ -25,7 +26,8 @@ import {
   Shield,
   TrendingUp,
   Package,
-  DollarSign
+  DollarSign,
+  Clock
 } from 'lucide-react';
 import {
   Select,
@@ -64,6 +66,7 @@ const StoreVerification = () => {
   const [stats, setStats] = useState({});
   const [sellerDetails, setSellerDetails] = useState(null);
   const [loadingSellerDetails, setLoadingSellerDetails] = useState(false);
+  const { showToast } = useToast();
 
   useEffect(() => {
     fetchStores();
@@ -110,15 +113,15 @@ const StoreVerification = () => {
       await api.post(`/admin/stores/${storeId}/approve`);
       fetchStores();
       fetchStats();
-      alert('Store approved and seller verified successfully!');
+      showToast('Store approved and seller verified successfully!', 'success');
     } catch (error) {
-      alert('Error approving store');
+      showToast('Error approving store', 'error');
     }
   };
 
   const handleReject = async () => {
     if (!rejectReason.trim()) {
-      alert('Please provide a reason for rejection');
+      showToast('Please provide a reason for rejection', 'error');
       return;
     }
 
@@ -129,9 +132,9 @@ const StoreVerification = () => {
       setShowRejectDialog(false);
       setRejectReason('');
       setSelectedStore(null);
-      alert('Store rejected successfully!');
+      showToast('Store rejected successfully!', 'success');
     } catch (error) {
-      alert('Error rejecting store');
+      showToast('Error rejecting store', 'error');
     }
   };
 
@@ -578,6 +581,24 @@ const StoreVerification = () => {
   return (
     <div className="space-y-8">
       {/* Page Header */}
+      {/* Test Button - Remove in production */}
+      <Card className="bg-gradient-to-br from-purple-50 to-purple-100 border-purple-200">
+        <CardContent className="p-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="text-sm font-semibold text-purple-700 mb-1">Test Notification</div>
+              <div className="text-xs text-purple-600">Click to test the toast notification</div>
+            </div>
+            <Button
+              onClick={() => showToast('Store approved and seller verified successfully!', 'success')}
+              className="bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white shadow-md hover:shadow-lg transition-all duration-200"
+            >
+              <CheckCircle className="h-4 w-4 mr-2" />
+              Test Success Toast
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
   
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
@@ -668,8 +689,6 @@ const StoreVerification = () => {
             </div>
           </div>
           <div className="mt-3 text-xs text-gray-500 flex items-center gap-2">
-            <div className="h-2 w-2 bg-green-500 rounded-full animate-pulse"></div>
-            Auto-refreshing every 1 minute
           </div>
         </CardContent>
       </Card>

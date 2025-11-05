@@ -33,7 +33,7 @@ export const UserProvider = ({ children }) => {
         
         // Ensure profile picture URL is properly constructed
         if (userData.profilePicture && !userData.profilePicture.startsWith('http')) {
-          userData.profilePicture = `http://localhost:8080/storage/${userData.profilePicture}`;
+          userData.profilePicture = `https://craftconnect-laravel-backend-1.onrender.com/storage/${userData.profilePicture}`;
         }
         
         setUser(userData);
@@ -62,7 +62,7 @@ export const UserProvider = ({ children }) => {
       // Construct full profile picture URL if it exists
       const userData = { ...response.data };
       if (userData.profilePicture) {
-        userData.profilePicture = `http://localhost:8080/storage/${userData.profilePicture}`;
+        userData.profilePicture = `https://craftconnect-laravel-backend-1.onrender.com/storage/${userData.profilePicture}`;
       }
       
       // Save user data to localStorage for persistence
@@ -118,7 +118,7 @@ const login = async (credentials) => {
     
     // Construct full profile picture URL if it exists
     if (userData.profilePicture) {
-      userData.profilePicture = `http://localhost:8080/storage/${userData.profilePicture}`;
+      userData.profilePicture = `https://craftconnect-laravel-backend-1.onrender.com/storage/${userData.profilePicture}`;
     }
     
     // Save user data to localStorage for persistence across reloads
@@ -200,7 +200,7 @@ const login = async (credentials) => {
       
       // Construct full profile picture URL if it exists
       if (userData.profilePicture) {
-        userData.profilePicture = `http://localhost:8080/storage/${userData.profilePicture}`;
+        userData.profilePicture = `https://craftconnect-laravel-backend-1.onrender.com/storage/${userData.profilePicture}`;
       }
       
       // Save user data to localStorage for persistence

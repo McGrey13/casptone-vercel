@@ -9,7 +9,7 @@ import { Textarea } from "../ui/textarea";
 import { Badge } from "../ui/badge";
 import {
   Truck, MapPin, User, Phone, Package, Clock, CheckCircle, 
-  AlertCircle, Download, Eye, Edit, Save, X
+  AlertCircle, Download, Eye, Edit, Save, X, UserPlus, Users, Trash2
 } from "lucide-react";
 import api from "../../api";
 
@@ -36,6 +36,9 @@ const ShippingSimulation = () => {
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
+  const [savedRiders, setSavedRiders] = useState([]);
+  const [selectedRiderId, setSelectedRiderId] = useState("");
+  const [showNewRiderForm, setShowNewRiderForm] = useState(false);
   const [riderInfo, setRiderInfo] = useState({
     riderName: "",
     riderPhone: "",
@@ -52,8 +55,23 @@ const ShippingSimulation = () => {
   });
   const [trackingNumber, setTrackingNumber] = useState("");
 
+  // Fetch saved riders
+  const fetchSavedRiders = async () => {
+    try {
+      const response = await api.get('/shipping/riders');
+      if (response.data.success) {
+        setSavedRiders(response.data.data || []);
+        console.log('✅ Saved riders fetched:', response.data.data.length);
+      }
+    } catch (error) {
+      console.error('Error fetching saved riders:', error);
+      // Don't show error to user, just log it
+    }
+  };
+
   useEffect(() => {
     fetchOrders(true); // Show loading on initial fetch
+    fetchSavedRiders(); // Fetch saved riders
   }, []);
 
   // Auto-refresh functionality (silent background refresh)
@@ -64,6 +82,59 @@ const ShippingSimulation = () => {
 
     return () => clearInterval(interval);
   }, []);
+
+  // Handle selecting a saved rider
+  const handleSelectSavedRider = (riderId) => {
+    const rider = savedRiders.find(r => r.id === parseInt(riderId));
+    if (rider) {
+      setSelectedRiderId(riderId.toString());
+      setRiderInfo({
+        riderName: rider.rider_name || "",
+        riderPhone: rider.rider_phone || "",
+        riderEmail: rider.rider_email || "",
+        riderCompany: rider.rider_company || "",
+        vehicleType: rider.vehicle_type || "",
+        vehicleNumber: rider.vehicle_number || ""
+      });
+      setShowNewRiderForm(false); // Hide new rider form when selecting saved rider
+      // Show form fields by selecting the rider (form will show when selectedRiderId is set)
+    }
+  };
+
+  // Handle adding new rider button click
+  const handleAddNewRider = () => {
+    setShowNewRiderForm(true);
+    setSelectedRiderId(""); // Clear selected rider
+    setRiderInfo({
+      riderName: "",
+      riderPhone: "",
+      riderEmail: "",
+      riderCompany: "",
+      vehicleType: "",
+      vehicleNumber: ""
+    });
+  };
+
+  // Handle deleting a saved rider
+  const handleDeleteRider = async (riderId, e) => {
+    e.stopPropagation(); // Prevent selecting the rider when clicking delete
+    if (!window.confirm('Are you sure you want to delete this rider?')) {
+      return;
+    }
+
+    try {
+      await api.delete(`/shipping/riders/${riderId}`);
+      setSavedRiders(savedRiders.filter(r => r.id !== riderId));
+      if (selectedRiderId === riderId.toString()) {
+        setSelectedRiderId("");
+        resetForm();
+      }
+      alert('Rider deleted successfully');
+    } catch (error) {
+      console.error('Error deleting rider:', error);
+      alert('Failed to delete rider: ' + (error.response?.data?.message || error.message));
+    }
+  };
 
   const fetchOrders = async (showLoading = true) => {
     try {
@@ -173,11 +244,16 @@ const ShippingSimulation = () => {
 
       setSelectedOrder(null);
       setIsEditing(false);
+      setShowNewRiderForm(false);
+      setSelectedRiderId("");
       resetForm();
       
       // Refresh orders list from server
       console.log('🔄 Refreshing orders from server...');
       await fetchOrders();
+      
+      // Refresh saved riders list
+      await fetchSavedRiders();
     } catch (error) {
       console.error('Error assigning rider:', error);
       console.error('Error details:', error.response?.data);
@@ -241,6 +317,8 @@ const ShippingSimulation = () => {
   };
 
   const resetForm = () => {
+    setSelectedRiderId("");
+    setShowNewRiderForm(false);
     setRiderInfo({
       riderName: "",
       riderPhone: "",
@@ -356,6 +434,8 @@ const ShippingSimulation = () => {
                     }`}
                     onClick={() => {
                       setSelectedOrder(order);
+                      setShowNewRiderForm(false);
+                      setSelectedRiderId("");
                       // Auto-populate delivery info from order's customer location
                       setDeliveryInfo({
                         deliveryAddress: order.location || "",
@@ -426,14 +506,135 @@ const ShippingSimulation = () => {
             <div className="h-full overflow-y-auto custom-scrollbar pr-2">
               {selectedOrder ? (
                 <div className="space-y-6">
-                  {/* Rider Information */}
-                  <div className="space-y-4">
-                    <h3 className="text-lg font-semibold text-[#5c3d28] flex items-center">
-                      <User className="h-5 w-5 mr-2 text-[#a4785a]" />
-                      Rider Information
-                    </h3>
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Rider Information */}
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold text-[#5c3d28] flex items-center">
+                    <User className="h-5 w-5 mr-2 text-[#a4785a]" />
+                    Rider Information
+                  </h3>
+
+                  {/* Saved Riders List - Show when there are saved riders, form is not shown, and no rider is selected */}
+                  {savedRiders.length > 0 && !showNewRiderForm && !selectedRiderId ? (
+                    <div className="space-y-3">
+                      <Label className="text-[#5c3d28] font-medium flex items-center gap-2">
+                        <Users className="h-4 w-4 text-blue-600" />
+                        Select Saved Rider
+                      </Label>
+                      <div className="space-y-2 max-h-64 overflow-y-auto custom-scrollbar pr-2">
+                        {savedRiders.map((rider) => (
+                          <div
+                            key={rider.id}
+                            className={`p-3 bg-white rounded-lg border-2 ${
+                              selectedRiderId === rider.id.toString()
+                                ? 'border-[#a4785a] bg-gradient-to-r from-[#a4785a]/10 to-[#7b5a3b]/10'
+                                : 'border-[#e5ded7] hover:border-[#a4785a]/50'
+                            } cursor-pointer transition-all`}
+                            onClick={() => handleSelectSavedRider(rider.id)}
+                          >
+                            <div className="flex items-center justify-between">
+                              <div className="flex-1">
+                                <div className="flex items-center gap-2 mb-1">
+                                  <p className="font-semibold text-sm text-[#5c3d28]">{rider.rider_name}</p>
+                                  {selectedRiderId === rider.id.toString() && (
+                                    <Badge className="bg-green-100 text-green-800 text-xs">Selected</Badge>
+                                  )}
+                                </div>
+                                <p className="text-xs text-gray-600">📞 {rider.rider_phone}</p>
+                                {rider.rider_email && (
+                                  <p className="text-xs text-gray-600">📧 {rider.rider_email}</p>
+                                )}
+                                {rider.rider_company && (
+                                  <p className="text-xs text-gray-600">🏢 {rider.rider_company}</p>
+                                )}
+                                <div className="flex items-center gap-2 mt-2">
+                                  <p className="text-xs text-gray-500">
+                                    🚗 {rider.vehicle_type} - {rider.vehicle_number}
+                                  </p>
+                                </div>
+                                <p className="text-xs text-blue-600 mt-2 font-medium">
+                                  ✓ {rider.delivery_count} {rider.delivery_count === 1 ? 'delivery completed' : 'deliveries completed'}
+                                </p>
+                              </div>
+                              <button
+                                onClick={(e) => handleDeleteRider(rider.id, e)}
+                                className="p-2 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg transition-all ml-2"
+                                title="Delete rider"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                      
+                      {/* Add New Delivery Information Button */}
+                      <Button
+                        onClick={handleAddNewRider}
+                        variant="outline"
+                        className="w-full border-2 border-dashed border-[#a4785a] text-[#a4785a] hover:bg-[#a4785a] hover:text-white transition-all duration-200 font-medium"
+                      >
+                        <UserPlus className="h-4 w-4 mr-2" />
+                        Add New Delivery Information
+                      </Button>
+                    </div>
+                  ) : (
+                    /* Show form when adding new rider or when no saved riders exist */
+                    <div className="space-y-4">
+                      {savedRiders.length > 0 && showNewRiderForm && (
+                        <div className="flex items-center justify-between p-3 bg-yellow-50 border-2 border-yellow-200 rounded-lg">
+                          <p className="text-sm text-yellow-800 font-medium">Adding new delivery information...</p>
+                          <Button
+                            onClick={() => {
+                              setShowNewRiderForm(false);
+                              setSelectedRiderId("");
+                              setRiderInfo({
+                                riderName: "",
+                                riderPhone: "",
+                                riderEmail: "",
+                                riderCompany: "",
+                                vehicleType: "",
+                                vehicleNumber: ""
+                              });
+                            }}
+                            variant="ghost"
+                            size="sm"
+                            className="text-yellow-800 hover:text-yellow-900 hover:bg-yellow-100"
+                          >
+                            <X className="h-4 w-4 mr-1" />
+                            Back to Saved Riders
+                          </Button>
+                        </div>
+                      )}
+                      
+                      {savedRiders.length > 0 && selectedRiderId && !showNewRiderForm && (
+                        <div className="flex items-center justify-between p-3 bg-green-50 border-2 border-green-200 rounded-lg">
+                          <p className="text-sm text-green-800 font-medium flex items-center gap-2">
+                            <CheckCircle className="h-4 w-4" />
+                            Using saved rider - You can modify the information below
+                          </p>
+                          <Button
+                            onClick={() => {
+                              setSelectedRiderId("");
+                              setRiderInfo({
+                                riderName: "",
+                                riderPhone: "",
+                                riderEmail: "",
+                                riderCompany: "",
+                                vehicleType: "",
+                                vehicleNumber: ""
+                              });
+                            }}
+                            variant="ghost"
+                            size="sm"
+                            className="text-green-800 hover:text-green-900 hover:bg-green-100"
+                          >
+                            <X className="h-4 w-4 mr-1" />
+                            Back to Saved Riders
+                          </Button>
+                        </div>
+                      )}
+                      
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="riderName" className="text-[#5c3d28] font-medium">Rider Name</Label>
                       <Input
@@ -496,6 +697,8 @@ const ShippingSimulation = () => {
                       />
                     </div>
                   </div>
+                    </div>
+                  )}
                 </div>
 
                 {/* Delivery Information */}

@@ -1,0 +1,38 @@
+/* Force active order tab styles - override everything including Tailwind */
+button.active-order-tab[data-active-tab="true"],
+button.active-order-tab[data-active-tab="true"].active-order-tab {
+  background-color: var(--active-bg-color, inherit) !important;
+  background: var(--active-bg-color, inherit) !important;
+  color: #ffffff !important;
+}
+
+/* Force all children to be white */
+button.active-order-tab[data-active-tab="true"] *,
+button.active-order-tab[data-active-tab="true"] > *,
+button.active-order-tab[data-active-tab="true"].active-order-tab * {
+  color: #ffffff !important;
+}
+
+/* Force icon styles */
+button.active-order-tab[data-active-tab="true"] .active-tab-icon,
+button.active-order-tab[data-active-tab="true"] svg,
+button.active-order-tab[data-active-tab="true"] > svg,
+button.active-order-tab[data-active-tab="true"].active-order-tab svg {
+  color: #ffffff !important;
+  stroke: #ffffff !important;
+  fill: none !important;
+}
+
+/* Force text styles */
+button.active-order-tab[data-active-tab="true"] .active-tab-text,
+button.active-order-tab[data-active-tab="true"] > span:first-of-type,
+button.active-order-tab[data-active-tab="true"].active-order-tab span:first-of-type {
+  color: #ffffff !important;
+}
+
+/* Override any Tailwind text color classes */
+button.active-order-tab[data-active-tab="true"].active-order-tab.text-\[.*\],
+button.active-order-tab[data-active-tab="true"] .text-\[.*\] {
+  color: #ffffff !important;
+}
+

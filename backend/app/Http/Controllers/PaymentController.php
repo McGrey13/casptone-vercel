@@ -7,8 +7,10 @@ use Ixudra\Curl\Facades\Curl;
 use App\Models\Payment;
 use App\Models\Order;
 use App\Models\OrderProduct;
+use App\Models\Seller;
 use App\Services\PayMongoService;
 use App\Services\CommissionService;
+use App\Services\NotificationService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
@@ -218,6 +220,30 @@ class PaymentController extends Controller
                         'status' => 'processing',
                         'paymentStatus' => 'paid'
                     ]);
+
+                    // Notify customer about payment success
+                    if ($recentOrder->customer && $recentOrder->customer->user_id) {
+                        NotificationService::notifyOrderStatusChange($recentOrder, $recentOrder->customer->user_id, 'processing');
+                    }
+
+                    // Notify seller about new order and payment received
+                    if ($recentOrder->sellerID) {
+                        $seller = Seller::find($recentOrder->sellerID);
+                        if ($seller && $seller->user_id) {
+                            // Notify about new order
+                            NotificationService::notifyNewOrder($recentOrder, $seller->user_id);
+                            
+                            // Notify about payment received
+                            $paymentMethod = $recentOrder->payment_method === 'paymaya' ? 'PayMaya' : 
+                                           ($recentOrder->payment_method === 'gcash' ? 'GCash' : 'Online Payment');
+                            NotificationService::notifyPaymentReceived(
+                                $seller->user_id,
+                                $recentOrder,
+                                $recentOrder->totalAmount,
+                                $paymentMethod
+                            );
+                        }
+                    }
                     
                     \Log::info('TEST MODE: Order auto-confirmed', [
                         'order_id' => $recentOrder->orderID,
@@ -296,6 +322,29 @@ class PaymentController extends Controller
                                     'status' => 'processing', // Ready to package/ship since payment is confirmed
                                     'paymentStatus' => 'paid'
                                 ]);
+
+                                // Notify customer about payment success
+                                if ($order->customer && $order->customer->user_id) {
+                                    NotificationService::notifyOrderStatusChange($order, $order->customer->user_id, 'processing');
+                                }
+
+                                // Notify seller about new order and payment received
+                                if ($order->sellerID) {
+                                    $seller = Seller::find($order->sellerID);
+                                    if ($seller && $seller->user_id) {
+                                        // Notify about new order
+                                        NotificationService::notifyNewOrder($order, $seller->user_id);
+                                        
+                                        // Notify about payment received
+                                        $paymentMethod = $paymongoType === 'grab_pay' ? 'PayMaya' : 'GCash';
+                                        NotificationService::notifyPaymentReceived(
+                                            $seller->user_id,
+                                            $order,
+                                            $order->totalAmount,
+                                            $paymentMethod
+                                        );
+                                    }
+                                }
 
                                 // Map PayMongo source type back to our internal payment method
                                 $paymongoType = $response->data->attributes->type;

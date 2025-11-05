@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Http\Request;
 use App\Models\Product;
 use app\Models\Seller;
+use App\Services\ProductValidationService;
 use Illuminate\Http\JsonResponse;
 
 class ProductController extends Controller
@@ -227,8 +228,18 @@ class ProductController extends Controller
             $data['publish_status'] = 'draft';
         }
 
-        // Auto-approve products
-        $data['approval_status'] = 'approved';
+        // Validate product using validation service
+        $validation = ProductValidationService::validateProduct($data);
+        
+        // Set approval status based on validation
+        if (!$validation['valid']) {
+            $data['approval_status'] = 'rejected';
+            $data['rejection_reason'] = $validation['rejection_reason'];
+        } elseif ($validation['auto_approve']) {
+            $data['approval_status'] = 'approved';
+        } else {
+            $data['approval_status'] = 'pending';
+        }
         
         // Generate unique SKU
         $data['sku'] = $this->generateSKU($sellerId, $data['category']);
@@ -263,8 +274,28 @@ class ProductController extends Controller
         }
 
         try {
+            // If product validation failed, return error response
+            if (!$validation['valid']) {
+                Log::warning('Product validation failed', [
+                    'seller_id' => $sellerId,
+                    'errors' => $validation['errors'],
+                    'rejection_reason' => $validation['rejection_reason']
+                ]);
+                
+                return response()->json([
+                    'message' => 'Product validation failed',
+                    'errors' => $validation['errors'],
+                    'rejection_reason' => $validation['rejection_reason'],
+                    'suggestions' => ProductValidationService::getImprovementSuggestion($validation)
+                ], 422);
+            }
+            
             $product = Product::create($data);
-            Log::info('Product created successfully:', ['product_id' => $product->product_id, 'sku' => $product->sku]);
+            Log::info('Product created successfully:', [
+                'product_id' => $product->product_id,
+                'sku' => $product->sku,
+                'approval_status' => $product->approval_status
+            ]);
             
             // Transform product to include full image URL
             $productImageUrl = $product->productImage
@@ -286,11 +317,24 @@ class ProductController extends Controller
                 'approval_status' => $product->approval_status,
                 'publish_status' => $product->publish_status,
                 'sku' => $product->sku,
+                'rejection_reason' => $product->rejection_reason,
                 'created_at' => $product->created_at,
                 'updated_at' => $product->updated_at,
             ];
             
-            return response()->json(['message' => 'Product created successfully!', 'product' => $productData]);
+            // Return appropriate message based on approval status
+            $message = 'Product created successfully!';
+            if ($product->approval_status === 'pending') {
+                $message = 'Product submitted for review. It will be approved by an administrator shortly.';
+            } elseif ($product->approval_status === 'approved') {
+                $message = 'Product approved and created successfully!';
+            }
+            
+            return response()->json([
+                'message' => $message,
+                'product' => $productData,
+                'validation_warnings' => $validation['warnings'] ?? []
+            ]);
         } catch (\Exception $e) {
             Log::error('Error creating product:', ['error' => $e->getMessage()]);
             return response()->json(['message' => 'Error creating product: ' . $e->getMessage()], 500);
@@ -721,7 +765,7 @@ class ProductController extends Controller
     }
 
     // Reject a product
-    public function reject($id)
+    public function reject(Request $request, $id)
     {
         $user = Auth::user();
 
@@ -737,9 +781,19 @@ class ProductController extends Controller
         }
 
         $product->approval_status = 'rejected';
+        $product->rejection_reason = $request->input('reason', 'Rejected by administrator');
         $product->save();
 
-        return response()->json(['message' => 'Product rejected successfully']);
+        Log::info('Product rejected by admin', [
+            'product_id' => $product->product_id,
+            'reason' => $product->rejection_reason,
+            'admin_id' => $user->userID
+        ]);
+
+        return response()->json([
+            'message' => 'Product rejected successfully',
+            'rejection_reason' => $product->rejection_reason
+        ]);
     }
 
     /**

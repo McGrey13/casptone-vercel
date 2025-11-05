@@ -18,7 +18,7 @@ const CategoriesPage = () => {
   const fixImageUrl = (url) => {
     if (!url) return url;
     // If it's already a full URL with localhost, convert to relative path
-    if (url.includes('localhost:8000') || url.includes('localhost:8080')) {
+    if (url.includes('localhost:8000') || url.includes('localhost:8080') || url.includes('craftconnect-laravel-backend-1.onrender.com')) {
       const path = new URL(url).pathname;
       return path;
     }
@@ -39,6 +39,22 @@ const CategoriesPage = () => {
       setLoading(true);
       setError(null);
       
+      // Get recommended store IDs first (only if no search term)
+      let recommendedStoreIds = [];
+      if (!searchTerm) {
+        try {
+          const recResponse = await api.get('/recommendations/stores', {
+            params: { limit: 50 }
+          });
+          
+          if (recResponse.data.success && recResponse.data.store_ids) {
+            recommendedStoreIds = recResponse.data.store_ids;
+          }
+        } catch (err) {
+          console.log('No store recommendations available');
+        }
+      }
+      
       // Build URL with search parameter if provided
       const url = searchTerm 
         ? `/stores?search=${encodeURIComponent(searchTerm)}`
@@ -50,10 +66,27 @@ const CategoriesPage = () => {
       const storesData = data.data || data;
       
       // Fix image URLs in the data
-      const fixedStoresData = storesData.map(store => ({
+      let fixedStoresData = storesData.map(store => ({
         ...store,
-        logo_url: fixImageUrl(store.logo_url)
+        logo_url: fixImageUrl(store.logo_url),
+        isRecommended: recommendedStoreIds.includes(store.storeID)
       }));
+      
+      // Sort: Recommended stores first (only if no search term)
+      if (!searchTerm && recommendedStoreIds.length > 0) {
+        fixedStoresData = fixedStoresData.sort((a, b) => {
+          const aIsRecommended = recommendedStoreIds.includes(a.storeID);
+          const bIsRecommended = recommendedStoreIds.includes(b.storeID);
+          
+          if (aIsRecommended && !bIsRecommended) return -1;
+          if (!aIsRecommended && bIsRecommended) return 1;
+          
+          // If both recommended or both not, sort by rating
+          const aRating = a.average_rating || 0;
+          const bRating = b.average_rating || 0;
+          return bRating - aRating;
+        });
+      }
       
       setStores(fixedStoresData);
       
@@ -163,7 +196,7 @@ const CategoriesPage = () => {
             {stores.map((store) => (
               <Link to={`/artisan/${store.seller?.sellerID || store.user?.userID}`} key={store.storeID}>
                 <Card className="h-full overflow-hidden hover:shadow-lg transition-all duration-300 hover:scale-105 border border-gray-200">
-                  {/* Store Logo/Image */}
+                    {/* Store Logo/Image */}
                   <div className="relative h-32 overflow-hidden bg-gradient-to-br from-gray-100 to-gray-200">
                     {store.logo_url ? (
                       <img
@@ -177,6 +210,12 @@ const CategoriesPage = () => {
                       </div>
                     )}
                     <div className="absolute inset-0 bg-black/10 hover:bg-black/5 transition-colors"></div>
+                    {/* Recommended Badge */}
+                    {store.isRecommended && (
+                      <div className="absolute top-2 right-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white text-xs px-2 py-1 rounded-full font-semibold shadow-lg">
+                        ✨ Recommended
+                      </div>
+                    )}
                   </div>
                   
                   {/* Store Info */}

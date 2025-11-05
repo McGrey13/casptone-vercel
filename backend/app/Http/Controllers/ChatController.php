@@ -6,11 +6,85 @@ use App\Models\Conversation;
 use App\Models\Message;
 use App\Models\MessageAttachment;
 use App\Events\MessageSent;
+use App\Services\NotificationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 class ChatController extends Controller
 {
+    /**
+     * Automatically create a conversation when a customer places an order
+     * This ensures sellers can immediately communicate with customers who ordered their products
+     */
+    public static function createConversationForOrder($order)
+    {
+        try {
+            // Get the customer (sender)
+            $customer = $order->customer;
+            if (!$customer || !$customer->user_id) {
+                \Log::warning('Cannot create conversation: customer not found', ['order_id' => $order->orderID]);
+                return null;
+            }
+
+            // Get the seller (receiver) using sellerID
+            if (!$order->sellerID) {
+                \Log::warning('Cannot create conversation: order has no sellerID', ['order_id' => $order->orderID]);
+                return null;
+            }
+
+            $seller = \App\Models\Seller::find($order->sellerID);
+            if (!$seller || !$seller->user_id) {
+                \Log::warning('Cannot create conversation: seller not found', [
+                    'order_id' => $order->orderID,
+                    'seller_id' => $order->sellerID
+                ]);
+                return null;
+            }
+
+            // Check if conversation already exists
+            $existingConversation = Conversation::where('sender_id', $customer->user_id)
+                ->where('recever_id', $seller->user_id)
+                ->first();
+
+            if ($existingConversation) {
+                // Update the conversation to link it to the order if not already linked
+                if (!$existingConversation->orderID) {
+                    $existingConversation->update(['orderID' => $order->orderID]);
+                }
+                \Log::info('Conversation already exists for order', [
+                    'conversation_id' => $existingConversation->conversation_id,
+                    'order_id' => $order->orderID
+                ]);
+                return $existingConversation;
+            }
+
+            // Create new conversation linked to the order
+            $conversation = Conversation::create([
+                'sender_id' => $customer->user_id,
+                'recever_id' => $seller->user_id,
+                'orderID' => $order->orderID,
+            ]);
+
+            \Log::info('Created conversation for order', [
+                'conversation_id' => $conversation->conversation_id,
+                'order_id' => $order->orderID,
+                'customer_id' => $customer->user_id,
+                'seller_id' => $seller->user_id
+            ]);
+
+            return $conversation;
+
+        } catch (\Exception $e) {
+            \Log::error('Error creating conversation for order', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+                'order_id' => $order->orderID ?? null
+            ]);
+            // Don't throw exception - we don't want to break order creation if conversation creation fails
+            return null;
+        }
+    }
+
     public function createConversation(Request $request)
     {
         $request->validate([
@@ -185,6 +259,15 @@ class ChatController extends Controller
 
             // Load the message with attachments
             $message->load('attachments');
+
+            // Notify receiver about new message (if receiver is different from sender)
+            if ($request->receiver_id != $user->userID) {
+                $conversation = Conversation::find($conversationId);
+                if ($conversation) {
+                    $senderName = $user->userName ?? 'Someone';
+                    NotificationService::notifyNewMessage($conversation, $request->receiver_id, $senderName);
+                }
+            }
 
             \Log::info('Message created successfully', ['message_id' => $message->message_id]);
 

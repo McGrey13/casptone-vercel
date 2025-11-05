@@ -6,6 +6,7 @@ use App\Models\AfterSaleRequest;
 use App\Models\Order;
 use App\Models\Customer;
 use App\Models\Seller;
+use App\Services\NotificationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
@@ -20,7 +21,8 @@ class AfterSaleController extends Controller
     {
         try {
             $user = Auth::user();
-            $customer = Customer::where('user_id', $user->userID)->first();
+            // Use relationship instead of direct query to avoid column name issues
+            $customer = $user->customer;
 
             if (!$customer) {
                 return response()->json(['error' => 'Customer not found'], 404);
@@ -45,7 +47,8 @@ class AfterSaleController extends Controller
     {
         try {
             $user = Auth::user();
-            $seller = Seller::where('userID', $user->userID)->first();
+            // Use relationship instead of direct query to avoid column name issues
+            $seller = $user->seller;
 
             if (!$seller) {
                 return response()->json(['error' => 'Seller not found'], 404);
@@ -115,7 +118,8 @@ class AfterSaleController extends Controller
             ]);
 
             $user = Auth::user();
-            $customer = Customer::where('userID', $user->userID)->first();
+            // Use relationship instead of direct query to avoid column name issues
+            $customer = $user->customer;
 
             if (!$customer) {
                 return response()->json(['error' => 'Customer not found'], 404);
@@ -198,6 +202,26 @@ class AfterSaleController extends Controller
 
             $afterSaleRequest->load(['order', 'product', 'seller.user']);
 
+            // Notify seller about the after-sale request (wrap in try-catch to prevent notification errors from breaking the request)
+            try {
+                if ($sellerIdForRequest) {
+                    $seller = Seller::find($sellerIdForRequest);
+                    if ($seller && $seller->user_id) {
+                        NotificationService::notifyAfterSaleRequest(
+                            $seller->user_id,
+                            $afterSaleRequest,
+                            $order
+                        );
+                    }
+                }
+            } catch (\Exception $notifException) {
+                // Log notification error but don't fail the request creation
+                Log::warning('Failed to send notification for after-sale request: ' . $notifException->getMessage(), [
+                    'request_id' => $afterSaleRequest->request_id,
+                    'seller_id' => $sellerIdForRequest,
+                ]);
+            }
+
             return response()->json([
                 'success' => true,
                 'message' => 'After-sale request created successfully',
@@ -231,7 +255,8 @@ class AfterSaleController extends Controller
             ]);
 
             $user = Auth::user();
-            $seller = Seller::where('userID', $user->userID)->first();
+            // Use relationship instead of direct query to avoid column name issues
+            $seller = $user->seller;
 
             if (!$seller) {
                 return response()->json(['error' => 'Seller not found'], 404);
@@ -255,6 +280,21 @@ class AfterSaleController extends Controller
             ]);
 
             $afterSaleRequest->load(['order', 'product', 'customer.user']);
+
+            // Notify customer about the seller's response
+            if ($afterSaleRequest->customer && $afterSaleRequest->customer->user_id) {
+                try {
+                    NotificationService::notifyAfterSaleResponse(
+                        $afterSaleRequest->customer->user_id,
+                        $afterSaleRequest,
+                        $afterSaleRequest->order,
+                        $validated['status']
+                    );
+                } catch (\Exception $e) {
+                    // Log error but don't fail the request
+                    Log::error('Failed to send notification to customer about after-sale response: ' . $e->getMessage());
+                }
+            }
 
             return response()->json([
                 'success' => true,
@@ -312,7 +352,8 @@ class AfterSaleController extends Controller
     {
         try {
             $user = Auth::user();
-            $customer = Customer::where('userID', $user->userID)->first();
+            // Use relationship instead of direct query to avoid column name issues
+            $customer = $user->customer;
 
             if (!$customer) {
                 return response()->json(['error' => 'Customer not found'], 404);

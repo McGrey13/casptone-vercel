@@ -13,6 +13,7 @@ import {
   Menu,
   X,
   DollarSign,
+  RotateCcw,
 } from "lucide-react";
 import AdminNavbar from "./AdminNavbar";
 import { cn } from "../lib/utils";
@@ -30,6 +31,7 @@ import {
 } from "../ui/tooltip";
 import { useUser } from "../Context/UserContext";
 import { useNavigate } from "react-router-dom";
+import { ToastProvider } from "../Context/ToastContext";
 
 // Import Admin Pages
 import Dashboard from "./AdminDashboard";
@@ -42,6 +44,7 @@ import CommissionDashboard from "./CommissionDashboard";
 import AdminSettings from "./AdminSettings";
 import AcceptPendingProduct from "./AcceptPendingProduct";
 import StoreVerification from "./StoreVerification";
+import ReturnRefundRequests from "./ReturnRefundRequests";
 import api from "../../api";
 import "./AdminLayout.css";
 
@@ -198,6 +201,8 @@ const AdminLayout = () => {
         return <StoreVerification />;
       case "orders":
         return <OrdersOverview />;
+      case "returnRefund":
+        return <ReturnRefundRequests />;
       case "analytics":
         return <AnalyticsDashboard />;
       case "commission":
@@ -210,9 +215,10 @@ const AdminLayout = () => {
   };
 
   return (
-    <TooltipProvider>
-      <div className="min-h-screen bg-gray-50">
-        <AdminNavbar userName={user?.userName || 'Admin'} />
+    <ToastProvider>
+      <TooltipProvider>
+        <div className="min-h-screen bg-gray-50">
+          <AdminNavbar userName={user?.userName || 'Admin'} />
       <div className="flex h-[calc(100vh-4rem)]">
         {/* Mobile Menu Button */}
         <div className="lg:hidden fixed top-4 left-4 z-50">
@@ -320,6 +326,15 @@ const AdminLayout = () => {
             />
 
             <SidebarItem
+              icon={<RotateCcw className="h-5 w-5" />}
+              label="Return & Refund"
+              tabKey="returnRefund"
+              activeTab={activeTab}
+              setActiveTab={setActiveTab}
+              onItemClick={() => setSidebarOpen(false)}
+            />
+
+            <SidebarItem
               icon={<BarChart3 className="h-5 w-5" />}
               label="Analytics"
               tabKey="analytics"
@@ -380,8 +395,9 @@ const AdminLayout = () => {
           </div>
         </main>
       </div>
-    </div>
-    </TooltipProvider>
+        </div>
+      </TooltipProvider>
+    </ToastProvider>
   );
 };
 

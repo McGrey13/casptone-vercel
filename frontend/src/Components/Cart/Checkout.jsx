@@ -7,13 +7,100 @@ import { useUser } from "../Context/UserContext";
 import { Loader2, ShoppingBag, MapPin, User, X } from "lucide-react";
 import api from "../../api";
 
+// J&T Express Shipping Rates (Reference: https://philnews.ph/2023/09/04/jt-express-rates-list-shipping-fees-package-weight/)
+const JNT_RATES = {
+  "Metro Manila": {
+    "Metro Manila": [85, 115, 155, 225, 305, 455],
+    "Luzon": [95, 165, 190, 280, 370, 465],
+    "Visayas": [100, 180, 200, 300, 400, 500],
+    "Mindanao": [105, 195, 220, 330, 440, 550],
+    "Island": [115, 205, 230, 340, 450, 560],
+  },
+  "Luzon": {
+    "Luzon": [85, 155, 180, 270, 360, 455],
+    "Metro Manila": [95, 165, 190, 280, 370, 465],
+    "Visayas": [100, 180, 200, 300, 400, 500],
+    "Mindanao": [105, 195, 220, 330, 440, 550],
+    "Island": [115, 205, 230, 340, 450, 560],
+  },
+  "Visayas": {
+    "Visayas": [85, 155, 180, 270, 360, 455],
+    "Metro Manila": [100, 180, 200, 300, 400, 500],
+    "Luzon": [100, 180, 200, 300, 400, 500],
+    "Mindanao": [105, 175, 200, 290, 380, 475],
+    "Island": [115, 185, 210, 300, 390, 485],
+  },
+  "Mindanao": {
+    "Mindanao": [85, 155, 180, 270, 360, 455],
+    "Luzon": [105, 195, 215, 325, 435, 545],
+    "Metro Manila": [105, 195, 215, 325, 435, 545],
+    "Visayas": [105, 175, 195, 285, 375, 470],
+    "Island": [115, 205, 230, 340, 450, 560],
+  },
+  "Island": {
+    "Island": [115, 205, 230, 340, 450, 560],
+    "Metro Manila": [115, 205, 230, 340, 450, 560],
+    "Luzon": [115, 205, 230, 340, 450, 560],
+    "Visayas": [115, 185, 210, 300, 390, 485],
+    "Mindanao": [115, 205, 230, 340, 450, 560],
+  },
+};
+
+// Weight brackets: [500g and below, 500g-1kg, 1kg-3kg, 3kg-4kg, 4kg-5kg, 5kg-6kg]
+const WEIGHT_BRACKETS = [0.5, 1, 3, 4, 5, 6];
+
+// Calculate J&T Express shipping fee
+const calculateJNTShipping = (totalWeightKg, origin = "Metro Manila", destination = "Luzon") => {
+  if (totalWeightKg <= 0) return 0;
+  
+  // Get the appropriate rate table
+  const rateTable = JNT_RATES[origin] || JNT_RATES["Metro Manila"];
+  const rates = rateTable[destination] || rateTable["Luzon"];
+  
+  // Determine weight bracket index
+  let bracketIndex = 0;
+  for (let i = 0; i < WEIGHT_BRACKETS.length; i++) {
+    if (totalWeightKg <= WEIGHT_BRACKETS[i]) {
+      bracketIndex = i;
+      break;
+    }
+  }
+  
+  // If weight exceeds 6kg, use the highest rate (6kg rate) as base and add extra
+  if (totalWeightKg > 6) {
+    const baseRate = rates[rates.length - 1];
+    const extraWeight = totalWeightKg - 6;
+    const extraKilos = Math.ceil(extraWeight);
+    // Add approximately 100-150 per extra kg beyond 6kg
+    return baseRate + (extraKilos * 120);
+  }
+  
+  return rates[bracketIndex] || rates[0];
+};
+
+// Default weight per item in kg
+const AVERAGE_ITEM_WEIGHT_KG = 0.5; // 500g per item
+
 const Checkout = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { checkout } = useCart();
   const { user } = useUser();
-  const { cartItems = [], subtotal = 0, shipping = 0, tax = 0 } =
+  const { cartItems = [], subtotal = 0, shipping: initialShipping = 0, totalWeightKg: initialTotalWeightKg } =
     location.state || {};
+
+  // Calculate total weight in kg (estimate: 0.5kg per item × quantity)
+  const totalWeightKg = cartItems.reduce(
+    (sum, item) => sum + (AVERAGE_ITEM_WEIGHT_KG * item.quantity),
+    0
+  ) || initialTotalWeightKg || 0;
+
+  // Calculate J&T Express shipping (use calculated if no initial shipping, otherwise use initial)
+  // Default origin: Metro Manila, destination: Luzon
+  // TODO: Get actual origin from seller location and destination from user address
+  const shipping = cartItems.length > 0 
+    ? (initialShipping > 0 ? initialShipping : calculateJNTShipping(totalWeightKg, "Metro Manila", "Luzon"))
+    : 0;
 
   const [isProcessing, setIsProcessing] = useState(false);
   const [formData, setFormData] = useState({
@@ -124,9 +211,9 @@ const Checkout = () => {
     setDiscountError('');
   };
 
-  // Calculate totals with discount
+  // Calculate totals with discount (no tax)
   const finalSubtotal = subtotal - (appliedDiscount ? appliedDiscount.amount : 0);
-  const finalTotal = finalSubtotal + shipping + tax;
+  const finalTotal = finalSubtotal + shipping;
 
   const handlePlaceOrder = async () => {
     if (!user?.userName || !user?.userAddress || !user?.userCity || !user?.userPostalCode) {
@@ -265,9 +352,6 @@ const Checkout = () => {
                       Seller: {item.seller_name}
                     </p>
                   )}
-                  <p className="text-sm text-[#a4785a]">
-                    Quantity: {item.quantity} × ₱{parseFloat(item.price || 0).toFixed(2)}
-                  </p>
                 </div>
                 <div className="text-right">
                   <p className="font-semibold text-[#5c3d28]">
@@ -292,10 +376,6 @@ const Checkout = () => {
               <div className="flex justify-between text-sm py-1">
                 <span className="text-[#7b5a3b]">Shipping</span>
                 <span className="font-semibold text-[#5c3d28]">₱{shipping.toFixed(2)}</span>
-              </div>
-              <div className="flex justify-between text-sm py-1">
-                <span className="text-[#7b5a3b]">Tax</span>
-                <span className="font-semibold text-[#5c3d28]">₱{tax.toFixed(2)}</span>
               </div>
               <div className="flex justify-between font-bold text-lg pt-3 mt-3 border-t-2 border-[#a4785a]">
                 <span className="text-[#5c3d28]">Total</span>

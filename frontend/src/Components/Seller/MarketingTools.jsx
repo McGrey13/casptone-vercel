@@ -34,7 +34,7 @@ import api from "../../api";
 import SellerAnalytics from "./SellerAnalytics";
 
 const MarketingTools = () => {
-  const [activeTab, setActiveTab] = useState('promotions');
+  const [activeTab, setActiveTab] = useState('discounts');
   const [discountCode, setDiscountCode] = useState('');
   const [discountAmount, setDiscountAmount] = useState('');
   const [usageLimit, setUsageLimit] = useState('');
@@ -229,13 +229,7 @@ const fetchProducts = async () => {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-4 bg-[#faf9f8] border-2 border-[#e5ded7] p-1 rounded-xl shadow-md">
-          <TabsTrigger 
-            value="promotions"
-            className="rounded-lg data-[state=active]:bg-gradient-to-r data-[state=active]:from-[#a4785a] data-[state=active]:to-[#7b5a3b] data-[state=active]:text-white data-[state=active]:shadow-lg transition-all duration-200 font-medium"
-          >
-            Promotions
-          </TabsTrigger>
+        <TabsList className="grid w-full grid-cols-3 bg-[#faf9f8] border-2 border-[#e5ded7] p-1 rounded-xl shadow-md">
           <TabsTrigger 
             value="discounts"
             className="rounded-lg data-[state=active]:bg-gradient-to-r data-[state=active]:from-[#a4785a] data-[state=active]:to-[#7b5a3b] data-[state=active]:text-white data-[state=active]:shadow-lg transition-all duration-200 font-medium"
@@ -255,50 +249,6 @@ const fetchProducts = async () => {
             Analytics
           </TabsTrigger>
         </TabsList>
-
-        <TabsContent value="promotions" className="space-y-4 pt-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <Card className="border-[#e5ded7] bg-gradient-to-br from-white to-[#faf9f8] hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
-              <CardHeader className="pb-4">
-                <div className="h-12 w-12 rounded-full bg-gradient-to-br from-[#a4785a] to-[#7b5a3b] flex items-center justify-center shadow-lg mb-3">
-                  <Megaphone className="h-6 w-6 text-white" />
-                </div>
-                <CardTitle className="text-[#5c3d28]">Featured Product</CardTitle>
-                <CardDescription className="text-[#7b5a3b]">
-                  Highlight a product on your storefront
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Button 
-                  variant="outline" 
-                  className="w-full border-2 border-[#d5bfae] text-[#5c3d28] hover:bg-[#f8f1ec] hover:border-[#a4785a] transition-all duration-200"
-                  onClick={() => setActiveTab('featured')}
-                >
-                  Manage Featured Products
-                </Button>
-              </CardContent>
-            </Card>
-
-            <Card className="border-[#e5ded7] bg-gradient-to-br from-white to-[#faf9f8] hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
-              <CardHeader className="pb-4">
-                <div className="h-12 w-12 rounded-full bg-gradient-to-br from-red-500 to-red-600 flex items-center justify-center shadow-lg mb-3">
-                  <Tag className="h-6 w-6 text-white" />
-                </div>
-                <CardTitle className="text-[#5c3d28]">Flash Sale</CardTitle>
-                <CardDescription className="text-[#7b5a3b]">Create a limited-time offer</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Button 
-                  variant="outline" 
-                  className="w-full border-2 border-[#d5bfae] text-[#5c3d28] hover:bg-[#f8f1ec] hover:border-[#a4785a] transition-all duration-200"
-                >
-                  Create Flash Sale
-                </Button>
-              </CardContent>
-            </Card>
-
-          </div>
-        </TabsContent>
 
         <TabsContent value="featured" className="space-y-6 pt-6">
           <Card className="border-[#e5ded7] shadow-xl">

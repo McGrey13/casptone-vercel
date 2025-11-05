@@ -4,7 +4,7 @@ import axios from 'axios';
 const API_BASE_URL = '/api';
 
 const api = axios.create({
-  baseURL: import.meta.env.VITE_BACKEND_URL || API_BASE_URL,
+  baseURL: import.meta.env.VITE_BACKEND_URL || 'https://craftconnect-laravel-backend-1.onrender.com/api',
   timeout: 30000, // 30 second timeout
   withCredentials: true, // Enable cookies for authentication
 });

@@ -17,11 +17,11 @@
 
 a {
   font-weight: 500;
-  color: #646cff;
+  color: #a4785a;
   text-decoration: inherit;
 }
 a:hover {
-  color: #535bf2;
+  color: #8b5f46;
 }
 
 html, body, #root {
@@ -42,7 +42,7 @@ h1 {
   line-height: 1.1;
 }
 
-button {
+button:not(.active-order-tab) {
   border-radius: 8px;
   border: 1px solid transparent;
   padding: 0.6em 1.2em;
@@ -53,7 +53,7 @@ button {
   cursor: pointer;
   transition: border-color 0.25s;
 }
-button:hover {
+button:not(.active-order-tab):hover {
   border-color: #646cff;
 }
 button:focus,
@@ -67,11 +67,34 @@ button:focus-visible {
     background-color: #ffffff;
   }
   a:hover {
-    color: #747bff;
+    color: #8b5f46;
   }
-  button {
+  button:not(.active-order-tab) {
     background-color: #f9f9f9;
   }
+}
+
+/* Force active order tab styles - highest priority */
+button.active-order-tab,
+button.active-order-tab[data-active-tab="true"] {
+  background-color: inherit !important;
+  background: inherit !important;
+}
+
+button.active-order-tab *,
+button.active-order-tab[data-active-tab="true"] *,
+button.active-order-tab .active-tab-icon,
+button.active-order-tab .active-tab-text,
+button.active-order-tab span {
+  color: #ffffff !important;
+}
+
+button.active-order-tab svg,
+button.active-order-tab .active-tab-icon,
+button.active-order-tab[data-active-tab="true"] svg {
+  color: #ffffff !important;
+  stroke: #ffffff !important;
+  fill: none !important;
 }
 
 /* In Footer.css */

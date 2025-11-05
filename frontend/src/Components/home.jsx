@@ -2,6 +2,8 @@ import React, { useEffect, useState } from "react";
 import HeroSection from "./Home/HeroSection";
 import CategoryGrid from "./Home/CategoryGrid";
 import FeaturedProducts from "./product/FeaturedProducts";
+import WorkshopsEventsGrid from "./Home/WorkshopsEventsGrid";
+import Recommendations from "./product/Recommendations";
 import { useCart } from "./Cart/CartContext";
 import { useFavorites } from "./favorites/FavoritesContext";
 import NotificationModal from "./ui/NotificationModal";
@@ -128,6 +130,18 @@ const Home = () => {
               onFavorite={handleFavorite}
             />
           )}
+        </div>
+        {/* AI-Powered Recommendations Section */}
+        <div className="w-full">
+          <Recommendations 
+            title="Recommended For You"
+            subtitle="Intelligent suggestions based on your browsing and purchasing behaviors"
+            limit={12}
+          />
+        </div>
+        {/* Workshops & Events Section */}
+        <div className="w-full">
+          <WorkshopsEventsGrid />
         </div>
       </main>
       

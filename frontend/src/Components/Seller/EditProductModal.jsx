@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { X, Plus, Upload, Video as VideoIcon, Image as ImageIcon, Check } from 'lucide-react';
 import { Label } from "../ui/label";
 import { Input } from "../ui/input";
@@ -19,12 +19,8 @@ const EditProductModal = ({ isOpen, onClose, product, onSave }) => {
   const [productImages, setProductImages] = useState([]);
   const [video, setVideo] = useState({ file: null, preview: '' });
   const [categories, setCategories] = useState([]);
-  const [loadingCategories, setLoadingCategories] = useState(false);
   const [tags, setTags] = useState([]);
   const [tagInput, setTagInput] = useState('');
-  
-  const fileInputRef = useRef(null);
-  const videoInputRef = useRef(null);
 
   // Fetch categories from API
   useEffect(() => {
@@ -33,7 +29,6 @@ const EditProductModal = ({ isOpen, onClose, product, onSave }) => {
 
   const fetchCategories = async () => {
     try {
-      setLoadingCategories(true);
       const response = await api.get('/categories');
       console.log('Categories response:', response.data);
       
@@ -70,8 +65,6 @@ const EditProductModal = ({ isOpen, onClose, product, onSave }) => {
         { id: 'textiles', name: 'Textiles' },
         { id: 'jewelry', name: 'Jewelry' },
       ]);
-    } finally {
-      setLoadingCategories(false);
     }
   };
 
@@ -205,6 +198,13 @@ const EditProductModal = ({ isOpen, onClose, product, onSave }) => {
     'Traditional Accessories',
     'Statuary & Sculpture',
     'Basketry & Weaving',
+    "Shoe & Sandals Making",
+    "Leather Crafts",
+    "Candle Making",
+    "Wood Carving & WoodCraft Artisans",
+    "House Garments",
+    "Beadwork",
+    "Crochet",
   ];
   const normalizedCategories = (categories || []).map((c) => ({
     id: c.id || c.category_id || (c.name || ''),
@@ -249,7 +249,7 @@ const EditProductModal = ({ isOpen, onClose, product, onSave }) => {
     const existingImages = [];
     let mainImageSet = false;
     
-    productImages.forEach((image, index) => {
+    productImages.forEach((image) => {
       if (image.file) {
         // New image file
         newImages.push({
@@ -272,18 +272,18 @@ const EditProductModal = ({ isOpen, onClose, product, onSave }) => {
     });
     
     // Add new images
-    newImages.forEach((imageData, index) => {
-      submitData.append(`productImages[${index}]`, imageData.file);
+    newImages.forEach((imageData, idx) => {
+      submitData.append(`productImages[${idx}]`, imageData.file);
       if (imageData.isMain) {
-        submitData.append(`mainImageIndex`, index);
+        submitData.append(`mainImageIndex`, idx);
       }
     });
     
     // Add existing images as references (so backend knows to keep them)
-    existingImages.forEach((imageData, index) => {
-      submitData.append(`existingImages[${index}]`, imageData.url);
+    existingImages.forEach((imageData, idx) => {
+      submitData.append(`existingImages[${idx}]`, imageData.url);
       if (imageData.isMain) {
-        submitData.append(`mainExistingImageIndex`, index);
+        submitData.append(`mainExistingImageIndex`, idx);
       }
     });
     
@@ -548,14 +548,14 @@ const EditProductModal = ({ isOpen, onClose, product, onSave }) => {
                               alt={`Product ${index + 1}`}
                               className="w-full h-24 sm:h-28 md:h-32 object-cover rounded-lg sm:rounded-xl border-3 border-[#e5ded7] shadow-md group-hover:shadow-xl transition-shadow duration-300"
                             />
-                            <div className="absolute top-1 right-1 sm:top-2 sm:right-2 flex gap-1">
+                            <div className="absolute top-1 right-1 sm:top-2 sm:right-2 flex gap-1 z-10">
                               <button
                                 type="button"
                                 onClick={() => setAsMainImage(image.id)}
-                                className={`rounded-full p-1 sm:p-1.5 text-white text-xs sm:text-sm font-bold shadow-lg transition-all duration-200 ${
+                                className={`rounded-full p-1.5 sm:p-2 text-base sm:text-lg font-bold shadow-xl transition-all duration-200 hover:scale-110 ${
                                   image.isMain 
-                                    ? 'bg-gradient-to-r from-[#a4785a] to-[#7b5a3b] opacity-100 scale-110' 
-                                    : 'bg-gray-400 opacity-0 group-hover:opacity-100 hover:scale-110'
+                                    ? 'bg-gradient-to-r from-[#a4785a] to-[#7b5a3b] text-white opacity-100 scale-110' 
+                                    : 'bg-white/95 text-[#a4785a] opacity-100 hover:bg-white hover:text-[#7b5a3b] border-2 border-[#a4785a]'
                                 }`}
                                 title="Set as main image"
                               >
@@ -564,7 +564,7 @@ const EditProductModal = ({ isOpen, onClose, product, onSave }) => {
                               <button
                                 type="button"
                                 onClick={() => removeImage(image.id)}
-                                className="bg-gradient-to-r from-red-500 to-red-600 text-white rounded-full p-0.5 sm:p-1 hover:scale-110 opacity-0 group-hover:opacity-100 transition-all duration-200 shadow-lg"
+                                className="bg-gradient-to-r from-red-500 to-red-600 text-white rounded-full p-1 sm:p-1.5 hover:scale-110 opacity-100 transition-all duration-200 shadow-xl"
                                 title="Remove image"
                               >
                                 <X className="h-3 w-3 sm:h-4 sm:w-4" />
@@ -652,11 +652,11 @@ const EditProductModal = ({ isOpen, onClose, product, onSave }) => {
                         {tag}
                         <button
                           type="button"
-                          className="hover:bg-white/20 rounded-full p-0.5 transition-colors duration-200"
+                          className="bg-white/40 hover:bg-white/70 rounded-full p-0.5 sm:p-1.5 transition-all duration-200 ml-0.5 flex items-center justify-center hover:scale-110"
                           onClick={() => removeTag(tag)}
                           aria-label={`Remove tag ${tag}`}
                         >
-                          <X size={12} className="sm:w-3.5 sm:h-3.5" />
+                          <X size={16} className="sm:w-5 sm:h-5 text-[#7b5a3b] font-bold" />
                         </button>
                       </span>
                     )) : (

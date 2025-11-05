@@ -441,7 +441,7 @@ const PaymentTracking = () => {
                     </p>
                   </div>
                   <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-full bg-gradient-to-br from-amber-500 to-amber-600 flex items-center justify-center">
-                    <DollarSign className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
+                    <span className="text-sm">₱</span>
                   </div>
                 </div>
               </CardContent>

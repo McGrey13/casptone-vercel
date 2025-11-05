@@ -7,6 +7,9 @@ use App\Models\Customer;
 use App\Models\Order;
 use App\Models\OrderProduct;
 use App\Models\Product;
+use App\Models\Seller;
+use App\Http\Controllers\ChatController;
+use App\Services\NotificationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -335,6 +338,22 @@ class CartController extends Controller
 
                 // Load relationships for response
                 $order->load('orderProducts.product');
+
+                // Notify seller about new order
+                // Note: Payment notification will be sent separately when payment is confirmed
+                if ($sellerID) {
+                    $seller = Seller::find($sellerID);
+                    if ($seller && $seller->user_id) {
+                        NotificationService::notifyNewOrder($order, $seller->user_id);
+                    }
+                }
+
+                // Notify customer about order creation
+                NotificationService::notifyOrderStatusChange($order, $user->userID, 'pending');
+
+                // Automatically create a conversation so seller can communicate with customer
+                // This allows sellers to send receipts and communicate about the order
+                ChatController::createConversationForOrder($order);
 
                 return response()->json([
                     'success' => true,

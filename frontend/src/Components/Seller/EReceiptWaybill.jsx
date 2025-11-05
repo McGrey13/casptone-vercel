@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   Card, CardContent, CardDescription, CardHeader, CardTitle,
 } from "../ui/card";
@@ -6,9 +6,10 @@ import { Button } from "../ui/button";
 import { Badge } from "../ui/badge";
 import {
   Download, Eye, Package, Truck, MapPin, User, Phone, 
-  Calendar, Clock, FileText, Printer, ArrowUpDown, ArrowUp, ArrowDown
+  Calendar, Clock, FileText, Printer, ArrowUpDown, ArrowUp, ArrowDown, Image as ImageIcon
 } from "lucide-react";
 import api from "../../api";
+import html2canvas from "html2canvas";
 
 // Add custom scrollbar styles
 const scrollbarStyles = `
@@ -57,6 +58,8 @@ const EReceiptWaybill = () => {
   const [sortOrder, setSortOrder] = useState('latest'); // 'latest' or 'oldest'
   const [activeTab, setActiveTab] = useState('waybill'); // 'waybill' or 'receipts'
   const previewRef = React.useRef(null);
+  const receiptRef = useRef(null);
+  const [isDownloadingImage, setIsDownloadingImage] = useState(false);
 
   // Function to handle order selection and scroll to preview on mobile
   const handleOrderSelect = (order) => {
@@ -173,6 +176,145 @@ const EReceiptWaybill = () => {
       document.body.removeChild(element);
     } catch (error) {
       console.error('Error downloading PDF:', error);
+    }
+  };
+
+  // Helper function to convert computed color to RGB
+  const getRGBColor = (computedStyle, property) => {
+    try {
+      const color = computedStyle.getPropertyValue(property);
+      if (!color || color.trim() === '' || color === 'transparent') {
+        return null;
+      }
+      
+      // If already in rgb/rgba format, return as is
+      if (color.startsWith('rgb')) {
+        return color;
+      }
+      
+      // Convert to RGB using canvas
+      const canvas = document.createElement('canvas');
+      canvas.width = 1;
+      canvas.height = 1;
+      const ctx = canvas.getContext('2d');
+      ctx.fillStyle = color;
+      ctx.fillRect(0, 0, 1, 1);
+      const imageData = ctx.getImageData(0, 0, 1, 1);
+      const [r, g, b, a] = imageData.data;
+      
+      if (a === 255) {
+        return `rgb(${r}, ${g}, ${b})`;
+      }
+      return `rgba(${r}, ${g}, ${b}, ${a / 255})`;
+    } catch (e) {
+      return null;
+    }
+  };
+
+  const handleDownloadImage = async () => {
+    if (!selectedOrder || !receiptRef.current) {
+      alert('Please select an order first');
+      return;
+    }
+
+    try {
+      setIsDownloadingImage(true);
+      
+      // Get the receipt container element
+      const element = receiptRef.current;
+      
+      // Clone the element to avoid modifying the original
+      const clonedElement = element.cloneNode(true);
+      clonedElement.style.position = 'absolute';
+      clonedElement.style.left = '-9999px';
+      clonedElement.style.top = '0';
+      clonedElement.style.width = element.scrollWidth + 'px';
+      clonedElement.style.height = element.scrollHeight + 'px';
+      clonedElement.style.backgroundColor = '#ffffff';
+      document.body.appendChild(clonedElement);
+
+      // Wait for the clone to be rendered
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      // Process all elements to convert colors to RGB
+      const allElements = clonedElement.querySelectorAll('*');
+      allElements.forEach(el => {
+        const computedStyle = window.getComputedStyle(el);
+        let inlineStyle = el.getAttribute('style') || '';
+        
+        // Convert problematic color properties to RGB
+        ['color', 'background-color', 'border-color', 'border-top-color', 'border-right-color', 'border-bottom-color', 'border-left-color'].forEach(prop => {
+          try {
+            const rgbColor = getRGBColor(computedStyle, prop);
+            if (rgbColor) {
+              inlineStyle += `${prop}: ${rgbColor} !important; `;
+            }
+          } catch (e) {
+            // Ignore errors for this property
+          }
+        });
+        
+        if (inlineStyle) {
+          el.setAttribute('style', inlineStyle);
+        }
+      });
+
+      // Also process the root element
+      const rootComputedStyle = window.getComputedStyle(clonedElement);
+      let rootStyle = clonedElement.getAttribute('style') || '';
+      const bgColor = getRGBColor(rootComputedStyle, 'background-color');
+      if (bgColor) {
+        rootStyle += `background-color: ${bgColor} !important; `;
+      }
+      if (rootStyle) {
+        clonedElement.setAttribute('style', rootStyle);
+      }
+
+      // Wait a bit more for styles to be applied
+      await new Promise(resolve => setTimeout(resolve, 50));
+      
+      // Configure html2canvas options for better quality
+      const canvas = await html2canvas(clonedElement, {
+        backgroundColor: '#ffffff',
+        scale: 2, // Higher scale for better quality
+        logging: false,
+        useCORS: true,
+        allowTaint: false,
+        foreignObjectRendering: false,
+      });
+
+      // Remove cloned element
+      document.body.removeChild(clonedElement);
+
+      // Convert canvas to blob
+      canvas.toBlob((blob) => {
+        if (!blob) {
+          alert('Failed to generate image');
+          setIsDownloadingImage(false);
+          return;
+        }
+
+        // Create download link
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        const fileName = `${activeTab === 'waybill' ? 'waybill' : 'receipt'}-${selectedOrder.order_number || selectedOrder.orderID}-${new Date().getTime()}.png`;
+        link.href = url;
+        link.download = fileName;
+        
+        // Trigger download
+        document.body.appendChild(link);
+        link.click();
+        
+        // Cleanup
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+        setIsDownloadingImage(false);
+      }, 'image/png', 1.0); // Highest quality PNG
+
+    } catch (error) {
+      console.error('Error downloading image:', error);
+      alert('Failed to download image. Please try again.');
+      setIsDownloadingImage(false);
     }
   };
 
@@ -432,7 +574,7 @@ const EReceiptWaybill = () => {
                 </div>
                 <div class="info-item">
                   <div class="label">Order Status</div>
-                  <div class="value">${order.status || 'N/A'}</div>
+                  <div class="value">${order.paymentStatus === 'paid' && (order.payment_method === 'gcash' || order.payment_method === 'paymaya') ? 'Paid' : order.status || 'N/A'}</div>
                 </div>
                 <div class="info-item">
                   <div class="label">💳 Payment Method</div>
@@ -713,7 +855,10 @@ const EReceiptWaybill = () => {
                             {order.order_number}
                           </h3>
                           <Badge className="bg-[#a4785a]/10 text-[#5c3d28] border-[#a4785a]/30">
-                            {order.status || 'Unknown'}
+                            {order.paymentStatus === 'paid' && 
+                             (order.payment_method === 'gcash' || order.payment_method === 'paymaya')
+                              ? 'Paid' 
+                              : order.status || 'Unknown'}
                           </Badge>
                           {order.payment_method && (
                             <Badge className={`${
@@ -804,7 +949,7 @@ const EReceiptWaybill = () => {
                 {/* Add print styles */}
                 
                 {/* Receipt Content - Print Ready */}
-                <div className="print-content bg-white border-2 border-[#e5ded7] rounded-xl overflow-hidden shadow-lg">
+                <div ref={receiptRef} className="print-content bg-white border-2 border-[#e5ded7] rounded-xl overflow-hidden shadow-lg">
                   {/* Header */}
                   <div className="bg-gradient-to-r from-[#a4785a] to-[#7b5a3b] text-white p-6 text-center relative overflow-hidden">
                     <div className="absolute inset-0 opacity-10" style={{
@@ -880,8 +1025,13 @@ const EReceiptWaybill = () => {
                           <p className="text-base font-bold text-[#5c3d28]">{selectedOrder.customer || 'N/A'}</p>
                         </div>
                         <div className="bg-[#faf9f8] p-3 rounded-lg border-l-4 border-[#a4785a]">
-                          <p className="text-xs font-semibold text-[#7b5a3b] uppercase tracking-wide mb-1">Status</p>
-                          <p className="text-sm font-bold text-[#5c3d28]">{selectedOrder.status || 'N/A'}</p>
+                          <p className="text-xs font-semibold text-[#7b5a3b] uppercase tracking-wide mb-1">Order Status</p>
+                          <p className="text-sm font-bold text-[#5c3d28]">
+                            {selectedOrder.paymentStatus === 'paid' && 
+                             (selectedOrder.payment_method === 'gcash' || selectedOrder.payment_method === 'paymaya')
+                              ? 'Paid' 
+                              : selectedOrder.status || 'N/A'}
+                          </p>
                         </div>
                         <div className={`p-3 rounded-lg border-l-4 col-span-2 ${
                           selectedOrder.payment_method === 'cod' 
@@ -1033,7 +1183,24 @@ const EReceiptWaybill = () => {
                 </div>
 
                 {/* Action Buttons - No Print */}
-                <div className="flex gap-3 no-print">
+                <div className="flex flex-col sm:flex-row gap-3 no-print">
+                  <Button
+                    onClick={handleDownloadImage}
+                    disabled={isDownloadingImage}
+                    className="flex-1 bg-gradient-to-r from-green-600 to-green-700 text-white hover:from-green-700 hover:to-green-800 shadow-md hover:shadow-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {isDownloadingImage ? (
+                      <>
+                        <div className="h-4 w-4 mr-2 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                        Generating...
+                      </>
+                    ) : (
+                      <>
+                        <ImageIcon className="h-4 w-4 mr-2" />
+                        Download as Image
+                      </>
+                    )}
+                  </Button>
                   <Button
                     onClick={() => handleDownloadPDF(selectedOrder)}
                     className="flex-1 bg-gradient-to-r from-[#a4785a] to-[#7b5a3b] text-white hover:from-[#8a6b4a] hover:to-[#6b4a2f] shadow-md hover:shadow-lg transition-all duration-200"

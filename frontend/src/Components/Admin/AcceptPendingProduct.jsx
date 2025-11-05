@@ -260,7 +260,7 @@ function AcceptPendingProduct() {
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center gap-1">
-                      <DollarSign className="h-4 w-4 text-green-600" />
+                      
                       <span className="font-semibold text-green-600">₱{Number(product.productPrice).toFixed(2)}</span>
                     </div>
                   </TableCell>

@@ -92,6 +92,16 @@ class User extends Authenticatable
         return $this->belongsToMany(Seller::class, 'seller_follows', 'userID', 'sellerID')->withTimestamps();
     }
     
+    public function notifications()
+    {
+        return $this->hasMany(Notification::class, 'user_id', 'userID');
+    }
+
+    public function unreadNotifications()
+    {
+        return $this->hasMany(Notification::class, 'user_id', 'userID')->where('is_read', false);
+    }
+    
 }
 
 

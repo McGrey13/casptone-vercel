@@ -104,80 +104,156 @@ const SellerDashboard = () => {
   const fetchDashboard = useCallback(async (id) => {
     if (!id) return;
     try {
-      setLoading(true);
       setError(null);
+      console.log('Fetching dashboard for seller ID:', id);
       const response = await api.get(`/seller/${id}/dashboard`);
+      console.log('Dashboard API response:', response.data);
+      
       if (response?.data?.success) {
-        setDashboardData(response.data.data);
+        const data = response.data.data;
+        console.log('Dashboard data received:', data);
+        console.log('Recent orders from API:', data.recentOrders);
+        console.log('Top rated products from API:', data.topRatedProducts);
+        
+        // Even if transaction_summary is empty, we still have orders and products
+        setDashboardData((prev) => ({
+          ...prev,
+          ...data,
+          // Ensure transaction_summary always exists with defaults
+          transaction_summary: data.transaction_summary || (prev?.transaction_summary || {
+            total_transactions: 0,
+            successful_transactions: 0,
+            total_gross_amount: 0,
+            total_admin_fee: 0,
+            total_seller_amount: 0,
+            average_transaction: 0,
+            commission_rate: '2%',
+            payment_methods: [],
+            pending_payments: { count: 0, total_amount: 0 },
+            online_payment_count: 0,
+          })
+        }));
       } else {
-        setError('Failed to load dashboard');
+        console.warn('Dashboard API returned success=false:', response.data);
+        setError(response.data?.message || 'Failed to load dashboard');
       }
     } catch (e) {
+      console.error('Dashboard fetch error:', e);
+      console.error('Error response:', e.response?.data);
       setError(e.response?.data?.message || 'Failed to load dashboard');
-    } finally {
-      setLoading(false);
     }
   }, []);
 
   // Fallback: fetch seller orders and compute simple summary
   const fetchOrdersFallback = useCallback(async (id) => {
     try {
+      console.log('Fetching orders fallback for seller ID:', id);
       const res = await api.get('/orders/seller');
+      console.log('Orders API response:', res.data);
+      
       const orders = Array.isArray(res?.data) ? res.data : [];
+      console.log('Orders found:', orders.length);
+      
       // Keep only this seller's orders if API returns more
       const normalized = orders.map((o) => ({
         id: o.orderID || o.order_id || o.id,
-        date: o.orderDate || o.date,
+        date: o.orderDate || o.created_at || o.date,
         amount: typeof o.totalAmount === 'number' ? o.totalAmount : parseFloat((o.totalAmount || '0').toString().replace(/[^0-9.]/g, '')) || 0,
         status: (o.status || '').charAt(0).toUpperCase() + (o.status || '').slice(1),
+        paymentMethod: (o.payment_method || '').toLowerCase(),
+        paymentStatus: (o.paymentStatus || '').toLowerCase(),
       }));
       setOrdersFallback(normalized);
+      console.log('Normalized orders:', normalized);
 
-      // If backend summary is empty, compute minimal one
+      // Calculate online payment count (GCash/PayMaya that are paid)
+      const onlinePayments = normalized.filter(o => {
+        const method = o.paymentMethod;
+        const status = o.paymentStatus;
+        const isOnline = method === 'gcash' || method === 'paymaya';
+        const isPaid = status === 'paid' || status === 'succeeded' || status === 'completed';
+        return isOnline && isPaid;
+      });
+      console.log('Online payments (paid):', onlinePayments.length);
+
+      // Calculate pending payment count (orders with pending payment status)
+      const pendingPayments = normalized.filter(o => {
+        const status = o.paymentStatus;
+        return status === 'pending';
+      });
+      const pendingAmount = pendingPayments.reduce((sum, o) => sum + (o.amount || 0), 0);
+      console.log('Pending payments:', pendingPayments.length, 'Amount:', pendingAmount);
+
+      // Merge with existing dashboard data or create new
       setDashboardData((prev) => {
-        if (prev?.transaction_summary && prev.transaction_summary.total_transactions) {
-          return prev;
-        }
         const totalGross = normalized.reduce((s, o) => s + (o.amount || 0), 0);
+        const newOrders = normalized.slice(0, 5).map((o) => ({
+          id: o.id?.toString().startsWith('ORD-') ? o.id.toString() : `ORD-${o.id}`,
+          date: (o.date || '').toString().slice(0, 10),
+          amount: `₱${Number(o.amount || 0).toLocaleString()}`,
+          status: o.status || 'Processing',
+        }));
+        
         return {
           ...(prev || {}),
           transaction_summary: {
-            total_transactions: normalized.length,
-            successful_transactions: normalized.length,
-            total_gross_amount: Math.round(totalGross * 100) / 100,
-            total_admin_fee: Math.round(totalGross * 0.02 * 100) / 100,
-            total_seller_amount: Math.round(totalGross * 0.98 * 100) / 100,
-            average_transaction: normalized.length ? Math.round((totalGross / normalized.length) * 100) / 100 : 0,
-            commission_rate: '2%',
-            payment_methods: [],
-            pending_payments: { count: 0, total_amount: 0 },
-            online_payment_count: 0,
+            ...(prev?.transaction_summary || {}),
+            // Only update if we don't have transaction data, or if orders show more
+            total_transactions: prev?.transaction_summary?.total_transactions || normalized.length,
+            successful_transactions: prev?.transaction_summary?.successful_transactions || normalized.length,
+            total_gross_amount: prev?.transaction_summary?.total_gross_amount || Math.round(totalGross * 100) / 100,
+            total_admin_fee: prev?.transaction_summary?.total_admin_fee || Math.round(totalGross * 0.02 * 100) / 100,
+            total_seller_amount: prev?.transaction_summary?.total_seller_amount || Math.round(totalGross * 0.98 * 100) / 100,
+            average_transaction: prev?.transaction_summary?.average_transaction || (normalized.length ? Math.round((totalGross / normalized.length) * 100) / 100 : 0),
+            commission_rate: prev?.transaction_summary?.commission_rate || '2%',
+            payment_methods: prev?.transaction_summary?.payment_methods || [],
+            // Use calculated values from orders if backend doesn't provide them or if calculated is higher
+            pending_payments: {
+              count: (prev?.transaction_summary?.pending_payments?.count ?? 0) > 0 
+                ? prev.transaction_summary.pending_payments.count 
+                : pendingPayments.length,
+              total_amount: (prev?.transaction_summary?.pending_payments?.total_amount ?? 0) > 0
+                ? prev.transaction_summary.pending_payments.total_amount
+                : Math.round(pendingAmount * 100) / 100,
+            },
+            // Use calculated online payment count from orders if backend doesn't provide it
+            online_payment_count: (prev?.transaction_summary?.online_payment_count ?? 0) > 0
+              ? prev.transaction_summary.online_payment_count
+              : onlinePayments.length,
           },
+          // Use backend orders if available, otherwise use fallback
           recentOrders: (prev?.recentOrders && prev.recentOrders.length > 0)
             ? prev.recentOrders
-            : normalized.slice(0, 5).map((o) => ({
-                id: `ORD-${o.id}`,
-                date: (o.date || '').slice(0, 10),
-                amount: `₱${Number(o.amount || 0).toLocaleString()}`,
-                status: o.status || 'Processing',
-              })),
+            : newOrders,
         };
       });
-    } catch (_) {
-      // ignore fallback errors
+    } catch (err) {
+      console.error('Error fetching orders fallback:', err);
+      // Don't ignore errors, log them for debugging
     }
   }, []);
 
   useEffect(() => {
     (async () => {
+      setLoading(true);
       const id = await resolveSellerId();
+      console.log('Resolved seller ID:', id);
       setSellerId(id);
       if (id) {
-        fetchDashboard(id);
-        fetchOrdersFallback(id);
+        try {
+          // Fetch both in parallel
+          await Promise.all([
+            fetchDashboard(id),
+            fetchOrdersFallback(id)
+          ]);
+        } catch (err) {
+          console.error('Error fetching dashboard data:', err);
+        } finally {
+          setLoading(false);
+        }
       } else {
         setLoading(false);
-        setError('Unable to determine seller');
+        setError('Unable to determine seller ID. Please make sure you are logged in as a seller.');
       }
     })();
   }, [resolveSellerId, fetchDashboard, fetchOrdersFallback]);
@@ -229,13 +305,13 @@ const SellerDashboard = () => {
         <StatCard
           title="Online Payments"
           value={dashboardData?.transaction_summary?.online_payment_count || "0"}
-          description="Online payment transactions"
+          description={`${dashboardData?.transaction_summary?.online_payment_count || 0} orders paid via GCash/PayMaya`}
           icon={<CreditCard className="h-4 w-4 text-primary" />}
         />
         <StatCard
           title="Pending Payments"
           value={dashboardData?.transaction_summary?.pending_payments?.count || "0"}
-          description={`₱${dashboardData?.transaction_summary?.pending_payments?.total_amount || 0} pending`}
+          description={`${dashboardData?.transaction_summary?.pending_payments?.count || 0} orders waiting for payment (₱${(dashboardData?.transaction_summary?.pending_payments?.total_amount || 0).toLocaleString()})`}
           icon={<Clock className="h-4 w-4 text-primary" />}
         />
       </div>
