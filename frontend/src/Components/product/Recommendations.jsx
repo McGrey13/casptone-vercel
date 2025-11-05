@@ -52,7 +52,7 @@ const Recommendations = ({ title = "Recommended For You", subtitle = "Based on y
     if (cleanPath.startsWith('/')) {
       cleanPath = cleanPath.substring(1);
     }
-    return `${import.meta.env.VITE_API_BASE_URL || 'https://craftconnect-laravel-backend-2.onrender.com'}/${cleanPath}`;
+    return `https://craftconnect-laravel-backend-2.onrender.com/${cleanPath}`;
   };
 
   // Transform API product format to match ProductCard format

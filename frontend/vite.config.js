@@ -19,19 +19,19 @@ export default defineConfig({
     ],
     proxy: {
       '/api': {
-        target: 'http://localhost:8000',
+        target: 'https://craftconnect-laravel-backend-2.onrender.com',
         changeOrigin: true,
-        secure: false,
+        secure: true,
       },
       '/storage': {
-        target: 'http://localhost:8000',
+        target: 'https://craftconnect-laravel-backend-2.onrender.com',
         changeOrigin: true,
-        secure: false,
+        secure: true,
       },
       '/images': {
-        target: 'http://localhost:8000',
+        target: 'https://craftconnect-laravel-backend-2.onrender.com',
         changeOrigin: true,
-        secure: false,
+        secure: true,
       }
     }
   },

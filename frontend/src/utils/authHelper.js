@@ -31,8 +31,7 @@ export const testAuthentication = async () => {
   }
 
   try {
-    const backendUrl = import.meta.env.VITE_BACKEND_URL || 'https://craftconnect-laravel-backend-2.onrender.com/api';
-    const response = await fetch(`${backendUrl}/admin/reports/system-commission?from_date=2025-09-01&to_date=2025-10-06`, {
+    const response = await fetch('https://craftconnect-laravel-backend-2.onrender.com/api/admin/reports/system-commission?from_date=2025-09-01&to_date=2025-10-06', {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${token}`,

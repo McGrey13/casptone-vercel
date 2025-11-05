@@ -239,7 +239,7 @@ const MessengerPopup = ({
       // Try 3: Use backend URL directly (if different from frontend)
       if (!fetchSuccess) {
         try {
-          const backendUrl = import.meta.env.VITE_BACKEND_URL?.replace('/api', '') || import.meta.env.VITE_API_BASE_URL || 'https://craftconnect-laravel-backend-2.onrender.com';
+          const backendUrl = import.meta.env.VITE_BACKEND_URL || 'https://craftconnect-laravel-backend-2.onrender.com';
           const backendImageUrl = imageUrl.replace(window.location.origin, backendUrl);
           const response = await fetch(backendImageUrl, {
             credentials: 'include',
@@ -672,14 +672,14 @@ const MessengerPopup = ({
                           <div key={i} className="mt-2">
                             {a.file_type === "image" ? (
                               <img 
-                                src={`${import.meta.env.VITE_API_BASE_URL || 'https://craftconnect-laravel-backend-2.onrender.com'}/storage/${a.messageAttachment}`} 
+                                src={`https://craftconnect-laravel-backend-2.onrender.com/storage/${a.messageAttachment}`} 
                                 alt="attachment" 
                                 className="max-w-full rounded-lg shadow max-h-64 object-contain"
                                 loading="lazy"
                               />
                             ) : (
                               <a 
-                                href={`${import.meta.env.VITE_API_BASE_URL || 'https://craftconnect-laravel-backend-2.onrender.com'}/storage/${a.messageAttachment}`}
+                                href={`https://craftconnect-laravel-backend-2.onrender.com/storage/${a.messageAttachment}`}
                                 target="_blank" 
                                 rel="noopener noreferrer"
                                 className="flex items-center gap-2 text-blue-400 hover:underline"

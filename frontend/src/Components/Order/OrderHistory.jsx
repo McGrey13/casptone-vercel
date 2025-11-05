@@ -16,8 +16,7 @@ const OrderHistory = () => {
       }
 
       try {
-        const backendUrl = import.meta.env.VITE_BACKEND_URL || 'https://craftconnect-laravel-backend-2.onrender.com/api';
-        const response = await fetch(`${backendUrl}/orders`, {
+        const response = await fetch('https://craftconnect-laravel-backend-2.onrender.com/api/orders', {
           headers: {
             Authorization: `Bearer ${token}`,
             Accept: 'application/json',

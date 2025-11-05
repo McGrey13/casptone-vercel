@@ -176,8 +176,7 @@ const StoreView = () => {
       setError(null);
       
       // Fetch store data using the same endpoint as ArtisanDetail
-      const backendUrl = import.meta.env.VITE_BACKEND_URL || 'https://craftconnect-laravel-backend-2.onrender.com/api';
-      const storeResponse = await fetch(`${backendUrl}/sellers/${id}/store`, {
+      const storeResponse = await fetch(`https://craftconnect-laravel-backend-2.onrender.com/api/sellers/${id}/store`, {
         headers: { Accept: "application/json" },
       });
       
@@ -211,8 +210,7 @@ const StoreView = () => {
       // Fetch products using the seller ID
       const sellerId = storeData.seller?.sellerID;
       if (sellerId) {
-        const backendUrl = import.meta.env.VITE_BACKEND_URL || 'https://craftconnect-laravel-backend-2.onrender.com/api';
-        const productsResponse = await fetch(`${backendUrl}/sellers/${sellerId}/approvedProduct`, {
+        const productsResponse = await fetch(`https://craftconnect-laravel-backend-2.onrender.com/api/sellers/${sellerId}/approvedProduct`, {
           headers: { Accept: "application/json" },
         });
         

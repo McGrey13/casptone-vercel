@@ -42,8 +42,7 @@ export const testGlobalAuthentication = async (endpoint = '/auth/profile') => {
   }
 
   try {
-    const backendUrl = import.meta.env.VITE_BACKEND_URL || 'https://craftconnect-laravel-backend-2.onrender.com/api';
-    const response = await fetch(`${backendUrl}${endpoint}`, {
+    const response = await fetch(`https://craftconnect-laravel-backend-2.onrender.com/api${endpoint}`, {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${token}`,

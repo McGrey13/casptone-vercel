@@ -59,7 +59,7 @@ const PurchaseHistory = () => {
     if (cleanPath.startsWith('/')) {
       cleanPath = cleanPath.substring(1);
     }
-    return `${import.meta.env.VITE_API_BASE_URL || 'https://craftconnect-laravel-backend-2.onrender.com'}/${cleanPath}`;
+    return `https://craftconnect-laravel-backend-2.onrender.com/${cleanPath}`;
   };
 
   const formatDate = (dateString) => {

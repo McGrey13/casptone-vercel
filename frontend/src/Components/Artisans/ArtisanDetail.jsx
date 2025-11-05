@@ -417,7 +417,7 @@ const ArtisanDetail = () => {
           image: (() => {
             // Prioritize profile_picture_path from seller data
             if (data.profile_picture_path) {
-              const backendUrl = import.meta.env.VITE_BACKEND_URL?.replace('/api', '') || import.meta.env.VITE_API_BASE_URL || 'https://craftconnect-laravel-backend-2.onrender.com';
+              const backendUrl = import.meta.env.VITE_BACKEND_URL?.replace('/api', '') || 'https://craftconnect-laravel-backend-2.onrender.com';
               const imageUrl = `${backendUrl}/storage/${data.profile_picture_path}`;
               return imageUrl;
             }
