@@ -57,7 +57,7 @@ const ProductsPage = () => {
   const fixImageUrl = (url) => {
     if (!url) return url;
     // If it's already a full URL with localhost, convert to relative path
-    if (url.includes('localhost:8000') || url.includes('localhost:8080') || url.includes('craftconnect-laravel-backend-1.onrender.com')) {
+    if (url.includes('localhost:8000') || url.includes('localhost:8080')) {
       const path = new URL(url).pathname;
       return path;
     }
@@ -347,7 +347,7 @@ const ProductsPage = () => {
           <div className="space-y-2 text-sm text-gray-500">
             <p>Please make sure:</p>
             <ul className="list-disc list-inside">
-              <li>The Laravel backend server is running on localhost:8080</li>
+              <li>The Laravel backend server is running</li>
               <li>There are approved products in the database</li>
               <li>The database connection is working</li>
             </ul>

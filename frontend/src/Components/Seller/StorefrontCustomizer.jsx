@@ -152,7 +152,8 @@ const StorefrontCustomizer = () => {
       try {
         const sellerId = storeData?.seller?.sellerID;
         if (!sellerId) return;
-        const response = await fetch(`https://craftconnect-laravel-backend-1.onrender.com/api/analytics/seller/${sellerId}`);
+        const backendUrl = import.meta.env.VITE_BACKEND_URL || 'https://craftconnect-laravel-backend-2.onrender.com/api';
+        const response = await fetch(`${backendUrl}/analytics/seller/${sellerId}`);
         if (response.ok) {
           const data = await response.json();
           setDiscountCodes(Array.isArray(data?.discount_codes) ? data.discount_codes : []);
@@ -182,7 +183,8 @@ const StorefrontCustomizer = () => {
       console.log("🔍 Fetching store data...");
       console.log("🔑 Token:", token ? "Present" : "Missing");
       
-      const response = await fetch("https://craftconnect-laravel-backend-1.onrender.com/api/stores/me", {
+      const backendUrl = import.meta.env.VITE_BACKEND_URL || 'https://craftconnect-laravel-backend-2.onrender.com/api';
+      const response = await fetch(`${backendUrl}/stores/me`, {
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
@@ -360,7 +362,8 @@ const handleImageUpload = (type, file) => {
         hasBackground: !!images.background
       });
 
-      const response = await fetch("https://craftconnect-laravel-backend-1.onrender.com/api/stores/customization", {
+      const backendUrl = import.meta.env.VITE_BACKEND_URL || 'https://craftconnect-laravel-backend-2.onrender.com/api';
+      const response = await fetch(`${backendUrl}/stores/customization`, {
         method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,

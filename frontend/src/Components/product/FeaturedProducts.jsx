@@ -53,7 +53,8 @@ const FeaturedProducts = ({
     }
     
     // Try the most common Laravel pattern
-    const testUrl = `https://craftconnect-laravel-backend-1.onrender.com/${cleanPath}`;
+    const baseUrl = import.meta.env.VITE_API_BASE_URL || 'https://craftconnect-laravel-backend-2.onrender.com';
+    const testUrl = `${baseUrl}/${cleanPath}`;
     console.log('🔄 Trying URL:', testUrl);
     return testUrl;
   };
@@ -70,7 +71,7 @@ const FeaturedProducts = ({
       let recommendedProductIds = [];
       try {
         const recResponse = await axios.get('/recommendations', { 
-          baseURL: import.meta.env.VITE_BACKEND_URL || 'https://craftconnect-laravel-backend-1.onrender.com/api',
+          baseURL: import.meta.env.VITE_BACKEND_URL || 'https://craftconnect-laravel-backend-2.onrender.com/api',
           params: { limit: 50 } // Get more to filter from
         });
         
@@ -82,7 +83,7 @@ const FeaturedProducts = ({
       }
       
       // Fetch all approved products
-      const response = await axios.get('/products/approved', { baseURL: import.meta.env.VITE_BACKEND_URL || 'https://craftconnect-laravel-backend-1.onrender.com/api' });
+      const response = await axios.get('/products/approved', { baseURL: import.meta.env.VITE_BACKEND_URL || 'https://craftconnect-laravel-backend-2.onrender.com/api' });
       const data = Array.isArray(response.data) ? response.data : 
                   response.data.data ? response.data.data : [];
       
@@ -395,14 +396,16 @@ const FeaturedProducts = ({
                   let retryUrl;
                   if (originalImage.startsWith('http')) {
                     // If it's a full URL, try switching port
-                    if (originalImage.includes('localhost:8000')) {
-                      retryUrl = originalImage.replace('localhost:8000', 'craftconnect-laravel-backend-1.onrender.com');
-                    } else if (originalImage.includes('localhost:8080')) {
-                      retryUrl = originalImage.replace('localhost:8080', 'craftconnect-laravel-backend-1.onrender.com');
+                    const baseUrl = import.meta.env.VITE_API_BASE_URL || 'https://craftconnect-laravel-backend-2.onrender.com';
+                    if (originalImage.includes('localhost:8000') || originalImage.includes('localhost:8080')) {
+                      retryUrl = originalImage.replace(/localhost:\d+/, new URL(baseUrl).host);
+                    } else {
+                      retryUrl = `${baseUrl}/storage/${originalImage.replace(/^\/+/, '')}`;
                     }
                   } else {
                     // Try with /storage/ prefix for relative paths
-                    retryUrl = `https://craftconnect-laravel-backend-1.onrender.com/storage/${originalImage.replace(/^\/+/, '')}`;
+                    const baseUrl = import.meta.env.VITE_API_BASE_URL || 'https://craftconnect-laravel-backend-2.onrender.com';
+                    retryUrl = `${baseUrl}/storage/${originalImage.replace(/^\/+/, '')}`;
                   }
                   console.log('🔄 Retry 1 - Trying URL:', retryUrl);
                   e.target.src = retryUrl;

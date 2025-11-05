@@ -31,7 +31,8 @@ export const testSellerAuthentication = async () => {
   }
 
   try {
-    const response = await fetch('https://craftconnect-laravel-backend-1.onrender.com/api/seller/4/dashboard', {
+    const backendUrl = import.meta.env.VITE_BACKEND_URL || 'https://craftconnect-laravel-backend-2.onrender.com/api';
+    const response = await fetch(`${backendUrl}/seller/4/dashboard`, {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${token}`,

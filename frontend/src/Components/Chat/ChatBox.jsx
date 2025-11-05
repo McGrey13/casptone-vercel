@@ -171,14 +171,14 @@ export default function ChatBox({ conversationId, user, customer }) {
                   <div key={i} className="mt-2">
                     {a.file_type === "image" ? (
                       <img 
-                        src={`https://craftconnect-laravel-backend-1.onrender.com/storage/${a.messageAttachment}`} 
+                        src={`${import.meta.env.VITE_API_BASE_URL || 'https://craftconnect-laravel-backend-2.onrender.com'}/storage/${a.messageAttachment}`} 
                         alt="attachment" 
                         className="max-w-full rounded-lg shadow max-h-64 object-contain"
                         loading="lazy"
                       />
                     ) : (
                       <a 
-                        href={`https://craftconnect-laravel-backend-1.onrender.com/storage/${a.messageAttachment}`}
+                        href={`${import.meta.env.VITE_API_BASE_URL || 'https://craftconnect-laravel-backend-2.onrender.com'}/storage/${a.messageAttachment}`}
                         target="_blank" 
                         rel="noopener noreferrer"
                         className={`flex items-center gap-2 ${

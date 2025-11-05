@@ -208,10 +208,10 @@ const AboutPage = () => {
                         // Fix the URL if it's a relative path
                         const url = seller.profile_image_url;
                         if (url.startsWith('/storage/')) {
-                          return `${import.meta.env.VITE_API_BASE_URL || 'https://craftconnect-laravel-backend-1.onrender.com'}${url}`;
+                          return `${import.meta.env.VITE_API_BASE_URL || 'https://craftconnect-laravel-backend-2.onrender.com'}${url}`;
                         }
                         if (url.startsWith('storage/')) {
-                          return `${import.meta.env.VITE_API_BASE_URL || 'https://craftconnect-laravel-backend-1.onrender.com'}/${url}`;
+                          return `${import.meta.env.VITE_API_BASE_URL || 'https://craftconnect-laravel-backend-2.onrender.com'}/${url}`;
                         }
                         return url;
                       }

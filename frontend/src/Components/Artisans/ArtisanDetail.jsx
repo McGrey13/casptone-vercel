@@ -215,7 +215,7 @@ const ArtisanDetail = () => {
         return;
       }
 
-      const backendUrl = import.meta.env.VITE_BACKEND_URL || 'https://craftconnect-laravel-backend-1.onrender.com/api';
+      const backendUrl = import.meta.env.VITE_BACKEND_URL || 'https://craftconnect-laravel-backend-2.onrender.com/api';
       const response = await fetch(`${backendUrl}/sellers/${id}/${action}`, {
         method: 'POST',
         headers: {
@@ -391,7 +391,7 @@ const ArtisanDetail = () => {
     const fetchArtisan = async () => {
       try {
         // Fetch artisan details
-        const backendUrl = import.meta.env.VITE_BACKEND_URL || 'https://craftconnect-laravel-backend-1.onrender.com/api';
+        const backendUrl = import.meta.env.VITE_BACKEND_URL || 'https://craftconnect-laravel-backend-2.onrender.com/api';
         const res = await fetch(`${backendUrl}/sellers/${id}/details`, {
           headers: { Accept: "application/json" },
         });
@@ -417,7 +417,7 @@ const ArtisanDetail = () => {
           image: (() => {
             // Prioritize profile_picture_path from seller data
             if (data.profile_picture_path) {
-              const backendUrl = import.meta.env.VITE_BACKEND_URL?.replace('/api', '') || 'https://craftconnect-laravel-backend-1.onrender.com';
+              const backendUrl = import.meta.env.VITE_BACKEND_URL?.replace('/api', '') || import.meta.env.VITE_API_BASE_URL || 'https://craftconnect-laravel-backend-2.onrender.com';
               const imageUrl = `${backendUrl}/storage/${data.profile_picture_path}`;
               return imageUrl;
             }
@@ -482,7 +482,7 @@ const ArtisanDetail = () => {
     const fetchDiscountStats = async () => {
       try {
         if (!id) return;
-        const backendUrl = import.meta.env.VITE_BACKEND_URL || 'https://craftconnect-laravel-backend-1.onrender.com/api';
+        const backendUrl = import.meta.env.VITE_BACKEND_URL || 'https://craftconnect-laravel-backend-2.onrender.com/api';
         const res = await fetch(`${backendUrl}/analytics/seller/${id}`);
         if (res.ok) {
           const data = await res.json();
@@ -506,7 +506,7 @@ const ArtisanDetail = () => {
   useEffect(() => {
     const fetchWorkshops = async () => {
       try {
-        const backendUrl = import.meta.env.VITE_BACKEND_URL || 'https://craftconnect-laravel-backend-1.onrender.com/api';
+        const backendUrl = import.meta.env.VITE_BACKEND_URL || 'https://craftconnect-laravel-backend-2.onrender.com/api';
         const res = await fetch(`${backendUrl}/work-and-events/public`);
         if (!res.ok) return;
         const payload = await res.json();
@@ -532,7 +532,7 @@ const ArtisanDetail = () => {
         const token = sessionStorage.getItem('auth_token');
         if (!token) return;
 
-        const backendUrl = import.meta.env.VITE_BACKEND_URL || 'https://craftconnect-laravel-backend-1.onrender.com/api';
+        const backendUrl = import.meta.env.VITE_BACKEND_URL || 'https://craftconnect-laravel-backend-2.onrender.com/api';
         const response = await fetch(`${backendUrl}/sellers/${id}/follow-status`, {
           headers: {
             'Authorization': `Bearer ${token}`,

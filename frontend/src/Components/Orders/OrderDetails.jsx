@@ -28,7 +28,7 @@ const OrderDetails = () => {
 
   const fixImageUrl = (url) => {
     if (!url) return url;
-    if (url.includes('localhost:8000') || url.includes('localhost:8080') || url.includes('craftconnect-laravel-backend-1.onrender.com')) {
+    if (url.includes('localhost:8000') || url.includes('localhost:8080')) {
       const path = new URL(url).pathname;
       return path;
     }

@@ -18,7 +18,7 @@ const CategoriesPage = () => {
   const fixImageUrl = (url) => {
     if (!url) return url;
     // If it's already a full URL with localhost, convert to relative path
-    if (url.includes('localhost:8000') || url.includes('localhost:8080') || url.includes('craftconnect-laravel-backend-1.onrender.com')) {
+    if (url.includes('localhost:8000') || url.includes('localhost:8080')) {
       const path = new URL(url).pathname;
       return path;
     }
